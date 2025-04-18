@@ -1,14 +1,4 @@
-
 import React, { useState } from 'react';
-import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
-import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, 
-  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
-} from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, Info, GripVertical, FileText } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
 import {
   Table,
   TableBody,
@@ -18,6 +8,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from '@/components/ui/button';
+import { Download, ExternalLink, FileText } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
 
 const tableData = [
   {
@@ -46,7 +39,6 @@ const tableData = [
   }
 ];
 
-// Sample table content data
 const sampleTableContent = [
   { metric: 'Depression Reduction', ai_treatment: '45%', traditional: '32%', difference: '+13%' },
   { metric: 'Anxiety Management', ai_treatment: '38%', traditional: '29%', difference: '+9%' },
@@ -76,14 +68,11 @@ const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) =
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="h-full flex flex-col">
       {selectedTable === null ? (
-        <div className="max-w-4xl mx-auto p-4 w-full">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-700">Data Tables & Analysis</h3>
-          </div>
-
-          <div className="space-y-3">
+        <div className="flex-1 p-6">
+          <h3 className="text-lg font-medium text-gray-700 mb-4">Data Tables & Analysis</h3>
+          <div className="grid gap-4">
             {tableData.map((table) => (
               <div 
                 key={table.id} 
@@ -91,7 +80,7 @@ const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) =
                   flex items-center justify-between 
                   bg-white border border-gray-200 
                   rounded-lg 
-                  p-3 
+                  p-4 
                   hover:bg-gray-50 
                   transition-colors 
                   cursor-pointer
@@ -100,21 +89,9 @@ const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) =
                 onClick={() => handleTableSelect(table.id)}
               >
                 <div className="flex items-center space-x-3">
-                  <FileText 
-                    className="
-                      h-6 w-6 
-                      text-neutral-500 
-                      group-hover:text-primary 
-                      transition-colors
-                    " 
-                  />
+                  <FileText className="h-5 w-5 text-neutral-500 group-hover:text-primary transition-colors" />
                   <div>
-                    <h4 className="
-                      text-sm font-medium 
-                      text-gray-800 
-                      group-hover:text-primary 
-                      transition-colors
-                    ">
+                    <h4 className="text-sm font-medium text-gray-800 group-hover:text-primary transition-colors">
                       {table.title}
                     </h4>
                     <p className="text-xs text-gray-500">
@@ -153,31 +130,18 @@ const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) =
             <div className="flex items-center gap-3">
               <FileText className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-medium text-gray-900">
-                {tableData.find(table => table.id === selectedTable)?.title || 'Table Viewer'}
+                {tableData.find(table => table.id === selectedTable)?.title}
               </h2>
             </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  const table = tableData.find(t => t.id === selectedTable);
-                  if (table) handleDownload(table.title);
-                }}
-              >
-                <Download className="h-4 w-4 mr-1" />
-                Download
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleCloseTable}>
-                Close
-              </Button>
-            </div>
+            <Button variant="ghost" size="sm" onClick={handleCloseTable}>
+              Close
+            </Button>
           </div>
           
           <div className="flex-1 overflow-auto bg-gray-50 p-6">
             <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border p-6">
               <h3 className="text-md font-medium mb-4 text-gray-700">
-                {tableData.find(table => table.id === selectedTable)?.title} - Comparative Analysis
+                {tableData.find(table => table.id === selectedTable)?.title} - Data Overview
               </h3>
               
               <Table>
@@ -203,10 +167,6 @@ const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) =
                   ))}
                 </TableBody>
               </Table>
-              
-              <div className="mt-4 text-sm text-gray-500">
-                <p>Data collected from clinical trials conducted between 2022-2024. Sample size: 500 patients.</p>
-              </div>
             </div>
           </div>
         </div>
