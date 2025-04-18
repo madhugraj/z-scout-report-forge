@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Users, Send, Edit, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,31 +21,40 @@ interface Message {
 const CollaborationWindow = () => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [collaborators, setCollaborators] = useState<CollaboratorInfo[]>([
-    { name: 'Sarah Kim', status: 'online', lastEdit: 'Edited Introduction' },
-    { name: 'John Doe', status: 'online', lastEdit: 'Added new citation' },
-    { name: 'Mike Ross', status: 'offline', lastEdit: 'Updated conclusions' }
-  ]);
+  const [hasCollaborators, setHasCollaborators] = useState(false);
+  const [collaborators, setCollaborators] = useState<CollaboratorInfo[]>([]);
 
-  // Add some example messages
-  useEffect(() => {
-    setMessages([
-      {
-        id: '1',
-        sender: 'Sarah Kim',
-        text: 'I added a few more citations to the literature review',
-        timestamp: new Date(Date.now() - 15 * 60000) // 15 minutes ago
-      },
-      {
-        id: '2',
-        sender: 'John Doe',
-        text: "Great work! I'm reviewing the impact analysis section now", // Escaped apostrophe with double quotes
-        timestamp: new Date(Date.now() - 5 * 60000) // 5 minutes ago
-      }
-    ]);
-  }, []);
+  const handleInvite = () => {
+    if (!inviteEmail.trim()) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    if (!inviteEmail.includes('@') || !inviteEmail.includes('.')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    toast.success(`Invite sent to ${inviteEmail}`);
+    setInviteEmail('');
+    setShowInviteDialog(false);
+    
+    // Simulate new collaborator joining
+    setTimeout(() => {
+      const name = inviteEmail.split('@')[0];
+      setCollaborators([
+        { 
+          name: name.charAt(0).toUpperCase() + name.slice(1), 
+          status: 'online',
+          lastEdit: 'Just joined'
+        }
+      ]);
+      setHasCollaborators(true);
+      toast.success(`${name} joined the collaboration`);
+    }, 3000);
+  };
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -68,33 +76,55 @@ const CollaborationWindow = () => {
     }
   };
 
-  const handleInvite = () => {
-    if (inviteEmail.trim() && inviteEmail.includes('@')) {
-      toast.success(`Invite sent to ${inviteEmail}`);
-      setInviteEmail('');
-      setShowInviteDialog(false);
-      
-      // Simulate new collaborator joining
-      setTimeout(() => {
-        const name = inviteEmail.split('@')[0];
-        setCollaborators([
-          ...collaborators,
-          { 
-            name: name.charAt(0).toUpperCase() + name.slice(1), 
-            status: 'online',
-            lastEdit: 'Just joined'
-          }
-        ]);
-        toast.success(`${name} joined the collaboration`);
-      }, 3000);
-    } else {
-      toast.error('Please enter a valid email address');
-    }
-  };
-
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  if (!hasCollaborators) {
+    return (
+      <div className="bg-[#1A1F2C] text-white p-4 rounded-lg flex flex-col h-full justify-center items-center">
+        <Users className="h-12 w-12 mb-4 text-violet-400" />
+        <h3 className="text-lg font-semibold mb-2">Start Collaborating</h3>
+        <p className="text-sm text-gray-400 mb-4 text-center">
+          Invite team members to collaborate on this research report
+        </p>
+        <Button 
+          onClick={() => setShowInviteDialog(true)}
+          className="gap-2"
+        >
+          <UserPlus className="h-4 w-4" />
+          Invite Collaborators
+        </Button>
+
+        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+          <DialogContent className="bg-[#1A1F2C] text-white border-gray-700">
+            <DialogHeader>
+              <DialogTitle>Invite Collaborator</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-gray-300">
+                Enter the email address of the person you want to collaborate with on this research report.
+              </p>
+              <Input
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="colleague@example.com"
+                className="bg-[#2A2F3C] border-gray-700 text-white"
+              />
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="ghost" onClick={() => setShowInviteDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleInvite}>
+                  Send Invite
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#1A1F2C] text-white p-4 rounded-lg flex flex-col h-full">
