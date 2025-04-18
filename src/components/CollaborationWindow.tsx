@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Users, Send, Edit, UserPlus, X, Bot, FileEdit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -196,7 +197,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       setCollaborators(prev => 
         prev.map(c => 
           c.id === request.collaborator.id 
-            ? {...c, lastEdit: `Edited ${request.type === 'title' ? 'title' : `${request.sectionTitle || 'section'}`}`} 
+            ? {...c, lastEdit: `Edited ${request.type === 'title' ? 'title' : request.sectionTitle || 'section'}`} 
             : c
         )
       );
