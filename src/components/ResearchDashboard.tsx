@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   FileText, Image, Table, BookOpen, MessageSquare, Download, Share2, 
-  ChevronRight, ExternalLink, Edit, Copy, Info, ChevronDown, Search, Send,
-  FilePdf
+  ChevronRight, ExternalLink, Edit, Copy, Info, ChevronDown, Search, Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -331,7 +329,7 @@ const ResearchDashboard: React.FC = () => {
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-3">
                           <div className="bg-muted p-2 rounded">
-                            <FilePdf className="h-8 w-8 text-primary" />
+                            <FileText className="h-8 w-8 text-primary" />
                           </div>
                           <div className="space-y-1">
                             <CardTitle className="text-base font-medium">
