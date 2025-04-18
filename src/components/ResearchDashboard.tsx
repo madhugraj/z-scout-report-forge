@@ -21,7 +21,7 @@ import { mockReport, mockImages, mockReferences } from '@/data/mockData';
 const samplePdfs = [
   {
     id: 1,
-    title: "Impact of AI on Mental Health Treatment Outcomes",
+    title: "AI in Mental Health Treatment",
     source: "Journal of Digital Psychiatry",
     date: "2024",
     pages: 12,
@@ -29,7 +29,7 @@ const samplePdfs = [
   },
   {
     id: 2,
-    title: "Machine Learning Applications in Mental Healthcare",
+    title: "Machine Learning in Mental Healthcare",
     source: "AI in Medicine Quarterly",
     date: "2023",
     pages: 28,
@@ -37,7 +37,7 @@ const samplePdfs = [
   },
   {
     id: 3,
-    title: "Ethical Considerations in AI-Powered Mental Health Tools",
+    title: "Ethical AI in Mental Health Tools",
     source: "Ethics in Healthcare Technology",
     date: "2024",
     pages: 15,
@@ -343,36 +343,55 @@ const ResearchDashboard: React.FC = () => {
           
           <TabsContent value="pdfs" className="flex-1 p-4">
             <div className="max-w-4xl mx-auto">
-              <h3 className="text-lg font-medium mb-4">Source Documents</h3>
-              <div className="grid gap-4">
+              <h3 className="text-lg font-medium mb-4 text-gray-700">Source Documents</h3>
+              <div className="space-y-3">
                 {samplePdfs.map((pdf) => (
-                  <Card key={pdf.id} className="hover:bg-muted/50 transition-colors">
-                    <CardHeader className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-3">
-                          <div className="bg-muted p-2 rounded">
-                            <FileText className="h-8 w-8 text-primary" />
-                          </div>
-                          <div className="space-y-1">
-                            <CardTitle className="text-base font-medium">
-                              {pdf.title}
-                            </CardTitle>
-                            <p className="text-sm text-muted-foreground">
-                              {pdf.source} • {pdf.date} • {pdf.pages} pages
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePdfPreview(pdf.url, pdf.title)}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          View PDF
-                        </Button>
+                  <div 
+                    key={pdf.id} 
+                    className="
+                      flex items-center justify-between 
+                      bg-white border border-gray-200 
+                      rounded-lg 
+                      p-3 
+                      hover:bg-gray-50 
+                      transition-colors 
+                      cursor-pointer
+                      group
+                    "
+                    onClick={() => handlePdfPreview(pdf.url, pdf.title)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <FileText 
+                        className="
+                          h-6 w-6 
+                          text-neutral-500 
+                          group-hover:text-primary 
+                          transition-colors
+                        " 
+                      />
+                      <div>
+                        <h4 className="
+                          text-sm font-medium 
+                          text-gray-800 
+                          group-hover:text-primary 
+                          transition-colors
+                        ">
+                          {pdf.title}
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          {pdf.source} • {pdf.date} • {pdf.pages} pages
+                        </p>
                       </div>
-                    </CardHeader>
-                  </Card>
+                    </div>
+                    <ExternalLink 
+                      className="
+                        h-4 w-4 
+                        text-neutral-400 
+                        group-hover:text-primary 
+                        transition-colors
+                      " 
+                    />
+                  </div>
                 ))}
               </div>
             </div>
