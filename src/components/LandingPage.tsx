@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive } from 'lucide-react';
+import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
