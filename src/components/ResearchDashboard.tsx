@@ -310,6 +310,10 @@ const ResearchDashboard: React.FC = () => {
     setSelectedPdf(null);
   };
 
+  const closeThreadViewer = () => {
+    setSelectedThread(null);
+  };
+
   const handleThreadSelect = (id: number) => {
     setSelectedThread(id);
     toast.info(`Viewing thread: ${discussionThreads.find(thread => thread.id === id)?.title}`);
