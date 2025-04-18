@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -15,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/sonner';
 import CitationPopover from './CitationPopover';
 import ImagePopover from './ImagePopover';
+import TableDataView from './TableDataView';
 import { mockReport, mockImages, mockReferences } from '@/data/mockData';
 
 interface DashboardState {
@@ -47,7 +47,6 @@ const ResearchDashboard: React.FC = () => {
       return;
     }
     
-    // Start generating report
     const query = state.query || "Research topic";
     startGeneratingReport(query);
   }, [state, navigate]);
@@ -58,7 +57,6 @@ const ResearchDashboard: React.FC = () => {
     setIsGenerating(true);
     setProgress(0);
     
-    // Simulate report generation with delays to show progress
     const totalSteps = 5;
     
     const progressInterval = setInterval(() => {
@@ -71,7 +69,6 @@ const ResearchDashboard: React.FC = () => {
       });
     }, 800);
     
-    // Simulate sections appearing gradually
     setTimeout(() => {
       setSections(prev => [...prev, {
         title: "Executive Summary",
@@ -123,13 +120,11 @@ const ResearchDashboard: React.FC = () => {
     const userQuestion = question.trim();
     setQuestion('');
     
-    // Add user question to history
     setHistory(prev => [...prev, { 
       question: userQuestion, 
       answer: 'Thinking...' 
     }]);
     
-    // Simulate AI responding
     setTimeout(() => {
       let response = '';
       
@@ -137,7 +132,6 @@ const ResearchDashboard: React.FC = () => {
           (userQuestion.toLowerCase().includes('europe') || userQuestion.toLowerCase().includes('us'))) {
         response = mockReport.comparison;
         
-        // Add new section to report
         setSections(prev => [...prev, {
           title: "Comparative Analysis: Europe vs US",
           content: mockReport.comparison
@@ -148,7 +142,6 @@ const ResearchDashboard: React.FC = () => {
         response = "Based on the research, AI technologies have shown promising results in mental health applications. Studies indicate that AI-powered chatbots and cognitive behavioral therapy apps can provide accessible support for mild to moderate conditions. However, research also suggests that human oversight remains essential for clinical applications.";
       }
       
-      // Update the answer in history
       setHistory(prev => 
         prev.map((item, i) => 
           i === prev.length - 1 
@@ -169,7 +162,6 @@ const ResearchDashboard: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Left Sidebar */}
       <div className="w-64 border-r bg-white flex flex-col">
         <div className="p-4 border-b flex items-center space-x-2">
           <div className="rounded-md bg-primary/10 p-1">
@@ -280,12 +272,10 @@ const ResearchDashboard: React.FC = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="tables" className="flex-1 p-4">
-            <div className="text-center text-muted-foreground p-4">
-              <Table className="h-10 w-10 mx-auto mb-2 opacity-50" />
-              <p>Extracted tables view</p>
-              <p className="text-sm">(Demo feature)</p>
-            </div>
+          <TabsContent value="tables" className="flex-1 p-0 m-0 overflow-hidden">
+            <ScrollArea className="h-full">
+              <TableDataView activeTab="tables" />
+            </ScrollArea>
           </TabsContent>
           
           <TabsContent value="threads" className="flex-1 p-4">
@@ -298,7 +288,6 @@ const ResearchDashboard: React.FC = () => {
         </Tabs>
       </div>
       
-      {/* Center - Report Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {isGenerating && (
           <div className="py-2 px-4 bg-muted">
@@ -336,18 +325,14 @@ const ResearchDashboard: React.FC = () => {
                     <h2 className="text-2xl font-semibold">{section.title}</h2>
                     <div className="prose max-w-none">
                       {section.content.split('\n\n').map((paragraph, idx) => {
-                        // Check if paragraph contains citation markers [1], [2], etc.
                         const citationRegex = /\[(\d+)\]/g;
                         const parts = [];
                         let lastIndex = 0;
                         let match;
                         
-                        // eslint-disable-next-line no-cond-assign
                         while ((match = citationRegex.exec(paragraph)) !== null) {
-                          // Add text before citation
                           parts.push(paragraph.substring(lastIndex, match.index));
                           
-                          // Add citation as component
                           const citationNumber = parseInt(match[1]);
                           parts.push(
                             <CitationPopover 
@@ -361,7 +346,6 @@ const ResearchDashboard: React.FC = () => {
                           lastIndex = match.index + match[0].length;
                         }
                         
-                        // Add remaining text
                         parts.push(paragraph.substring(lastIndex));
                         
                         return (
@@ -383,7 +367,6 @@ const ResearchDashboard: React.FC = () => {
         </ScrollArea>
       </div>
       
-      {/* Right Sidebar - Q&A */}
       <div className="w-96 border-l bg-white flex flex-col">
         <div className="p-4 border-b flex justify-between items-center">
           <div className="flex items-center space-x-2">
