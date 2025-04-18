@@ -17,6 +17,33 @@ import ImagePopover from './ImagePopover';
 import TableDataView from './TableDataView';
 import { mockReport, mockImages, mockReferences } from '@/data/mockData';
 
+const samplePdfs = [
+  {
+    id: 1,
+    title: "Impact of AI on Mental Health Treatment Outcomes",
+    source: "Journal of Digital Psychiatry",
+    date: "2024",
+    pages: 12,
+    url: "https://example.com/pdf1.pdf"
+  },
+  {
+    id: 2,
+    title: "Machine Learning Applications in Mental Healthcare",
+    source: "AI in Medicine Quarterly",
+    date: "2023",
+    pages: 28,
+    url: "https://example.com/pdf2.pdf"
+  },
+  {
+    id: 3,
+    title: "Ethical Considerations in AI-Powered Mental Health Tools",
+    source: "Ethics in Healthcare Technology",
+    date: "2024",
+    pages: 15,
+    url: "https://example.com/pdf3.pdf"
+  }
+];
+
 interface DashboardState {
   query?: string;
   files?: string[];
@@ -160,6 +187,11 @@ const ResearchDashboard: React.FC = () => {
     toast.success('Sharable link copied to clipboard');
   };
 
+  const handlePdfPreview = (pdfUrl: string, title: string) => {
+    toast.info(`Opening preview for: ${title}`);
+    window.open(pdfUrl, '_blank');
+  };
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <div className="w-64 border-r bg-white flex flex-col">
@@ -265,10 +297,34 @@ const ResearchDashboard: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="pdfs" className="flex-1 p-4">
-            <div className="text-center text-muted-foreground p-4">
-              <BookOpen className="h-10 w-10 mx-auto mb-2 opacity-50" />
-              <p>Source documents view</p>
-              <p className="text-sm">(Demo feature)</p>
+            <div className="max-w-4xl mx-auto">
+              <h3 className="text-lg font-medium mb-4">Source Documents</h3>
+              <div className="grid gap-4">
+                {samplePdfs.map((pdf) => (
+                  <Card key={pdf.id} className="hover:bg-muted/50 transition-colors">
+                    <CardHeader className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="text-base font-medium">
+                            {pdf.title}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            {pdf.source} • {pdf.date} • {pdf.pages} pages
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePdfPreview(pdf.url, pdf.title)}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Preview
+                        </Button>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
             </div>
           </TabsContent>
           

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import {
@@ -18,7 +17,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, Info } from 'lucide-react';
+import { Download, ExternalLink, Info, DragHandleDots2Icon } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -29,7 +28,21 @@ import {
 } from '@/components/ui/table';
 import { toast } from '@/components/ui/sonner';
 
-// Sample data for tables
+const tableImages = [
+  {
+    id: 1,
+    src: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
+    caption: "Neural Network Architecture for Mental Health Analysis",
+    source: "Journal of AI in Healthcare (2024)"
+  },
+  {
+    id: 2,
+    src: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
+    caption: "Comparative Analysis of AI Models in Mental Health Diagnosis",
+    source: "International Conference on AI Medicine (2023)"
+  }
+];
+
 const tableData = [
   {
     id: 1,
@@ -56,7 +69,6 @@ const tableData = [
   }
 ];
 
-// Sample chart data
 const lineChartData = [
   { year: 2018, patients: 2400, providers: 1200 },
   { year: 2019, patients: 3600, providers: 1800 },
@@ -86,9 +98,14 @@ interface TableDataViewProps {
   activeTab?: string;
 }
 
-const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) => {
+const TableDataView: React.FC<{ activeTab?: string }> = ({ activeTab = 'tables' }) => {
   const handleDownload = (title: string) => {
     toast.success(`Downloaded table: ${title}`);
+  };
+
+  const handleDragStart = (e: React.DragEvent, imageId: number) => {
+    e.dataTransfer.setData('text/plain', imageId.toString());
+    e.dataTransfer.effectAllowed = 'copy';
   };
 
   return (
@@ -96,13 +113,41 @@ const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) =
       {activeTab === 'tables' && (
         <>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium">Extracted Tables</h3>
+            <h3 className="text-lg font-medium">Extracted Tables & Visualizations</h3>
             <div className="flex gap-2">
               <Button variant="outline" size="sm">
                 <Info className="h-4 w-4 mr-2" />
                 About This Data
               </Button>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mb-8">
+            {tableImages.map((image) => (
+              <Card 
+                key={image.id}
+                className="overflow-hidden cursor-move"
+                draggable
+                onDragStart={(e) => handleDragStart(e, image.id)}
+              >
+                <div className="relative group">
+                  <img
+                    src={image.src}
+                    alt={image.caption}
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="outline" size="sm" className="bg-white/90">
+                      <DragHandleDots2Icon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <CardContent className="p-4">
+                  <p className="font-medium text-sm mb-1">{image.caption}</p>
+                  <p className="text-xs text-muted-foreground">Source: {image.source}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <div className="grid gap-6">
