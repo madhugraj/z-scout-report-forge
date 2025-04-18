@@ -15,9 +15,12 @@ import {
   ExternalLink, 
   FileText, 
   BarChart,
-  List
+  List,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 const tableData = [
   {
@@ -61,6 +64,7 @@ interface TableDataViewProps {
 const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) => {
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
   
   const handleDownload = (title: string) => {
     toast.success(`Downloaded table: ${title}`);
@@ -78,6 +82,11 @@ const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) =
   const toggleViewMode = () => {
     setViewMode(prev => prev === 'table' ? 'chart' : 'table');
     toast.info(`Switched to ${viewMode === 'table' ? 'chart' : 'table'} view`);
+  };
+
+  const toggleMaximize = () => {
+    setIsMaximized(prev => !prev);
+    toast.info(isMaximized ? 'View normalized' : 'View maximized');
   };
 
   // Simulated chart data visualization
@@ -133,62 +142,132 @@ const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) =
     );
   };
 
-  return (
-    <div className="h-full">
-      {selectedTable === null ? (
-        <div className="h-full flex flex-col overflow-auto p-6">
-          <h3 className="text-lg font-medium text-gray-700 mb-4">Data Tables & Analysis</h3>
-          <div className="grid gap-4">
-            {tableData.map((table) => (
-              <div 
-                key={table.id} 
-                className="
-                  flex items-center justify-between 
-                  bg-white border border-gray-200 
-                  rounded-lg 
-                  p-4 
-                  hover:bg-gray-50 
-                  transition-colors 
-                  cursor-pointer
-                  group
-                "
-                onClick={() => handleTableSelect(table.id)}
-              >
-                <div className="flex items-center space-x-3">
-                  <FileText className="h-5 w-5 text-neutral-500 group-hover:text-primary transition-colors" />
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-800 group-hover:text-primary transition-colors">
-                      {table.title}
-                    </h4>
-                    <p className="text-xs text-gray-500">
-                      {table.source} • {table.date} • {table.category}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDownload(table.title);
-                    }}
-                  >
-                    <Download className="h-4 w-4 text-neutral-400 group-hover:text-primary" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ExternalLink className="h-4 w-4 text-neutral-400 group-hover:text-primary" />
-                  </Button>
-                </div>
+  // Dummy table image for visualization when no real data is available
+  const renderDummyTableImage = () => {
+    return (
+      <div className="bg-white rounded-lg p-6 border shadow-sm">
+        <h3 className="text-md font-medium mb-4 text-gray-700">
+          Sample Data Visualization
+        </h3>
+        
+        <div className="border rounded-lg overflow-hidden">
+          <div className="bg-gray-100 p-3 border-b">
+            <div className="grid grid-cols-4 gap-4">
+              <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+          
+          <div className="p-3">
+            {[1, 2, 3, 4, 5].map((row) => (
+              <div key={row} className="grid grid-cols-4 gap-4 mb-3">
+                <div className="h-6 bg-gray-100 rounded"></div>
+                <div className="h-6 bg-blue-100 rounded"></div>
+                <div className="h-6 bg-gray-100 rounded"></div>
+                <div className="h-6 bg-green-100 rounded"></div>
               </div>
             ))}
           </div>
+        </div>
+        
+        <div className="mt-4 text-sm text-gray-500 text-center">
+          Interactive table visualization will appear here when data is loaded
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className={`h-full flex flex-col ${isMaximized ? 'fixed inset-0 z-50 bg-background' : ''}`}>
+      {selectedTable === null ? (
+        <div className="h-full flex flex-col overflow-auto p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-700">Data Tables & Analysis</h3>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={toggleMaximize}
+              className="flex items-center gap-1"
+            >
+              {isMaximized ? (
+                <>
+                  <Minimize2 className="h-4 w-4" />
+                  <span>Minimize</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="h-4 w-4" />
+                  <span>Maximize</span>
+                </>
+              )}
+            </Button>
+          </div>
+          
+          <ResizablePanelGroup 
+            direction="horizontal" 
+            className="flex-1 rounded-lg border"
+          >
+            <ResizablePanel defaultSize={30} minSize={20}>
+              <div className="h-full bg-white p-4 overflow-y-auto">
+                <h4 className="text-sm font-medium mb-3 text-gray-700">Available Tables</h4>
+                <div className="grid gap-2">
+                  {tableData.map((table) => (
+                    <div 
+                      key={table.id} 
+                      className="
+                        flex items-center justify-between 
+                        bg-white border border-gray-200 
+                        rounded-lg 
+                        p-3 
+                        hover:bg-gray-50 
+                        transition-colors 
+                        cursor-pointer
+                        group
+                      "
+                      onClick={() => handleTableSelect(table.id)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-5 w-5 text-neutral-500 group-hover:text-primary transition-colors" />
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-800 group-hover:text-primary transition-colors">
+                            {table.title}
+                          </h4>
+                          <p className="text-xs text-gray-500">
+                            {table.source} • {table.date}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload(table.title);
+                          }}
+                        >
+                          <Download className="h-4 w-4 text-neutral-400 group-hover:text-primary" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ResizablePanel>
+            
+            <ResizableHandle withHandle />
+            
+            <ResizablePanel defaultSize={70}>
+              <div className="h-full flex flex-col bg-gray-50 p-4">
+                <div className="flex-1 overflow-auto">
+                  {renderDummyTableImage()}
+                </div>
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
       ) : (
         <div className="flex-1 flex flex-col h-full">
@@ -215,6 +294,24 @@ const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) =
                   <>
                     <List className="h-4 w-4" />
                     <span>Table View</span>
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={toggleMaximize}
+                className="flex items-center gap-1"
+              >
+                {isMaximized ? (
+                  <>
+                    <Minimize2 className="h-4 w-4" />
+                    <span>Minimize</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="h-4 w-4" />
+                    <span>Maximize</span>
                   </>
                 )}
               </Button>
