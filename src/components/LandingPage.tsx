@@ -1,14 +1,15 @@
-
 import React, { useState } from 'react';
 import { Search, Upload, Globe, GraduationCap, FileText, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
+import SignInDialog from './SignInDialog';
 
 const LandingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -48,7 +49,7 @@ const LandingPage: React.FC = () => {
             <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
               About
             </Button>
-            <Button>Sign In</Button>
+            <Button onClick={() => setShowSignIn(true)}>Sign In</Button>
           </div>
         </div>
       </header>
@@ -130,6 +131,9 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Sign In Dialog */}
+      <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>
   );
 };
