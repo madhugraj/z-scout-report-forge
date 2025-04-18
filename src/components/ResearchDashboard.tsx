@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Share2, Mail, FileDown, Send, Users,
   FileText, Image, Table, BookOpen, MessageSquare, 
-  ChevronRight, ExternalLink, Search, Edit, Download, Maximize2, Minimize2, X, History
+  ChevronRight, ExternalLink, Search, Edit, Download, Maximize2, Minimize2, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CitationPopover from './CitationPopover';
 import { ResearchImagePanel } from './ResearchImagePanel';
-import CollaborationWindow, { EditRequest } from './CollaborationWindow';
+import CollaborationWindow from './CollaborationWindow';
 import { mockReport, mockReferences } from '@/data/mockData';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -38,16 +38,6 @@ interface DashboardState {
   source?: string;
 }
 
-interface ChangeRecord {
-  timestamp: Date;
-  collaboratorName: string;
-  collaboratorId: string;
-  type: 'title' | 'content' | 'add' | 'delete';
-  sectionIndex?: number;
-  sectionTitle?: string;
-  newValue: string;
-}
-
 const ResearchDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -64,17 +54,6 @@ const ResearchDashboard: React.FC = () => {
   const [showCollaborator, setShowCollaborator] = useState(false);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [documentTitle, setDocumentTitle] = useState<string>('');
-  const [changeHistory, setChangeHistory] = useState<ChangeRecord[]>([]);
-  const [showChangeHistory, setShowChangeHistory] = useState(false);
-  
-  // Current user info
-  const [currentUser] = useState({
-    id: 'user-1',
-    name: 'You',
-    status: 'online' as const,
-    lastEdit: 'Just started editing'
-  });
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -82,9 +61,7 @@ const ResearchDashboard: React.FC = () => {
       return;
     }
     
-    const query = state.query || "Impact of AI on Mental Health Research";
-    setDocumentTitle(query);
-    startGeneratingReport(query);
+    startGeneratingReport(state.query || "Impact of AI on Mental Health Research");
   }, [state, navigate]);
 
   const startGeneratingReport = (query: string) => {
@@ -166,7 +143,7 @@ const ResearchDashboard: React.FC = () => {
   };
 
   const handleEmailReport = () => {
-    const subject = encodeURIComponent("Research Report: " + (documentTitle || "AI Impact Analysis"));
+    const subject = encodeURIComponent("Research Report: " + (state.query || "AI Impact Analysis"));
     const body = encodeURIComponent("Access the full research report here: " + window.location.href);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
     toast.success("Email client opened with report link!");
@@ -196,17 +173,6 @@ const ResearchDashboard: React.FC = () => {
         return updatedSections;
       });
       
-      // Record the change in history
-      recordChange({
-        timestamp: new Date(),
-        collaboratorName: currentUser.name,
-        collaboratorId: currentUser.id,
-        type: 'content',
-        sectionIndex,
-        sectionTitle: sections[sectionIndex].title,
-        newValue: `Added image: ${imageData.title}`
-      });
-      
       toast.success(`Image "${imageData.title}" added to ${sections[sectionIndex].title}`);
     } catch (err) {
       toast.error('Failed to add image');
@@ -220,62 +186,6 @@ const ResearchDashboard: React.FC = () => {
   
   const handleSectionDragLeave = () => {
     setDropTargetIndex(null);
-  };
-
-  const recordChange = (change: ChangeRecord) => {
-    setChangeHistory(prev => [change, ...prev]);
-  };
-
-  const handleEditRequest = (request: EditRequest) => {
-    // Handle title change
-    if (request.type === 'title' && request.newValue) {
-      setDocumentTitle(request.newValue);
-      recordChange({
-        timestamp: new Date(),
-        collaboratorName: request.collaborator.name,
-        collaboratorId: request.collaborator.id,
-        type: 'title',
-        newValue: request.newValue
-      });
-      toast.success(`${request.collaborator.name} changed the title`);
-      return;
-    }
-    
-    // Handle section content change
-    if (request.type === 'content' && request.sectionIndex !== undefined && request.newValue) {
-      setSections(prev => {
-        const newSections = [...prev];
-        if (request.sectionIndex !== undefined && request.sectionIndex < newSections.length) {
-          const editedSection = newSections[request.sectionIndex];
-          if (request.sectionTitle && editedSection.title !== request.sectionTitle) {
-            // Update section title
-            newSections[request.sectionIndex] = {
-              ...editedSection,
-              title: request.newValue
-            };
-          } else {
-            // Update section content
-            newSections[request.sectionIndex] = {
-              ...editedSection,
-              content: request.newValue
-            };
-          }
-        }
-        return newSections;
-      });
-      
-      recordChange({
-        timestamp: new Date(),
-        collaboratorName: request.collaborator.name,
-        collaboratorId: request.collaborator.id,
-        type: request.type,
-        sectionIndex: request.sectionIndex,
-        sectionTitle: request.sectionTitle,
-        newValue: request.newValue
-      });
-      
-      toast.success(`${request.collaborator.name} updated section ${request.sectionIndex! + 1}`);
-    }
   };
 
   const pdfViewerContent = (
@@ -464,65 +374,6 @@ const ResearchDashboard: React.FC = () => {
     }
   };
 
-  const renderChangeHistory = () => (
-    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-4 rounded-lg">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Change History</h3>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setShowChangeHistory(false)}
-          className="text-gray-400 hover:text-white"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      {changeHistory.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">
-          <History className="mx-auto h-10 w-10 mb-2 opacity-50" />
-          <p>No changes have been made yet</p>
-        </div>
-      ) : (
-        <div className="space-y-3 overflow-y-auto">
-          {changeHistory.map((change, index) => (
-            <div 
-              key={index} 
-              className="bg-[#2A2F3C] p-3 rounded-lg border border-gray-800"
-            >
-              <div className="flex items-start gap-2">
-                <div className="bg-gray-800 p-1.5 rounded">
-                  <Edit className="h-5 w-5 text-gray-400" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between">
-                    <h4 className="font-medium text-white text-sm">{change.collaboratorName}</h4>
-                    <p className="text-xs text-gray-400">
-                      {new Date(change.timestamp).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: true 
-                      })}
-                    </p>
-                  </div>
-                  <p className="text-xs text-gray-300 mt-1">
-                    {change.type === 'title' 
-                      ? 'Changed document title' 
-                      : `Updated ${change.sectionTitle || `section ${change.sectionIndex! + 1}`}`}
-                  </p>
-                  <p className="text-xs bg-gray-800 p-1.5 rounded mt-1 text-green-300 font-mono">
-                    {change.newValue.length > 50 
-                      ? change.newValue.substring(0, 50) + '...' 
-                      : change.newValue}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );  
-
   return (
     <div className="flex h-screen bg-[#1A1F2C] text-white overflow-hidden">
       <div className="w-64 flex flex-col bg-[#1A1F2C] border-r border-gray-800">
@@ -583,7 +434,7 @@ const ResearchDashboard: React.FC = () => {
 
       <div className="flex flex-1 relative flex-col">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={showChangeHistory ? 65 : 100}>
+          <ResizablePanel defaultSize={100}>
             <div className="bg-white overflow-auto h-full">
               {isGenerating && (
                 <div className="bg-violet-100 p-4 flex items-center gap-2 text-violet-700">
@@ -597,27 +448,9 @@ const ResearchDashboard: React.FC = () => {
                   <>
                     <div className="flex justify-between items-center mb-6">
                       <h1 className="text-3xl font-bold text-gray-900">
-                        {documentTitle || "Impact of AI on Mental Health Research"}
+                        {state.query || "Impact of AI on Mental Health Research"}
                       </h1>
                       <div className="flex items-center gap-1">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                onClick={() => setShowChangeHistory(!showChangeHistory)}
-                                className={`h-8 w-8 ${showChangeHistory ? 'bg-violet-100' : ''}`}
-                              >
-                                <History className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>View Change History</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -785,15 +618,6 @@ const ResearchDashboard: React.FC = () => {
             </div>
           </ResizablePanel>
 
-          {showChangeHistory && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={35} minSize={25}>
-                {renderChangeHistory()}
-              </ResizablePanel>
-            </>
-          )}
-
           {activeSideView && (
             <>
               <ResizableHandle withHandle />
@@ -815,11 +639,7 @@ const ResearchDashboard: React.FC = () => {
           </DrawerTrigger>
           <DrawerContent className="h-[400px] bg-[#1A1F2C] p-0">
             <div className="h-1 w-12 rounded-full bg-gray-600 mx-auto my-2" />
-            <CollaborationWindow 
-              onEditRequest={handleEditRequest}
-              currentUser={currentUser}
-              reportSections={sections}
-            />
+            <CollaborationWindow />
           </DrawerContent>
         </Drawer>
       </div>
