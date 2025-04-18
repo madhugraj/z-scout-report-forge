@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -616,6 +617,15 @@ const ResearchDashboard: React.FC = () => {
               </div>
             </div>
           </ResizablePanel>
+
+          {activeSideView && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={35} minSize={25}>
+                {renderSidePanel()}
+              </ResizablePanel>
+            </>
+          )}
         </ResizablePanelGroup>
 
         <Drawer>
