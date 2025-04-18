@@ -6,6 +6,7 @@ import {
   ChevronRight, ExternalLink, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CitationPopover from './CitationPopover';
