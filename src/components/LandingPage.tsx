@@ -6,41 +6,37 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import SignInDialog from './SignInDialog';
 import { cn } from '@/lib/utils';
-
 const LandingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const navigate = useNavigate();
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!searchQuery.trim()) {
       toast.error('Please enter a search query');
       return;
     }
-    
     setIsGenerating(true);
-    
     setTimeout(() => {
       setIsGenerating(false);
-      navigate('/dashboard', { 
-        state: { 
+      navigate('/dashboard', {
+        state: {
           query: searchQuery,
           source: 'search'
-        } 
+        }
       });
     }, 1500);
   };
-
   const handleUpload = (type: string) => {
-    navigate('/upload', { state: { uploadType: type } });
+    navigate('/upload', {
+      state: {
+        uploadType: type
+      }
+    });
   };
-
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
+  return <div className="min-h-screen bg-background flex flex-col">
       <header className="w-full border-b bg-white/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -62,49 +58,32 @@ const LandingPage: React.FC = () => {
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
         <div className="w-full max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4 animate-fade-in">
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-balance">
+            <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-2xl">
               The research assistant you always needed
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
+            <p className="max-w-2xl mx-auto text-balance text-xs font-thin text-gray-900">
               Just upload documents or reference live links, or ask, and get intelligent, cited answers grounded in your documents and trusted sources.
             </p>
           </div>
 
           <div className="relative">
-            <div 
-              className={cn(
-                "fixed inset-x-4 top-24 z-50 mx-auto max-w-2xl overflow-hidden rounded-2xl border bg-background shadow-2xl transition-all",
-                showUploadOptions ? "block" : "hidden"
-              )}
-            >
+            <div className={cn("fixed inset-x-4 top-24 z-50 mx-auto max-w-2xl overflow-hidden rounded-2xl border bg-background shadow-2xl transition-all", showUploadOptions ? "block" : "hidden")}>
               <div className="flex flex-col divide-y">
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-3 p-4 h-auto hover:bg-accent"
-                  onClick={() => handleUpload('drive')}
-                >
+                <Button variant="ghost" className="flex items-center gap-3 p-4 h-auto hover:bg-accent" onClick={() => handleUpload('drive')}>
                   <HardDrive className="h-5 w-5 text-blue-500" />
                   <div className="flex flex-col items-start">
                     <span className="font-medium">Connect to Drive</span>
                     <span className="text-sm text-muted-foreground">Access your cloud documents</span>
                   </div>
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-3 p-4 h-auto hover:bg-accent"
-                  onClick={() => handleUpload('computer')}
-                >
+                <Button variant="ghost" className="flex items-center gap-3 p-4 h-auto hover:bg-accent" onClick={() => handleUpload('computer')}>
                   <FolderUp className="h-5 w-5 text-orange-500" />
                   <div className="flex flex-col items-start">
                     <span className="font-medium">Upload from computer</span>
                     <span className="text-sm text-muted-foreground">PDF, Word, or text files</span>
                   </div>
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-3 p-4 h-auto hover:bg-accent"
-                  onClick={() => handleUpload('url')}
-                >
+                <Button variant="ghost" className="flex items-center gap-3 p-4 h-auto hover:bg-accent" onClick={() => handleUpload('url')}>
                   <Globe className="h-5 w-5 text-green-500" />
                   <div className="flex flex-col items-start">
                     <span className="font-medium">Add URL reference</span>
@@ -116,32 +95,16 @@ const LandingPage: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="w-full" onClick={() => setShowUploadOptions(false)}>
               <div className="relative rounded-xl border bg-background shadow-lg transition-colors focus-within:border-primary">
-                <Input
-                  type="text"
-                  placeholder="Ask a question or upload documents..."
-                  className="pl-12 pr-16 py-7 text-lg border-0 focus-visible:ring-0 rounded-xl"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+                <Input type="text" placeholder="Ask a question or upload documents..." className="pl-12 pr-16 py-7 text-lg border-0 focus-visible:ring-0 rounded-xl" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="hover:bg-accent"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowUploadOptions(!showUploadOptions);
-                    }}
-                  >
+                  <Button type="button" size="icon" variant="ghost" className="hover:bg-accent" onClick={e => {
+                  e.stopPropagation();
+                  setShowUploadOptions(!showUploadOptions);
+                }}>
                     <CloudUpload className="h-5 w-5" />
                   </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    disabled={isGenerating}
-                  >
+                  <Button type="button" size="icon" disabled={isGenerating}>
                     <Mic className="h-5 w-5" />
                   </Button>
                 </div>
@@ -180,8 +143,6 @@ const LandingPage: React.FC = () => {
       </footer>
 
       <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
-    </div>
-  );
+    </div>;
 };
-
 export default LandingPage;
