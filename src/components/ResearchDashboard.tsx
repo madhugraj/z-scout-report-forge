@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -14,6 +15,8 @@ import { ResearchImagePanel } from './ResearchImagePanel';
 import CollaborationWindow from './CollaborationWindow';
 import { mockReport, mockReferences } from '@/data/mockData';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface DashboardState {
   query?: string;
@@ -37,6 +40,7 @@ const ResearchDashboard: React.FC = () => {
   const [question, setQuestion] = useState('');
   const [report, setReport] = useState('');
   const [activeSideView, setActiveSideView] = useState<'pdf-viewer' | 'images' | 'tables' | null>(null);
+  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -143,23 +147,23 @@ const ResearchDashboard: React.FC = () => {
     }
   };
 
-  const handleCollaborate = () => {
-    toast.success('Collaboration invite sent!');
-  };
-
   const pdfViewerContent = (
     <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-semibold">Source PDFs</h3>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {[
-          { title: "Neural Networks in Mental Health", author: "J. Smith", pages: 28 },
-          { title: "AI Applications in Therapy", author: "K. Johnson", pages: 42 },
-          { title: "Ethics of AI in Healthcare", author: "M. Williams", pages: 36 },
-          { title: "Digital Interventions Review", author: "T. Roberts", pages: 54 }
+          { id: "pdf1", title: "Neural Networks in Mental Health", author: "J. Smith", pages: 28, url: "https://www.africau.edu/images/default/sample.pdf" },
+          { id: "pdf2", title: "AI Applications in Therapy", author: "K. Johnson", pages: 42, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+          { id: "pdf3", title: "Ethics of AI in Healthcare", author: "M. Williams", pages: 36, url: "https://www.africau.edu/images/default/sample.pdf" },
+          { id: "pdf4", title: "Digital Interventions Review", author: "T. Roberts", pages: 54, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
         ].map((pdf, index) => (
-          <div key={index} className="bg-[#2A2F3C] p-4 rounded-lg border border-gray-800">
+          <div 
+            key={index} 
+            className={`bg-[#2A2F3C] p-4 rounded-lg border ${selectedPdf === pdf.id ? 'border-violet-500' : 'border-gray-800'} cursor-pointer hover:border-violet-400 transition-colors`}
+            onClick={() => setSelectedPdf(pdf.id)}
+          >
             <div className="flex items-start gap-3">
               <div className="bg-gray-800 p-2 rounded">
                 <FileText className="h-8 w-8 text-gray-400" />
@@ -167,12 +171,47 @@ const ResearchDashboard: React.FC = () => {
               <div className="flex-1">
                 <h4 className="font-medium text-white">{pdf.title}</h4>
                 <p className="text-sm text-gray-400">{pdf.author} • {pdf.pages} pages</p>
-                <Button variant="ghost" size="sm" className="mt-2 text-violet-400">
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Download PDF
-                </Button>
+                <div className="flex mt-2 gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-violet-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(pdf.url, '_blank');
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-violet-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // PDF download logic
+                      const a = document.createElement('a');
+                      a.href = pdf.url;
+                      a.download = pdf.title.replace(/\s+/g, '_') + '.pdf';
+                      a.click();
+                    }}
+                  >
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
               </div>
             </div>
+            {selectedPdf === pdf.id && (
+              <div className="mt-4 bg-gray-900 rounded-lg p-2 h-96 overflow-hidden">
+                <iframe 
+                  src={pdf.url} 
+                  className="w-full h-full" 
+                  title={pdf.title}
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -201,7 +240,7 @@ const ResearchDashboard: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-semibold">Data Tables</h3>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {[
           { title: "AI Adoption Rates by Sector", rows: 12, columns: 5 },
           { title: "Mental Health Indicators Study", rows: 20, columns: 8 },
@@ -345,57 +384,122 @@ const ResearchDashboard: React.FC = () => {
               </div>
             )}
 
-            <div className="max-w-4xl mx-auto p-8">
+            <div 
+              className="max-w-4xl mx-auto p-8" 
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleImageDrop}
+            >
               {activeView === 'full-report' && (
                 <>
                   <div className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold text-gray-900">
                       {state.query || "Impact of AI on Mental Health Research"}
                     </h1>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setActiveSideView(prev => prev === 'pdf-viewer' ? null : 'pdf-viewer')}
-                        className={activeSideView === 'pdf-viewer' ? 'bg-violet-100' : ''}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        PDFs
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setActiveSideView(prev => prev === 'images' ? null : 'images')}
-                        className={activeSideView === 'images' ? 'bg-violet-100' : ''}
-                      >
-                        <Image className="h-4 w-4 mr-2" />
-                        Images
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setActiveSideView(prev => prev === 'tables' ? null : 'tables')}
-                        className={activeSideView === 'tables' ? 'bg-violet-100' : ''}
-                      >
-                        <Table className="h-4 w-4 mr-2" />
-                        Tables
-                      </Button>
-                      <Button onClick={handleCollaborate} variant="outline" size="sm">
-                        <Users className="h-4 w-4 mr-2" />
-                        Collaborate
-                      </Button>
-                      <Button onClick={handleShareReport} variant="outline" size="sm">
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Share
-                      </Button>
-                      <Button onClick={handleExportReport} variant="outline" size="sm">
-                        <FileDown className="h-4 w-4 mr-2" />
-                        Export
-                      </Button>
-                      <Button onClick={handleEmailReport} variant="outline" size="sm">
-                        <Mail className="h-4 w-4 mr-2" />
-                        Email
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => setActiveSideView(prev => prev === 'pdf-viewer' ? null : 'pdf-viewer')}
+                              className={activeSideView === 'pdf-viewer' ? 'bg-violet-100' : ''}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p>View PDFs</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => setActiveSideView(prev => prev === 'images' ? null : 'images')}
+                              className={activeSideView === 'images' ? 'bg-violet-100' : ''}
+                            >
+                              <Image className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p>View Images</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => setActiveSideView(prev => prev === 'tables' ? null : 'tables')}
+                              className={activeSideView === 'tables' ? 'bg-violet-100' : ''}
+                            >
+                              <Table className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p>View Tables</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={handleShareReport}
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p>Share Report</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={handleExportReport}
+                            >
+                              <FileDown className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p>Export Report</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={handleEmailReport}
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p>Email Report</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                   
