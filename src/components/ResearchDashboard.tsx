@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Share2, Mail, FileDown, Send,
+  Share2, Mail, FileDown, Send, Users,
   FileText, Image, Table, BookOpen, MessageSquare, 
-  ChevronRight, ExternalLink, Search
+  ChevronRight, ExternalLink, Search, Edit
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CitationPopover from './CitationPopover';
+import { ResearchImagePanel } from './ResearchImagePanel';
 import { mockReport, mockReferences } from '@/data/mockData';
 
 interface DashboardState {
@@ -128,16 +129,25 @@ const ResearchDashboard: React.FC = () => {
     toast.success("Email client opened with report link!");
   };
 
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    try {
+      const imageData = JSON.parse(e.dataTransfer.getData('application/json'));
+      toast.success('Image added to report');
+      // Here you would handle adding the image to the report content
+    } catch (err) {
+      toast.error('Failed to add image');
+    }
+  };
+
+  const handleCollaborate = () => {
+    toast.success('Collaboration invite sent!');
+  };
+
   const pdfViewerContent = (
     <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-semibold">Source PDFs</h3>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => toast.success("PDF downloaded")}>
-            <FileDown className="h-4 w-4 mr-2" />
-            Download PDF
-          </Button>
-        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[
@@ -151,157 +161,18 @@ const ResearchDashboard: React.FC = () => {
               <div className="bg-gray-800 p-2 rounded">
                 <FileText className="h-8 w-8 text-gray-400" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h4 className="font-medium text-white">{pdf.title}</h4>
                 <p className="text-sm text-gray-400">{pdf.author} • {pdf.pages} pages</p>
-                <Button variant="ghost" size="sm" className="mt-2 text-violet-400 p-0 h-auto">
-                  View PDF <ExternalLink className="ml-1 h-3 w-3" />
+                <Button variant="ghost" size="sm" className="mt-2 text-violet-400">
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Download PDF
                 </Button>
               </div>
             </div>
           </div>
         ))}
       </div>
-    </div>
-  );
-
-  const extractedImagesContent = (
-    <div className="p-6 bg-[#1A1F2C] text-white rounded-lg">
-      <h3 className="text-xl font-semibold mb-4">Images from Research Sources</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-        {[
-          { title: "Neural Network Architecture", source: "Smith et al., 2023", type: "Figure" },
-          { title: "Treatment Outcomes Comparison", source: "Johnson, 2022", type: "Chart" },
-          { title: "Patient Response Distribution", source: "Williams et al., 2023", type: "Graph" },
-          { title: "Therapy Session Framework", source: "Roberts, 2021", type: "Diagram" },
-          { title: "Technology Adoption Curve", source: "Chen, 2023", type: "Graph" },
-          { title: "AI Integration Workflow", source: "Garcia et al., 2022", type: "Flowchart" },
-        ].map((image, index) => (
-          <div key={index} className="flex flex-col gap-2">
-            <div className="aspect-square bg-[#2A2F3C] rounded-lg flex items-center justify-center p-4 border border-gray-800">
-              <div className="w-full h-full bg-[#3A3F4C] rounded-lg flex items-center justify-center">
-                <Image className="h-8 w-8 text-gray-500" />
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium">{image.title}</p>
-              <p className="text-xs text-gray-400">{image.type} • {image.source}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const citationsContent = (
-    <div className="space-y-4 p-6 bg-[#1A1F2C] text-white rounded-lg">
-      <h3 className="text-xl font-semibold mb-4">Research Citations</h3>
-      {mockReferences.slice(0, 5).map((reference, index) => (
-        <div key={index} className="p-4 bg-[#2A2F3C] rounded-lg border border-gray-800">
-          <div className="flex justify-between items-start mb-2">
-            <h4 className="font-medium text-white">{reference.title}</h4>
-            <span className="text-xs bg-violet-900/50 text-violet-200 px-2 py-1 rounded-full">{reference.year}</span>
-          </div>
-          <p className="text-sm text-gray-400 mb-2">{reference.authors.join(', ')}</p>
-          <p className="text-xs text-gray-500">{reference.journal}</p>
-          <div className="mt-3 flex gap-2">
-            <Button variant="ghost" size="sm" className="text-xs text-violet-400 p-0 h-auto">
-              View source <ExternalLink className="ml-1 h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="sm" className="text-xs text-violet-400 p-0 h-auto">
-              Cite <FileText className="ml-1 h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const tablesContent = (
-    <div className="space-y-4 p-6 bg-[#1A1F2C] text-white rounded-lg">
-      <h3 className="text-xl font-semibold mb-4">Data Tables from Sources</h3>
-      <div className="overflow-auto">
-        <table className="min-w-full divide-y divide-gray-800 border border-gray-800 rounded-lg overflow-hidden">
-          <thead className="bg-[#2A2F3C]">
-            <tr>
-              {['Method', 'Accuracy', 'Precision', 'Recall', 'Source'].map((header) => (
-                <th key={header} className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-800">
-            {[
-              { method: 'Neural Network', accuracy: '89%', precision: '0.87', recall: '0.91', source: 'Smith et al.' },
-              { method: 'Random Forest', accuracy: '85%', precision: '0.84', recall: '0.86', source: 'Johnson, 2022' },
-              { method: 'SVM', accuracy: '82%', precision: '0.81', recall: '0.83', source: 'Williams et al.' },
-              { method: 'Gradient Boosting', accuracy: '87%', precision: '0.86', recall: '0.89', source: 'Roberts, 2021' },
-              { method: 'Deep Learning', accuracy: '91%', precision: '0.90', recall: '0.93', source: 'Chen, 2023' },
-            ].map((row, i) => (
-              <tr key={i} className="bg-[#2A2F3C]">
-                <td className="px-4 py-3 text-sm text-white">{row.method}</td>
-                <td className="px-4 py-3 text-sm text-white">{row.accuracy}</td>
-                <td className="px-4 py-3 text-sm text-white">{row.precision}</td>
-                <td className="px-4 py-3 text-sm text-white">{row.recall}</td>
-                <td className="px-4 py-3 text-sm text-gray-400">{row.source}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const threadsContent = (
-    <div className="space-y-4 p-6 bg-[#1A1F2C] text-white rounded-lg">
-      <h3 className="text-xl font-semibold mb-4">Research Discussions</h3>
-      {[
-        {
-          title: 'Impact of AI on Mental Health Treatment',
-          date: '2 days ago',
-          content: 'Latest research suggests significant improvements in early diagnosis accuracy.',
-          replies: 5,
-          source: 'Research Community'
-        },
-        {
-          title: 'Ethical Considerations in AI Healthcare',
-          date: '3 days ago',
-          content: 'Discussion on privacy concerns and data protection in AI-assisted diagnosis.',
-          replies: 3,
-          source: 'Ethics Panel Review'
-        },
-        {
-          title: 'Future of AI in Clinical Practice',
-          date: '4 days ago',
-          content: 'Exploring potential applications and limitations in clinical settings.',
-          replies: 7,
-          source: 'Clinical Psychology Forum'
-        },
-        {
-          title: 'Machine Learning for Personalized Treatment',
-          date: '5 days ago',
-          content: 'New approaches to using patient data for customized therapy interventions.',
-          replies: 4,
-          source: 'Data Science in Healthcare'
-        }
-      ].map((thread, i) => (
-        <div key={i} className="border border-gray-800 rounded-lg overflow-hidden bg-[#2A2F3C]">
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="font-medium text-white">{thread.title}</h4>
-              <span className="text-xs text-gray-400">{thread.date}</span>
-            </div>
-            <p className="text-sm text-gray-400 mb-3">{thread.content}</p>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-500">{thread.replies} replies • {thread.source}</span>
-              <Button variant="ghost" size="sm" className="text-xs text-violet-400 p-0 h-auto">
-                View Thread <ChevronRight className="ml-1 h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      ))}
     </div>
   );
 
@@ -371,7 +242,11 @@ const ResearchDashboard: React.FC = () => {
           </div>
         )}
 
-        <div className="max-w-4xl mx-auto p-8">
+        <div 
+          className="max-w-4xl mx-auto p-8"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleImageDrop}
+        >
           {activeView === 'full-report' && (
             <>
               <div className="flex justify-between items-center mb-6">
@@ -379,17 +254,21 @@ const ResearchDashboard: React.FC = () => {
                   {state.query || "Impact of AI on Mental Health Research"}
                 </h1>
                 <div className="flex gap-2">
+                  <Button onClick={handleCollaborate} variant="outline" size="sm">
+                    <Users className="h-4 w-4 mr-2" />
+                    Collaborate
+                  </Button>
                   <Button onClick={handleShareReport} variant="outline" size="sm">
                     <Share2 className="h-4 w-4 mr-2" />
-                    Share Report
+                    Share
                   </Button>
                   <Button onClick={handleExportReport} variant="outline" size="sm">
                     <FileDown className="h-4 w-4 mr-2" />
-                    Export Report
+                    Export
                   </Button>
                   <Button onClick={handleEmailReport} variant="outline" size="sm">
                     <Mail className="h-4 w-4 mr-2" />
-                    Email Report
+                    Email
                   </Button>
                 </div>
               </div>
@@ -431,7 +310,7 @@ const ResearchDashboard: React.FC = () => {
           )}
 
           {activeView === 'pdf-viewer' && pdfViewerContent}
-          {activeView === 'images' && extractedImagesContent}
+          {activeView === 'images' && <ResearchImagePanel />}
           {activeView === 'citations' && citationsContent}
           {activeView === 'tables' && tablesContent}
           {activeView === 'threads' && threadsContent}
