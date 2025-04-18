@@ -79,52 +79,79 @@ const UploadPanel: React.FC = () => {
       case 'drive':
         return (
           <div className="space-y-8">
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-8 border shadow-sm">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border shadow-lg">
               <div className="text-center space-y-6">
-                <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2 mx-auto">
-                  <HardDrive className="h-8 w-8 text-primary" />
+                <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-2 mx-auto">
+                  <HardDrive className="h-10 w-10 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">Connect Cloud Storage</h3>
+                  <h3 className="text-2xl font-semibold mb-3 text-gray-900">Connect Cloud Storage</h3>
                   <p className="text-muted-foreground text-sm max-w-md mx-auto">
                     Securely connect and import documents from your preferred cloud storage services
                   </p>
                 </div>
               </div>
 
-              <div className="mt-8 space-y-4 max-w-md mx-auto">
-                <Button variant="outline" className="w-full justify-start h-14 relative hover:border-primary/50" disabled>
-                  <img src="https://www.google.com/images/about/drive.png" alt="" className="w-6 h-6 mr-3" />
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">Google Drive</span>
-                    <span className="text-xs text-muted-foreground">Connect your Drive account</span>
+              <div className="mt-10 space-y-4 max-w-md mx-auto">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start h-16 relative hover:border-primary/50 hover:bg-blue-50/50 transition-all duration-200"
+                  disabled
+                >
+                  <div className="flex items-center w-full">
+                    <div className="bg-blue-100 p-2 rounded-lg mr-4">
+                      <img src="https://www.google.com/images/about/drive.png" alt="" className="w-8 h-8" />
+                    </div>
+                    <div className="flex flex-col items-start flex-1">
+                      <span className="font-medium text-gray-900">Google Drive</span>
+                      <span className="text-xs text-muted-foreground">Import documents from Drive</span>
+                    </div>
+                    <CloudOff className="h-5 w-5 text-muted-foreground shrink-0" />
                   </div>
-                  <CloudOff className="h-4 w-4 text-muted-foreground absolute right-4" />
                 </Button>
-                
-                <Button variant="outline" className="w-full justify-start h-14 relative hover:border-primary/50" disabled>
-                  <img src="https://www.microsoft.com/onedrive.png" alt="" className="w-6 h-6 mr-3" />
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">OneDrive</span>
-                    <span className="text-xs text-muted-foreground">Connect Microsoft OneDrive</span>
+
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start h-16 relative hover:border-primary/50 hover:bg-blue-50/50 transition-all duration-200"
+                  disabled
+                >
+                  <div className="flex items-center w-full">
+                    <div className="bg-blue-100 p-2 rounded-lg mr-4">
+                      <img src="https://www.microsoft.com/onedrive.png" alt="" className="w-8 h-8" />
+                    </div>
+                    <div className="flex flex-col items-start flex-1">
+                      <span className="font-medium text-gray-900">OneDrive</span>
+                      <span className="text-xs text-muted-foreground">Access Microsoft OneDrive files</span>
+                    </div>
+                    <CloudOff className="h-5 w-5 text-muted-foreground shrink-0" />
                   </div>
-                  <CloudOff className="h-4 w-4 text-muted-foreground absolute right-4" />
                 </Button>
-                
-                <Button variant="outline" className="w-full justify-start h-14 relative hover:border-primary/50" disabled>
-                  <img src="https://www.dropbox.com/static/images/logo.png" alt="" className="w-6 h-6 mr-3" />
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">Dropbox</span>
-                    <span className="text-xs text-muted-foreground">Connect your Dropbox</span>
+
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start h-16 relative hover:border-primary/50 hover:bg-blue-50/50 transition-all duration-200"
+                  disabled
+                >
+                  <div className="flex items-center w-full">
+                    <div className="bg-blue-100 p-2 rounded-lg mr-4">
+                      <img src="https://www.dropbox.com/static/images/logo.png" alt="" className="w-8 h-8" />
+                    </div>
+                    <div className="flex flex-col items-start flex-1">
+                      <span className="font-medium text-gray-900">Dropbox</span>
+                      <span className="text-xs text-muted-foreground">Connect with Dropbox</span>
+                    </div>
+                    <CloudOff className="h-5 w-5 text-muted-foreground shrink-0" />
                   </div>
-                  <CloudOff className="h-4 w-4 text-muted-foreground absolute right-4" />
                 </Button>
               </div>
 
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Cloud storage integration coming soon
-                </p>
+              <div className="mt-8 text-center">
+                <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 border border-blue-100">
+                  <AlertCircle className="h-4 w-4 text-blue-500 mr-2" />
+                  <p className="text-sm text-blue-700">
+                    Cloud storage integration coming soon
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -342,4 +369,3 @@ const UploadPanel: React.FC = () => {
 };
 
 export default UploadPanel;
-
