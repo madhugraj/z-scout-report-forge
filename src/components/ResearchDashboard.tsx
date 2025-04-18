@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -31,6 +32,7 @@ const ResearchDashboard: React.FC = () => {
   const [sections, setSections] = useState<{title: string; content: string}[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [question, setQuestion] = useState('');
+  const [report, setReport] = useState('');
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
