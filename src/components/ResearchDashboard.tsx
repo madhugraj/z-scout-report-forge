@@ -51,21 +51,69 @@ const discussionThreads = [
     title: "AI Ethics in Mental Health",
     lastUpdate: "2 hours ago",
     participants: 4,
-    status: "Active"
+    status: "Active",
+    content: [
+      {
+        author: "Dr. Sarah Chen",
+        avatar: "SC",
+        time: "2 hours ago",
+        message: "We need to carefully consider the ethical implications of AI diagnosing mental health conditions without human oversight. Recent studies show concerning false positive rates in depression screening."
+      },
+      {
+        author: "Prof. James Wilson",
+        avatar: "JW",
+        time: "2 hours ago",
+        message: "I agree with Sarah. While the efficiency gains are substantial, there's a risk of over-diagnosing when algorithms aren't properly calibrated for diverse populations."
+      },
+      {
+        author: "Dr. Maria Lopez",
+        avatar: "ML",
+        time: "2 hours ago",
+        message: "Has anyone reviewed the new framework from the International AI Ethics Board? They've published guidelines specifically for mental health applications that might help address these concerns."
+      }
+    ]
   },
   {
     id: 2,
     title: "Data Privacy Concerns",
     lastUpdate: "1 day ago",
     participants: 6,
-    status: "Resolved"
+    status: "Resolved",
+    content: [
+      {
+        author: "Dr. Alex Johnson",
+        avatar: "AJ",
+        time: "1 day ago",
+        message: "With the increasing use of AI chatbots for therapy, we need stricter guidelines on data retention and anonymization practices."
+      },
+      {
+        author: "Dr. Sam Taylor",
+        avatar: "ST",
+        time: "1 day ago",
+        message: "Agreed. I've been reviewing solutions that maintain differential privacy while still allowing for effective treatment. Will share my findings later this week."
+      }
+    ]
   },
   {
     id: 3,
     title: "Treatment Efficacy Analysis",
     lastUpdate: "3 days ago",
     participants: 3,
-    status: "Archived"
+    status: "Archived",
+    content: [
+      {
+        author: "Dr. Emily Roberts",
+        avatar: "ER",
+        time: "3 days ago",
+        message: "Our meta-analysis shows a 27% improvement in treatment outcomes when AI-assisted approaches are used alongside traditional therapy methods."
+      },
+      {
+        author: "Dr. Michael Chen",
+        avatar: "MC",
+        time: "3 days ago",
+        message: "Emily, could you share the breakdown by condition type? I'm particularly interested in the anxiety disorder results compared to mood disorders."
+      }
+    ]
   }
 ];
 
@@ -116,6 +164,7 @@ const ResearchDashboard: React.FC = () => {
     [1] Smith, J. et al. (2024) "AI in Mental Health: A Systematic Review"
     [2] Johnson, M. (2023) "Machine Learning Applications in Therapy"`
   );
+  const [selectedThread, setSelectedThread] = useState<number | null>(null);
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -259,6 +308,11 @@ const ResearchDashboard: React.FC = () => {
 
   const closePdfViewer = () => {
     setSelectedPdf(null);
+  };
+
+  const handleThreadSelect = (id: number) => {
+    setSelectedThread(id);
+    toast.info(`Viewing thread: ${discussionThreads.find(thread => thread.id === id)?.title}`);
   };
 
   return (
@@ -451,6 +505,7 @@ const ResearchDashboard: React.FC = () => {
                       cursor-pointer
                       group
                     "
+                    onClick={() => handleThreadSelect(thread.id)}
                   >
                     <div className="flex items-center space-x-3">
                       <MessageSquare 
@@ -548,6 +603,71 @@ const ResearchDashboard: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        ) : selectedThread !== null ? (
+          <div className="flex-1 flex flex-col">
+            <div className="flex justify-between items-center px-6 py-4 border-b">
+              <div className="flex items-center gap-3">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-medium text-gray-900">
+                  {discussionThreads.find(thread => thread.id === selectedThread)?.title || 'Discussion Thread'}
+                </h2>
+                <span className={`
+                  text-xs px-2 py-1 rounded-full ml-2
+                  ${discussionThreads.find(thread => thread.id === selectedThread)?.status === 'Active' ? 'bg-green-100 text-green-700' : ''}
+                  ${discussionThreads.find(thread => thread.id === selectedThread)?.status === 'Resolved' ? 'bg-blue-100 text-blue-700' : ''}
+                  ${discussionThreads.find(thread => thread.id === selectedThread)?.status === 'Archived' ? 'bg-gray-100 text-gray-700' : ''}
+                `}>
+                  {discussionThreads.find(thread => thread.id === selectedThread)?.status}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={closeThreadViewer}>
+                  Close
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-auto bg-gray-50 p-6">
+              <div className="max-w-4xl mx-auto">
+                <div className="space-y-6">
+                  {discussionThreads.find(thread => thread.id === selectedThread)?.content.map((message, index) => (
+                    <div key={index} className="bg-white rounded-lg shadow-sm border p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>{message.avatar}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{message.author}</p>
+                          <p className="text-xs text-gray-500">{message.time}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700">{message.message}</p>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-6">
+                  <div className="flex space-x-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <Input 
+                        placeholder="Add your response..." 
+                        className="w-full"
+                      />
+                      <div className="flex justify-end mt-2">
+                        <Button size="sm">
+                          <Send className="h-4 w-4 mr-2" />
+                          Reply
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <ScrollArea 
