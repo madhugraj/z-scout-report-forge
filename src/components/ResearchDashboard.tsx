@@ -45,6 +45,30 @@ const samplePdfs = [
   }
 ];
 
+const discussionThreads = [
+  {
+    id: 1,
+    title: "AI Ethics in Mental Health",
+    lastUpdate: "2 hours ago",
+    participants: 4,
+    status: "Active"
+  },
+  {
+    id: 2,
+    title: "Data Privacy Concerns",
+    lastUpdate: "1 day ago",
+    participants: 6,
+    status: "Resolved"
+  },
+  {
+    id: 3,
+    title: "Treatment Efficacy Analysis",
+    lastUpdate: "3 days ago",
+    participants: 3,
+    status: "Archived"
+  }
+];
+
 interface DashboardState {
   query?: string;
   files?: string[];
@@ -404,10 +428,74 @@ const ResearchDashboard: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="threads" className="flex-1 p-4">
-            <div className="text-center text-muted-foreground p-4">
-              <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-50" />
-              <p>Conversation threads</p>
-              <p className="text-sm">(Demo feature)</p>
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-700">Discussion Threads</h3>
+                <Button variant="outline" size="sm">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  New Thread
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                {discussionThreads.map((thread) => (
+                  <div 
+                    key={thread.id} 
+                    className="
+                      flex items-center justify-between 
+                      bg-white border border-gray-200 
+                      rounded-lg 
+                      p-3 
+                      hover:bg-gray-50 
+                      transition-colors 
+                      cursor-pointer
+                      group
+                    "
+                  >
+                    <div className="flex items-center space-x-3">
+                      <MessageSquare 
+                        className="
+                          h-6 w-6 
+                          text-neutral-500 
+                          group-hover:text-primary 
+                          transition-colors
+                        " 
+                      />
+                      <div>
+                        <h4 className="
+                          text-sm font-medium 
+                          text-gray-800 
+                          group-hover:text-primary 
+                          transition-colors
+                        ">
+                          {thread.title}
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          {thread.lastUpdate} • {thread.participants} participants
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`
+                        text-xs px-2 py-1 rounded-full
+                        ${thread.status === 'Active' ? 'bg-green-100 text-green-700' : ''}
+                        ${thread.status === 'Resolved' ? 'bg-blue-100 text-blue-700' : ''}
+                        ${thread.status === 'Archived' ? 'bg-gray-100 text-gray-700' : ''}
+                      `}>
+                        {thread.status}
+                      </span>
+                      <ExternalLink 
+                        className="
+                          h-4 w-4 
+                          text-neutral-400 
+                          group-hover:text-primary 
+                          transition-colors
+                        " 
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
