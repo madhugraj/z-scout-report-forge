@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Chart, ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import {
   BarChart,
   Bar,
