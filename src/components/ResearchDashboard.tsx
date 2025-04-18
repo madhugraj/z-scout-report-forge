@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/sonner';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import CitationPopover from './CitationPopover';
 import ImagePopover from './ImagePopover';
 import TableDataView from './TableDataView';

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import {
@@ -17,7 +18,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, Info, DragHandleDots2Icon } from 'lucide-react';
+import { Download, ExternalLink, Info, GripVertical } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -138,7 +139,7 @@ const TableDataView: React.FC<{ activeTab?: string }> = ({ activeTab = 'tables' 
                   />
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="outline" size="sm" className="bg-white/90">
-                      <DragHandleDots2Icon className="h-4 w-4" />
+                      <GripVertical className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
