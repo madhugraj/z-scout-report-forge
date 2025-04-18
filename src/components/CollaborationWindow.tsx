@@ -78,7 +78,7 @@ const CollaborationWindow = () => {
         const aiMessage = {
           id: (Date.now() + 1).toString(),
           sender: 'Research AI',
-          text: 'I've analyzed your comment. Would you like me to help you research this topic further or make edits to the report?',
+          text: 'I\'ve analyzed your comment. Would you like me to help you research this topic further or make edits to the report?',
           timestamp: new Date(),
           isAI: true
         };
