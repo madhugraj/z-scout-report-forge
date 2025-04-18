@@ -13,6 +13,7 @@ import CitationPopover from './CitationPopover';
 import { ResearchImagePanel } from './ResearchImagePanel';
 import CollaborationWindow from './CollaborationWindow';
 import { mockReport, mockReferences } from '@/data/mockData';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 interface DashboardState {
   query?: string;
@@ -35,6 +36,7 @@ const ResearchDashboard: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [question, setQuestion] = useState('');
   const [report, setReport] = useState('');
+  const [activeSideView, setActiveSideView] = useState<'pdf-viewer' | 'images' | 'tables' | null>(null);
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -262,6 +264,19 @@ const ResearchDashboard: React.FC = () => {
     </div>
   );
 
+  const renderSidePanel = () => {
+    switch (activeSideView) {
+      case 'pdf-viewer':
+        return pdfViewerContent;
+      case 'images':
+        return <ResearchImagePanel />;
+      case 'tables':
+        return tablesContent;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex h-screen bg-[#1A1F2C] text-white overflow-hidden">
       <div className="w-64 flex flex-col bg-[#1A1F2C] border-r border-gray-800">
@@ -320,88 +335,126 @@ const ResearchDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 bg-white overflow-auto">
-        {isGenerating && (
-          <div className="bg-violet-100 p-4 flex items-center gap-2 text-violet-700">
-            <div className="animate-spin h-4 w-4 border-2 border-violet-700 border-t-transparent rounded-full" />
-            Generating comprehensive research report...
-          </div>
-        )}
-
-        <div 
-          className="max-w-4xl mx-auto p-8"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleImageDrop}
-        >
-          {activeView === 'full-report' && (
-            <>
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {state.query || "Impact of AI on Mental Health Research"}
-                </h1>
-                <div className="flex gap-2">
-                  <Button onClick={handleCollaborate} variant="outline" size="sm">
-                    <Users className="h-4 w-4 mr-2" />
-                    Collaborate
-                  </Button>
-                  <Button onClick={handleShareReport} variant="outline" size="sm">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
-                  <Button onClick={handleExportReport} variant="outline" size="sm">
-                    <FileDown className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                  <Button onClick={handleEmailReport} variant="outline" size="sm">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Email
-                  </Button>
-                </div>
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        <ResizablePanel defaultSize={activeSideView ? 60 : 100}>
+          <div className="bg-white overflow-auto h-full">
+            {isGenerating && (
+              <div className="bg-violet-100 p-4 flex items-center gap-2 text-violet-700">
+                <div className="animate-spin h-4 w-4 border-2 border-violet-700 border-t-transparent rounded-full" />
+                Generating comprehensive research report...
               </div>
-              
-              {sections.map((section, index) => (
-                <div key={index} className="mb-8">
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
-                  <div className="prose max-w-none">
-                    {section.content.split('\n\n').map((paragraph, idx) => {
-                      const citationRegex = /\[(\d+)\]/g;
-                      const parts = [];
-                      let lastIndex = 0;
-                      let match;
-                      
-                      while ((match = citationRegex.exec(paragraph)) !== null) {
-                        parts.push(paragraph.substring(lastIndex, match.index));
-                        const citationNumber = parseInt(match[1]);
-                        parts.push(
-                          <CitationPopover 
-                            key={`${idx}-${citationNumber}`}
-                            reference={mockReferences[citationNumber - 1] || mockReferences[0]} 
-                            index={citationNumber - 1}
-                            inline
-                          />
-                        );
-                        lastIndex = match.index + match[0].length;
-                      }
-                      parts.push(paragraph.substring(lastIndex));
-                      return (
-                        <p key={idx} className="text-gray-700 mb-4">
-                          {parts}
-                        </p>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
+            )}
 
-          {activeView === 'pdf-viewer' && pdfViewerContent}
-          {activeView === 'images' && <ResearchImagePanel />}
-          {activeView === 'citations' && citationsContent}
-          {activeView === 'tables' && tablesContent}
-          {activeView === 'threads' && threadsContent}
-        </div>
-      </div>
+            <div className="max-w-4xl mx-auto p-8">
+              {activeView === 'full-report' && (
+                <>
+                  <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-3xl font-bold text-gray-900">
+                      {state.query || "Impact of AI on Mental Health Research"}
+                    </h1>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setActiveSideView(prev => prev === 'pdf-viewer' ? null : 'pdf-viewer')}
+                        className={activeSideView === 'pdf-viewer' ? 'bg-violet-100' : ''}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        PDFs
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setActiveSideView(prev => prev === 'images' ? null : 'images')}
+                        className={activeSideView === 'images' ? 'bg-violet-100' : ''}
+                      >
+                        <Image className="h-4 w-4 mr-2" />
+                        Images
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setActiveSideView(prev => prev === 'tables' ? null : 'tables')}
+                        className={activeSideView === 'tables' ? 'bg-violet-100' : ''}
+                      >
+                        <Table className="h-4 w-4 mr-2" />
+                        Tables
+                      </Button>
+                      <Button onClick={handleCollaborate} variant="outline" size="sm">
+                        <Users className="h-4 w-4 mr-2" />
+                        Collaborate
+                      </Button>
+                      <Button onClick={handleShareReport} variant="outline" size="sm">
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share
+                      </Button>
+                      <Button onClick={handleExportReport} variant="outline" size="sm">
+                        <FileDown className="h-4 w-4 mr-2" />
+                        Export
+                      </Button>
+                      <Button onClick={handleEmailReport} variant="outline" size="sm">
+                        <Mail className="h-4 w-4 mr-2" />
+                        Email
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {sections.map((section, index) => (
+                    <div key={index} className="mb-8">
+                      <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
+                      <div className="prose max-w-none">
+                        {section.content.split('\n\n').map((paragraph, idx) => {
+                          const citationRegex = /\[(\d+)\]/g;
+                          const parts = [];
+                          let lastIndex = 0;
+                          let match;
+                          
+                          while ((match = citationRegex.exec(paragraph)) !== null) {
+                            parts.push(paragraph.substring(lastIndex, match.index));
+                            const citationNumber = parseInt(match[1]);
+                            parts.push(
+                              <CitationPopover 
+                                key={`${idx}-${citationNumber}`}
+                                reference={mockReferences[citationNumber - 1] || mockReferences[0]} 
+                                index={citationNumber - 1}
+                                inline
+                              />
+                            );
+                            lastIndex = match.index + match[0].length;
+                          }
+                          parts.push(paragraph.substring(lastIndex));
+                          return (
+                            <p key={idx} className="text-gray-700 mb-4">
+                              {parts}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {activeView === 'pdf-viewer' && pdfViewerContent}
+              {activeView === 'images' && <ResearchImagePanel />}
+              {activeView === 'citations' && citationsContent}
+              {activeView === 'tables' && tablesContent}
+              {activeView === 'threads' && threadsContent}
+            </div>
+          </div>
+        </ResizablePanel>
+
+        {activeSideView && (
+          <>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={40}>
+              <div className="h-full overflow-auto">
+                {renderSidePanel()}
+              </div>
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
 
       <div className="w-80 bg-[#1A1F2C] border-l border-gray-800 flex flex-col overflow-hidden">
         <div className="flex-1 p-4">
