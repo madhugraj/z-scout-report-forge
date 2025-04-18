@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Share2, Mail, FileDown, Send, Users,
   FileText, Image, Table, BookOpen, MessageSquare, 
-  ChevronRight, ExternalLink, Search, Edit
+  ChevronRight, ExternalLink, Search, Edit, Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -172,6 +172,91 @@ const ResearchDashboard: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+
+  const citationsContent = (
+    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-semibold">Citations</h3>
+      </div>
+      <div className="space-y-3">
+        {mockReferences.map((reference, index) => (
+          <CitationPopover 
+            key={index}
+            reference={reference}
+            index={index}
+          />
+        ))}
+      </div>
+    </div>
+  );
+
+  const tablesContent = (
+    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-semibold">Data Tables</h3>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[
+          { title: "AI Adoption Rates by Sector", rows: 12, columns: 5 },
+          { title: "Mental Health Indicators Study", rows: 20, columns: 8 },
+          { title: "Treatment Effectiveness Comparison", rows: 15, columns: 6 },
+          { title: "Clinical Trial Results Summary", rows: 32, columns: 10 }
+        ].map((table, index) => (
+          <div key={index} className="bg-[#2A2F3C] p-4 rounded-lg border border-gray-800">
+            <div className="flex items-start gap-3">
+              <div className="bg-gray-800 p-2 rounded">
+                <Table className="h-8 w-8 text-gray-400" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-white">{table.title}</h4>
+                <p className="text-sm text-gray-400">{table.rows} rows • {table.columns} columns</p>
+                <Button variant="ghost" size="sm" className="mt-2 text-violet-400">
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export Table
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const threadsContent = (
+    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-semibold">Discussion Threads</h3>
+      </div>
+      <div className="space-y-4">
+        {[
+          { title: "Ethical considerations of AI in mental health", replies: 12, lastUpdated: "2 hours ago" },
+          { title: "Limitations of current research methods", replies: 8, lastUpdated: "1 day ago" },
+          { title: "Potential future applications to explore", replies: 15, lastUpdated: "3 days ago" },
+          { title: "Data privacy concerns with AI therapy", replies: 22, lastUpdated: "1 week ago" }
+        ].map((thread, index) => (
+          <div key={index} className="bg-[#2A2F3C] p-4 rounded-lg border border-gray-800">
+            <div className="flex items-start gap-3">
+              <div className="bg-gray-800 p-2 rounded">
+                <MessageSquare className="h-6 w-6 text-gray-400" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-white">{thread.title}</h4>
+                <p className="text-sm text-gray-400">{thread.replies} replies • Last updated {thread.lastUpdated}</p>
+                <Button variant="ghost" size="sm" className="mt-2 text-violet-400">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Join Discussion
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+        <Button variant="outline" className="w-full mt-4 text-white">
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Start New Discussion
+        </Button>
       </div>
     </div>
   );
