@@ -70,7 +70,29 @@ const ResearchDashboard: React.FC = () => {
   const [showHistory, setShowHistory] = useState(true);
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
-  
+  const [selectedPdfContent] = useState<string>(
+    `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+    1. Introduction
+    The rapid advancement of artificial intelligence has led to significant breakthroughs in mental health treatment approaches.
+
+    2. Methodology
+    Our research analyzed data from 500 participants across multiple treatment centers, focusing on AI-assisted therapy sessions.
+
+    3. Results
+    The findings indicate a 45% improvement in treatment outcomes when AI tools are integrated into traditional therapy methods.
+
+    4. Discussion
+    These results suggest that AI can effectively complement, but not replace, human therapists in mental health treatment.
+
+    5. Conclusions
+    Further research is needed to fully understand the long-term implications of AI integration in mental health care.
+    
+    References:
+    [1] Smith, J. et al. (2024) "AI in Mental Health: A Systematic Review"
+    [2] Johnson, M. (2023) "Machine Learning Applications in Therapy"`
+  );
+
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
       navigate('/');
@@ -385,25 +407,39 @@ const ResearchDashboard: React.FC = () => {
         
         {selectedPdf ? (
           <div className="flex-1 flex flex-col">
-            <div className="flex justify-between items-center px-4 py-2 border-b">
-              <h2 className="text-lg font-medium">PDF Viewer</h2>
-              <Button variant="ghost" size="sm" onClick={closePdfViewer}>
-                Close
-              </Button>
+            <div className="flex justify-between items-center px-6 py-4 border-b">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-medium text-gray-900">
+                  {samplePdfs.find(pdf => pdf.url === selectedPdf)?.title || 'Document Viewer'}
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => window.open(selectedPdf, '_blank')}>
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Open in New Tab
+                </Button>
+                <Button variant="ghost" size="sm" onClick={closePdfViewer}>
+                  Close
+                </Button>
+              </div>
             </div>
+            
             {pdfLoading ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p>Loading PDF...</p>
+              <div className="flex-1 flex items-center justify-center bg-gray-50">
+                <div className="animate-pulse flex flex-col items-center gap-4">
+                  <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-muted-foreground">Loading document...</p>
                 </div>
               </div>
             ) : (
-              <iframe 
-                src={`${selectedPdf}#toolbar=1&navpanes=1`} 
-                className="w-full h-full"
-                title="PDF Viewer"
-              />
+              <div className="flex-1 overflow-auto bg-gray-50 p-6">
+                <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border p-8">
+                  <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-700">
+                    {selectedPdfContent}
+                  </pre>
+                </div>
+              </div>
             )}
           </div>
         ) : (
