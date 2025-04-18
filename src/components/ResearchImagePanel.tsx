@@ -39,42 +39,77 @@ const dummyImages: ResearchImage[] = [
 
 export const ResearchImagePanel: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<ResearchImage | null>(null);
+  const [draggingImage, setDraggingImage] = useState<string | null>(null);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, image: ResearchImage) => {
     e.dataTransfer.setData('application/json', JSON.stringify(image));
     e.dataTransfer.effectAllowed = 'copy';
+    setDraggingImage(image.id);
+    
+    // Create a custom drag image showing what's being dragged
+    const dragPreview = document.createElement('div');
+    dragPreview.className = 'p-2 bg-violet-100 rounded-lg shadow-md';
+    dragPreview.innerHTML = `
+      <div class="flex items-center gap-2">
+        <img src="${image.url}" alt="${image.title}" class="h-8 w-8 object-cover rounded" />
+        <span class="text-xs font-medium">${image.title}</span>
+      </div>
+    `;
+    document.body.appendChild(dragPreview);
+    e.dataTransfer.setDragImage(dragPreview, 20, 20);
+    
+    // Show drag hint text
+    toast.info("Drag image to a section in your report", {
+      duration: 2000,
+      position: "top-center"
+    });
+    
+    // Remove the element after drag operation
+    setTimeout(() => {
+      document.body.removeChild(dragPreview);
+    }, 0);
+  };
+  
+  const handleDragEnd = () => {
+    setDraggingImage(null);
   };
 
   return (
     <div className="p-6 bg-[#1A1F2C] text-white rounded-lg">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold">Research Images</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Research Images</h3>
         <div className="text-sm text-gray-400">
-          Drag images to add them to your report
+          Drag images to your report sections
         </div>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 gap-4">
         {dummyImages.map((image) => (
           <div
             key={image.id}
-            className="group relative"
+            className={`group relative ${draggingImage === image.id ? 'opacity-50' : ''}`}
             draggable
             onDragStart={(e) => handleDragStart(e, image)}
+            onDragEnd={handleDragEnd}
           >
             <Dialog>
               <DialogTrigger asChild>
                 <div className="cursor-pointer">
-                  <div className="aspect-square bg-[#2A2F3C] rounded-lg overflow-hidden border border-gray-800">
+                  <div className="aspect-square bg-[#2A2F3C] rounded-lg overflow-hidden border border-gray-800 relative">
                     <img
                       src={image.url}
                       alt={image.title}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button variant="ghost" className="text-white">
-                        <Maximize2 className="h-5 w-5" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" className="text-white">
+                          <Maximize2 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" className="text-white">
+                          <Move className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-2">
@@ -83,7 +118,7 @@ export const ResearchImagePanel: React.FC = () => {
                   </div>
                 </div>
               </DialogTrigger>
-              <DialogContent className="bg-[#1A1F2C] text-white border-gray-800 max-w-3xl">
+              <DialogContent className="bg-[#1A1F2C] text-white border-gray-800 max-w-2xl">
                 <div className="space-y-4">
                   <div className="rounded-lg overflow-hidden">
                     <img
@@ -95,12 +130,35 @@ export const ResearchImagePanel: React.FC = () => {
                   <div>
                     <h4 className="text-lg font-medium">{image.title}</h4>
                     <p className="text-sm text-gray-400">{image.source}</p>
+                    <div className="flex mt-2 gap-2">
+                      <Button 
+                        variant="outline"
+                        className="text-violet-400 border-violet-400/30"
+                        onClick={() => {
+                          const a = document.createElement('a');
+                          a.href = image.url;
+                          a.download = image.title.replace(/\s+/g, '_') + '.jpg';
+                          a.click();
+                          toast.success("Image downloaded successfully");
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Image
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
         ))}
+      </div>
+      
+      <div className="mt-4 p-3 bg-violet-900/20 rounded-lg border border-violet-700/30">
+        <div className="flex items-center gap-2">
+          <Move className="h-4 w-4 text-violet-400" />
+          <p className="text-xs text-violet-300">Tip: Drag any image onto a section in your report to include it</p>
+        </div>
       </div>
     </div>
   );

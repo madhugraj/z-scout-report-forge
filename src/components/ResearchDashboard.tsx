@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Share2, Mail, FileDown, Send, Users,
   FileText, Image, Table, BookOpen, MessageSquare, 
-  ChevronRight, ExternalLink, Search, Edit, Download
+  ChevronRight, ExternalLink, Search, Edit, Download, Maximize2, Minimize2, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,16 @@ import { mockReport, mockReferences } from '@/data/mockData';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 interface DashboardState {
   query?: string;
@@ -41,6 +51,9 @@ const ResearchDashboard: React.FC = () => {
   const [report, setReport] = useState('');
   const [activeSideView, setActiveSideView] = useState<'pdf-viewer' | 'images' | 'tables' | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  const [showCollaborator, setShowCollaborator] = useState(false);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -136,23 +149,59 @@ const ResearchDashboard: React.FC = () => {
     toast.success("Email client opened with report link!");
   };
 
-  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
     e.preventDefault();
+    setDropTargetIndex(null);
     try {
       const imageData = JSON.parse(e.dataTransfer.getData('application/json'));
-      toast.success('Image added to report');
-      // Here you would handle adding the image to the report content
+      
+      // Update the section content to include the image
+      setSections(prevSections => {
+        const updatedSections = [...prevSections];
+        const section = updatedSections[sectionIndex];
+        const imageHtml = `<div class="my-4 w-full max-w-md mx-auto">
+          <img src="${imageData.url}" alt="${imageData.title}" class="w-full rounded-lg shadow-md" />
+          <p class="text-sm text-gray-500 mt-1">${imageData.title} • ${imageData.source}</p>
+        </div>`;
+        
+        // Split the content at the drop position or append at the end
+        updatedSections[sectionIndex] = {
+          ...section,
+          content: section.content + '\n\n' + imageHtml
+        };
+        
+        return updatedSections;
+      });
+      
+      toast.success(`Image "${imageData.title}" added to ${sections[sectionIndex].title}`);
     } catch (err) {
       toast.error('Failed to add image');
     }
   };
+  
+  const handleSectionDragOver = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
+    e.preventDefault();
+    setDropTargetIndex(sectionIndex);
+  };
+  
+  const handleSectionDragLeave = () => {
+    setDropTargetIndex(null);
+  };
 
   const pdfViewerContent = (
-    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold">Source PDFs</h3>
+    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-4 rounded-lg">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Source PDFs</h3>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setActiveSideView(null)}
+          className="text-gray-400 hover:text-white"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-3 overflow-auto">
         {[
           { id: "pdf1", title: "Neural Networks in Mental Health", author: "J. Smith", pages: 28, url: "https://www.africau.edu/images/default/sample.pdf" },
           { id: "pdf2", title: "AI Applications in Therapy", author: "K. Johnson", pages: 42, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
@@ -161,53 +210,62 @@ const ResearchDashboard: React.FC = () => {
         ].map((pdf, index) => (
           <div 
             key={index} 
-            className={`bg-[#2A2F3C] p-4 rounded-lg border ${selectedPdf === pdf.id ? 'border-violet-500' : 'border-gray-800'} cursor-pointer hover:border-violet-400 transition-colors`}
+            className={`bg-[#2A2F3C] p-3 rounded-lg border ${selectedPdf === pdf.id ? 'border-violet-500' : 'border-gray-800'} cursor-pointer hover:border-violet-400 transition-colors`}
             onClick={() => setSelectedPdf(pdf.id)}
           >
-            <div className="flex items-start gap-3">
-              <div className="bg-gray-800 p-2 rounded">
-                <FileText className="h-8 w-8 text-gray-400" />
+            <div className="flex items-start gap-2">
+              <div className="bg-gray-800 p-1.5 rounded">
+                <FileText className="h-6 w-6 text-gray-400" />
               </div>
               <div className="flex-1">
-                <h4 className="font-medium text-white">{pdf.title}</h4>
-                <p className="text-sm text-gray-400">{pdf.author} • {pdf.pages} pages</p>
-                <div className="flex mt-2 gap-2">
+                <h4 className="font-medium text-white text-sm">{pdf.title}</h4>
+                <p className="text-xs text-gray-400">{pdf.author} • {pdf.pages} pages</p>
+                <div className="flex mt-1 gap-1">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-violet-400"
+                    className="text-violet-400 h-7 text-xs px-2"
                     onClick={(e) => {
                       e.stopPropagation();
                       window.open(pdf.url, '_blank');
                     }}
                   >
-                    <ExternalLink className="h-4 w-4 mr-2" />
+                    <ExternalLink className="h-3 w-3 mr-1" />
                     View
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-violet-400"
+                    className="text-violet-400 h-7 text-xs px-2"
                     onClick={(e) => {
                       e.stopPropagation();
-                      // PDF download logic
                       const a = document.createElement('a');
                       a.href = pdf.url;
                       a.download = pdf.title.replace(/\s+/g, '_') + '.pdf';
                       a.click();
                     }}
                   >
-                    <FileDown className="h-4 w-4 mr-2" />
+                    <Download className="h-3 w-3 mr-1" />
                     Download
                   </Button>
                 </div>
               </div>
             </div>
             {selectedPdf === pdf.id && (
-              <div className="mt-4 bg-gray-900 rounded-lg p-2 h-96 overflow-hidden">
+              <div className="mt-3 bg-gray-900 rounded-lg overflow-hidden relative">
+                <div className="absolute top-2 right-2 z-10 flex gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-6 w-6 bg-gray-800 border-gray-700"
+                    onClick={() => setIsFullScreen(!isFullScreen)}
+                  >
+                    {isFullScreen ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+                  </Button>
+                </div>
                 <iframe 
                   src={pdf.url} 
-                  className="w-full h-full" 
+                  className={`w-full ${isFullScreen ? 'h-[calc(100vh-400px)]' : 'h-80'}`}
                   title={pdf.title}
                 />
               </div>
@@ -374,195 +432,231 @@ const ResearchDashboard: React.FC = () => {
         </div>
       </div>
 
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
-        <ResizablePanel defaultSize={activeSideView ? 60 : 100}>
-          <div className="bg-white overflow-auto h-full">
-            {isGenerating && (
-              <div className="bg-violet-100 p-4 flex items-center gap-2 text-violet-700">
-                <div className="animate-spin h-4 w-4 border-2 border-violet-700 border-t-transparent rounded-full" />
-                Generating comprehensive research report...
-              </div>
-            )}
-
-            <div 
-              className="max-w-4xl mx-auto p-8" 
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleImageDrop}
-            >
-              {activeView === 'full-report' && (
-                <>
-                  <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                      {state.query || "Impact of AI on Mental Health Research"}
-                    </h1>
-                    <div className="flex items-center gap-2">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              onClick={() => setActiveSideView(prev => prev === 'pdf-viewer' ? null : 'pdf-viewer')}
-                              className={activeSideView === 'pdf-viewer' ? 'bg-violet-100' : ''}
-                            >
-                              <FileText className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>View PDFs</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              onClick={() => setActiveSideView(prev => prev === 'images' ? null : 'images')}
-                              className={activeSideView === 'images' ? 'bg-violet-100' : ''}
-                            >
-                              <Image className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>View Images</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              onClick={() => setActiveSideView(prev => prev === 'tables' ? null : 'tables')}
-                              className={activeSideView === 'tables' ? 'bg-violet-100' : ''}
-                            >
-                              <Table className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>View Tables</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              onClick={handleShareReport}
-                            >
-                              <Share2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>Share Report</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              onClick={handleExportReport}
-                            >
-                              <FileDown className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>Export Report</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              onClick={handleEmailReport}
-                            >
-                              <Mail className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>Email Report</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </div>
-                  
-                  {sections.map((section, index) => (
-                    <div key={index} className="mb-8">
-                      <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
-                      <div className="prose max-w-none">
-                        {section.content.split('\n\n').map((paragraph, idx) => {
-                          const citationRegex = /\[(\d+)\]/g;
-                          const parts = [];
-                          let lastIndex = 0;
-                          let match;
-                          
-                          while ((match = citationRegex.exec(paragraph)) !== null) {
-                            parts.push(paragraph.substring(lastIndex, match.index));
-                            const citationNumber = parseInt(match[1]);
-                            parts.push(
-                              <CitationPopover 
-                                key={`${idx}-${citationNumber}`}
-                                reference={mockReferences[citationNumber - 1] || mockReferences[0]} 
-                                index={citationNumber - 1}
-                                inline
-                              />
-                            );
-                            lastIndex = match.index + match[0].length;
-                          }
-                          parts.push(paragraph.substring(lastIndex));
-                          return (
-                            <p key={idx} className="text-gray-700 mb-4">
-                              {parts}
-                            </p>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </>
+      <div className="flex flex-1 relative">
+        <ResizablePanelGroup direction="horizontal" className="flex-1">
+          <ResizablePanel defaultSize={activeSideView ? 60 : 100}>
+            <div className="bg-white overflow-auto h-full">
+              {isGenerating && (
+                <div className="bg-violet-100 p-4 flex items-center gap-2 text-violet-700">
+                  <div className="animate-spin h-4 w-4 border-2 border-violet-700 border-t-transparent rounded-full" />
+                  Generating comprehensive research report...
+                </div>
               )}
 
-              {activeView === 'pdf-viewer' && pdfViewerContent}
-              {activeView === 'images' && <ResearchImagePanel />}
-              {activeView === 'citations' && citationsContent}
-              {activeView === 'tables' && tablesContent}
-              {activeView === 'threads' && threadsContent}
-            </div>
-          </div>
-        </ResizablePanel>
+              <div className="max-w-4xl mx-auto p-8">
+                {activeView === 'full-report' && (
+                  <>
+                    <div className="flex justify-between items-center mb-6">
+                      <h1 className="text-3xl font-bold text-gray-900">
+                        {state.query || "Impact of AI on Mental Health Research"}
+                      </h1>
+                      <div className="flex items-center gap-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="icon"
+                                onClick={() => setActiveSideView(prev => prev === 'pdf-viewer' ? null : 'pdf-viewer')}
+                                className={`h-8 w-8 ${activeSideView === 'pdf-viewer' ? 'bg-violet-100' : ''}`}
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                              <p>View PDFs</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
 
-        {activeSideView && (
-          <>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={40}>
-              <div className="h-full overflow-auto">
-                {renderSidePanel()}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="icon"
+                                onClick={() => setActiveSideView(prev => prev === 'images' ? null : 'images')}
+                                className={`h-8 w-8 ${activeSideView === 'images' ? 'bg-violet-100' : ''}`}
+                              >
+                                <Image className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                              <p>View Images</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="icon"
+                                onClick={() => setActiveSideView(prev => prev === 'tables' ? null : 'tables')}
+                                className={`h-8 w-8 ${activeSideView === 'tables' ? 'bg-violet-100' : ''}`}
+                              >
+                                <Table className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                              <p>View Tables</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={handleShareReport}
+                              >
+                                <Share2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                              <p>Share Report</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={handleExportReport}
+                              >
+                                <FileDown className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                              <p>Export Report</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={handleEmailReport}
+                              >
+                                <Mail className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                              <p>Email Report</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                    
+                    {sections.map((section, index) => (
+                      <div 
+                        key={index} 
+                        className={`mb-8 ${dropTargetIndex === index ? 'border-2 border-dashed border-violet-400 rounded-lg p-4' : ''}`}
+                        onDragOver={(e) => handleSectionDragOver(e, index)}
+                        onDragLeave={handleSectionDragLeave}
+                        onDrop={(e) => handleImageDrop(e, index)}
+                      >
+                        <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
+                        <div className="prose max-w-none">
+                          {section.content.split('\n\n').map((paragraph, idx) => {
+                            // Handle HTML content for images
+                            if (paragraph.startsWith('<div class="my-4')) {
+                              return (
+                                <div key={idx} dangerouslySetInnerHTML={{ __html: paragraph }} />
+                              );
+                            }
+                            
+                            // Handle regular text paragraphs with citations
+                            const citationRegex = /\[(\d+)\]/g;
+                            const parts = [];
+                            let lastIndex = 0;
+                            let match;
+                            
+                            while ((match = citationRegex.exec(paragraph)) !== null) {
+                              parts.push(paragraph.substring(lastIndex, match.index));
+                              const citationNumber = parseInt(match[1]);
+                              parts.push(
+                                <CitationPopover 
+                                  key={`${idx}-${citationNumber}`}
+                                  reference={mockReferences[citationNumber - 1] || mockReferences[0]} 
+                                  index={citationNumber - 1}
+                                  inline
+                                />
+                              );
+                              lastIndex = match.index + match[0].length;
+                            }
+                            parts.push(paragraph.substring(lastIndex));
+                            return (
+                              <p key={idx} className="text-gray-700 mb-4">
+                                {parts}
+                              </p>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {activeView === 'pdf-viewer' && pdfViewerContent}
+                {activeView === 'images' && <ResearchImagePanel />}
+                {activeView === 'citations' && citationsContent}
+                {activeView === 'tables' && tablesContent}
+                {activeView === 'threads' && threadsContent}
               </div>
-            </ResizablePanel>
-          </>
-        )}
-      </ResizablePanelGroup>
+            </div>
+          </ResizablePanel>
 
-      <div className="w-80 bg-[#1A1F2C] border-l border-gray-800 flex flex-col overflow-hidden">
-        <div className="flex-1 p-4">
-          <CollaborationWindow />
+          {activeSideView && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={40}>
+                <div className="h-full overflow-auto">
+                  {renderSidePanel()}
+                </div>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+
+        {/* Collaborator toggle button */}
+        <div className="absolute bottom-4 right-4 z-10">
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button className="rounded-full" size="icon">
+                <Users className="h-5 w-5" />
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent className="bg-[#1A1F2C] text-white max-w-md mx-auto p-4">
+              <DrawerHeader>
+                <DrawerTitle className="text-white">Collaborators</DrawerTitle>
+                <DrawerDescription className="text-gray-400">
+                  Invite and collaborate with team members
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="px-4 py-2">
+                <CollaborationWindow />
+              </div>
+              <DrawerFooter>
+                <DrawerClose asChild>
+                  <Button variant="outline">Close</Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
         </div>
       </div>
     </div>
