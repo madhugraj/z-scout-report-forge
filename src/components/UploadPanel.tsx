@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Upload, Link, AlertCircle, X, ChevronLeft, FileText, HardDrive, Globe, Laptop, CloudOff } from 'lucide-react';
+import { Upload, Link, AlertCircle, X, ChevronLeft, FileText, HardDrive, Globe, Mic, CloudUpload, FolderUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -79,78 +78,65 @@ const UploadPanel: React.FC = () => {
       case 'drive':
         return (
           <div className="space-y-8">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border shadow-lg">
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-100 rounded-2xl p-8 border border-purple-100/50 shadow-lg">
               <div className="text-center space-y-6">
-                <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-2 mx-auto">
-                  <HardDrive className="h-10 w-10 text-primary" />
+                <div className="relative inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-purple-500/10 mb-4 mx-auto">
+                  <HardDrive className="h-12 w-12 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-semibold mb-3 text-gray-900">Connect Cloud Storage</h3>
-                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                    Securely connect and import documents from your preferred cloud storage services
+                  <h3 className="text-2xl font-bold mb-3 text-gray-900">Cloud Storage Integration</h3>
+                  <p className="text-muted-foreground text-base max-w-md mx-auto">
+                    Select your preferred cloud storage platform to import documents
                   </p>
                 </div>
               </div>
 
-              <div className="mt-10 space-y-4 max-w-md mx-auto">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-16 relative hover:border-primary/50 hover:bg-blue-50/50 transition-all duration-200"
-                  disabled
-                >
-                  <div className="flex items-center w-full">
-                    <div className="bg-blue-100 p-2 rounded-lg mr-4">
-                      <img src="https://www.google.com/images/about/drive.png" alt="" className="w-8 h-8" />
-                    </div>
-                    <div className="flex flex-col items-start flex-1">
-                      <span className="font-medium text-gray-900">Google Drive</span>
-                      <span className="text-xs text-muted-foreground">Import documents from Drive</span>
-                    </div>
-                    <CloudOff className="h-5 w-5 text-muted-foreground shrink-0" />
-                  </div>
-                </Button>
-
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-16 relative hover:border-primary/50 hover:bg-blue-50/50 transition-all duration-200"
-                  disabled
-                >
-                  <div className="flex items-center w-full">
-                    <div className="bg-blue-100 p-2 rounded-lg mr-4">
-                      <img src="https://www.microsoft.com/onedrive.png" alt="" className="w-8 h-8" />
-                    </div>
-                    <div className="flex flex-col items-start flex-1">
-                      <span className="font-medium text-gray-900">OneDrive</span>
-                      <span className="text-xs text-muted-foreground">Access Microsoft OneDrive files</span>
-                    </div>
-                    <CloudOff className="h-5 w-5 text-muted-foreground shrink-0" />
-                  </div>
-                </Button>
-
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-16 relative hover:border-primary/50 hover:bg-blue-50/50 transition-all duration-200"
-                  disabled
-                >
-                  <div className="flex items-center w-full">
-                    <div className="bg-blue-100 p-2 rounded-lg mr-4">
-                      <img src="https://www.dropbox.com/static/images/logo.png" alt="" className="w-8 h-8" />
-                    </div>
-                    <div className="flex flex-col items-start flex-1">
-                      <span className="font-medium text-gray-900">Dropbox</span>
-                      <span className="text-xs text-muted-foreground">Connect with Dropbox</span>
-                    </div>
-                    <CloudOff className="h-5 w-5 text-muted-foreground shrink-0" />
-                  </div>
-                </Button>
-              </div>
-
-              <div className="mt-8 text-center">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 border border-blue-100">
-                  <AlertCircle className="h-4 w-4 text-blue-500 mr-2" />
-                  <p className="text-sm text-blue-700">
-                    Cloud storage integration coming soon
-                  </p>
+              <div className="mt-10 space-y-4 max-w-xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    { 
+                      name: 'Google Drive', 
+                      logo: 'https://www.gstatic.com/images/branding/product/1x/google_drive_2020q4_48dp.png', 
+                      description: 'Import from Google Drive',
+                      bgColor: 'bg-blue-50'
+                    },
+                    { 
+                      name: 'OneDrive', 
+                      logo: 'https://www.microsoft.com/en-us/microsoft-365/blog/wp-content/uploads/sites/2/2020/11/OneDrive-Icon.png', 
+                      description: 'Connect Microsoft OneDrive',
+                      bgColor: 'bg-sky-50'
+                    },
+                    { 
+                      name: 'Dropbox', 
+                      logo: 'https://www.dropbox.com/static/images/logo.svg', 
+                      description: 'Access Dropbox files',
+                      bgColor: 'bg-indigo-50'
+                    }
+                  ].map((service) => (
+                    <Button 
+                      key={service.name}
+                      variant="outline" 
+                      className={`w-full h-auto p-4 flex flex-col items-center justify-center space-y-3 
+                        border-2 border-transparent hover:border-purple-300 
+                        ${service.bgColor} hover:bg-purple-50/50 transition-all duration-300 group`}
+                    >
+                      <div className={`p-3 rounded-xl ${service.bgColor} group-hover:bg-white transition-all`}>
+                        <img 
+                          src={service.logo} 
+                          alt={`${service.name} logo`} 
+                          className="w-10 h-10 object-contain"
+                        />
+                      </div>
+                      <div className="text-center">
+                        <h4 className="font-semibold text-gray-800 group-hover:text-purple-700 transition-colors">
+                          {service.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground group-hover:text-purple-600 transition-colors">
+                          {service.description}
+                        </p>
+                      </div>
+                    </Button>
+                  ))}
                 </div>
               </div>
             </div>
