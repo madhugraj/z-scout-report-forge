@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Share2, Mail, FileDown, Send, Users,
+  Share2, Mail, FileDown, Users,
   FileText, Image, Table, BookOpen, MessageSquare, 
   ChevronRight, ExternalLink, Search, Edit, Download, Maximize2, Minimize2, X
 } from 'lucide-react';
@@ -12,21 +11,12 @@ import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CitationPopover from './CitationPopover';
 import { ResearchImagePanel } from './ResearchImagePanel';
-import CollaborationWindow from './CollaborationWindow';
 import { mockReport, mockReferences } from '@/data/mockData';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+import CollaborationModule from './collaboration/CollaborationModule';
+import { CollaboratorInfo } from './collaboration/types';
 
 interface DashboardState {
   query?: string;
@@ -54,6 +44,13 @@ const ResearchDashboard: React.FC = () => {
   const [showCollaborator, setShowCollaborator] = useState(false);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  
+  const [currentUser] = useState<CollaboratorInfo>({
+    id: 'user-1',
+    name: 'You',
+    status: 'online',
+    lastEdit: 'Owner of the report'
+  });
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -149,13 +146,26 @@ const ResearchDashboard: React.FC = () => {
     toast.success("Email client opened with report link!");
   };
 
+  const handleEditReport = (sectionIndex: number | undefined, type: 'title' | 'content', newValue: string) => {
+    if (type === 'title' && sectionIndex !== undefined) {
+      setSections(prev => prev.map((section, idx) => 
+        idx === sectionIndex ? { ...section, title: newValue } : section
+      ));
+    } else if (type === 'content' && sectionIndex !== undefined) {
+      setSections(prev => prev.map((section, idx) => 
+        idx === sectionIndex ? { ...section, content: newValue } : section
+      ));
+    } else if (type === 'title' && sectionIndex === undefined) {
+      toast.info("Report title updated to: " + newValue);
+    }
+  };
+
   const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
     e.preventDefault();
     setDropTargetIndex(null);
     try {
       const imageData = JSON.parse(e.dataTransfer.getData('application/json'));
       
-      // Update the section content to include the image
       setSections(prevSections => {
         const updatedSections = [...prevSections];
         const section = updatedSections[sectionIndex];
@@ -164,7 +174,6 @@ const ResearchDashboard: React.FC = () => {
           <p class="text-sm text-gray-500 mt-1">${imageData.title} • ${imageData.source}</p>
         </div>`;
         
-        // Split the content at the drop position or append at the end
         updatedSections[sectionIndex] = {
           ...section,
           content: section.content + '\n\n' + imageHtml
@@ -201,6 +210,7 @@ const ResearchDashboard: React.FC = () => {
           <X className="h-4 w-4" />
         </Button>
       </div>
+      
       <div className="grid grid-cols-1 gap-3 overflow-auto">
         {[
           { id: "pdf1", title: "Neural Networks in Mental Health", author: "J. Smith", pages: 28, url: "https://www.africau.edu/images/default/sample.pdf" },
@@ -628,20 +638,11 @@ const ResearchDashboard: React.FC = () => {
           )}
         </ResizablePanelGroup>
 
-        <Drawer>
-          <DrawerTrigger asChild>
-            <Button 
-              className="fixed bottom-4 right-4 rounded-full shadow-lg"
-              size="icon"
-            >
-              <Users className="h-5 w-5" />
-            </Button>
-          </DrawerTrigger>
-          <DrawerContent className="h-[400px] bg-[#1A1F2C] p-0">
-            <div className="h-1 w-12 rounded-full bg-gray-600 mx-auto my-2" />
-            <CollaborationWindow />
-          </DrawerContent>
-        </Drawer>
+        <CollaborationModule 
+          reportSections={sections}
+          onEditReport={handleEditReport}
+          currentUser={currentUser}
+        />
       </div>
     </div>
   );
