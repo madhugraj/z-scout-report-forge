@@ -42,7 +42,7 @@ const CollaborationWindow = () => {
       {
         id: '2',
         sender: 'John Doe',
-        text: 'Great work! I'm reviewing the impact analysis section now',
+        text: "Great work! I'm reviewing the impact analysis section now", // Escaped apostrophe with double quotes
         timestamp: new Date(Date.now() - 5 * 60000) // 5 minutes ago
       }
     ]);
