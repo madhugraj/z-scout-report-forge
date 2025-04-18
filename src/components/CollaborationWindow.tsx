@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Users, Send, Edit, UserPlus, X, Bot, FileEdit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -85,7 +84,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     setInviteEmail('');
     setShowInviteDialog(false);
     
-    // Simulate new collaborator joining
     setTimeout(() => {
       const name = inviteEmail.split('@')[0];
       const newCollaborator = {
@@ -122,14 +120,12 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       setMessages(prev => [...prev, newMessage]);
       setMessage('');
 
-      // If message contains edit request, process it
       const editRequest = parseEditRequest(message);
       if (editRequest && onEditRequest) {
         processEditRequest(editRequest);
         return;
       }
 
-      // Simulate AI response
       setTimeout(() => {
         const aiMessage = {
           id: (Date.now() + 1).toString(),
@@ -145,7 +141,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   };
 
   const parseEditRequest = (msg: string): EditRequest | null => {
-    // Simple parsing of edit requests
     const titleChangeRegex = /change\s+title\s+to\s+"([^"]+)"/i;
     const editSectionRegex = /edit\s+section\s+(\d+|\w+)/i;
     
@@ -170,7 +165,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         setEditSection(sectionIndex);
         setEditText(reportSections[sectionIndex].content);
         setEditTitle(false);
-        return null; // Will be processed when edit is submitted
+        return null;
       }
     }
     
@@ -181,7 +176,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     if (onEditRequest) {
       onEditRequest(request);
       
-      // Add edit message to chat
       const editMessage: Message = {
         id: Date.now().toString(),
         sender: 'System',
@@ -199,7 +193,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       
       setMessages(prev => [...prev, editMessage]);
       
-      // Update last edit for collaborator
       setCollaborators(prev => 
         prev.map(c => 
           c.id === request.collaborator.id 
