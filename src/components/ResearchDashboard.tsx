@@ -1,13 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
+  Share2, Mail, FileDown, Send,
   FileText, Image, Table, BookOpen, MessageSquare, 
-  ChevronRight, ExternalLink, Search, Send 
+  ChevronRight, ExternalLink, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CitationPopover from './CitationPopover';
@@ -105,83 +103,121 @@ const ResearchDashboard: React.FC = () => {
     }, 10000);
   };
 
-  // Mock data for different views
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Link copied to clipboard!");
+  };
+
+  const handleExport = () => {
+    const content = sections.map(s => `${s.title}\n\n${s.content}`).join('\n\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'research-report.txt';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success("Report downloaded successfully!");
+  };
+
+  const handleEmail = () => {
+    const subject = encodeURIComponent("Research Report: " + (state.query || "AI Impact Analysis"));
+    const body = encodeURIComponent("Access the full report here: " + window.location.href);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    toast.success("Email client opened!");
+  };
+
   const pdfViewerContent = (
-    <div className="flex flex-col h-full">
-      <div className="bg-violet-100 p-4 mb-4 rounded-lg">
-        <h3 className="font-semibold text-violet-800">Document Viewer</h3>
-        <p className="text-sm text-violet-700">This is a preview of the PDF viewer. In a real implementation, this would show the actual document.</p>
-      </div>
-      <div className="flex-1 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-300">
-        <div className="text-center">
-          <FileText className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600">PDF document would be rendered here</p>
-          <Button className="mt-4" variant="outline" size="sm">
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Open in full view
+    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-semibold">Research Document</h3>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleShare}>
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
           </Button>
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <FileDown className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        </div>
+      </div>
+      <div className="flex-1 bg-[#2A2F3C] rounded-lg p-6">
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="h-8 bg-[#3A3F4C] rounded w-3/4"></div>
+          <div className="h-4 bg-[#3A3F4C] rounded w-full"></div>
+          <div className="h-4 bg-[#3A3F4C] rounded w-5/6"></div>
+          <div className="h-4 bg-[#3A3F4C] rounded w-4/5"></div>
+          <div className="h-8 bg-[#3A3F4C] rounded w-2/3 mt-8"></div>
+          <div className="h-4 bg-[#3A3F4C] rounded w-full"></div>
+          <div className="h-4 bg-[#3A3F4C] rounded w-5/6"></div>
         </div>
       </div>
     </div>
   );
 
   const extractedImagesContent = (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="border rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
-          <div className="h-32 bg-gray-200 flex items-center justify-center">
-            <Image className="h-8 w-8 text-gray-400" />
-          </div>
-          <div className="p-2">
-            <p className="text-xs text-gray-600">Image {i + 1}</p>
-          </div>
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-6 bg-[#1A1F2C] text-white rounded-lg">
+      <div className="flex flex-col gap-2">
+        <div className="aspect-square bg-[#2A2F3C] rounded-lg flex items-center justify-center">
+          <div className="w-16 h-16 bg-[#3A3F4C] rounded-lg"></div>
         </div>
-      ))}
+        <p className="text-sm text-gray-400">Figure 1: Data Distribution</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="aspect-square bg-[#2A2F3C] rounded-lg flex items-center justify-center">
+          <div className="w-16 h-16 bg-[#3A3F4C] rounded-lg"></div>
+        </div>
+        <p className="text-sm text-gray-400">Figure 2: Neural Network</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="aspect-square bg-[#2A2F3C] rounded-lg flex items-center justify-center">
+          <div className="w-16 h-16 bg-[#3A3F4C] rounded-lg"></div>
+        </div>
+        <p className="text-sm text-gray-400">Figure 3: Results Graph</p>
+      </div>
     </div>
   );
 
   const citationsContent = (
-    <div className="space-y-4 p-4">
-      <div className="bg-violet-100 p-4 rounded-lg">
-        <h3 className="font-semibold text-violet-800">Citations</h3>
-        <p className="text-sm text-violet-700">References extracted from the research materials.</p>
-      </div>
+    <div className="space-y-4 p-6 bg-[#1A1F2C] text-white rounded-lg">
       {mockReferences.slice(0, 5).map((reference, index) => (
-        <div key={index} className="p-4 border rounded-lg bg-white shadow-sm">
-          <div className="flex justify-between items-start">
-            <h4 className="font-medium">{reference.title}</h4>
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">{reference.year}</span>
+        <div key={index} className="p-4 bg-[#2A2F3C] rounded-lg">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="font-medium text-white">{reference.title}</h4>
+            <span className="text-xs bg-[#3A3F4C] px-2 py-1 rounded-full">{reference.year}</span>
           </div>
-          <p className="text-sm text-gray-600 mt-1">{reference.authors.join(', ')}</p>
-          <p className="text-xs text-gray-500 mt-2">{reference.publication}</p>
+          <p className="text-sm text-gray-400 mb-2">{reference.authors.join(', ')}</p>
+          <p className="text-xs text-gray-500">{reference.journal}</p>
         </div>
       ))}
     </div>
   );
 
   const tablesContent = (
-    <div className="space-y-4 p-4">
-      <div className="bg-violet-100 p-4 rounded-lg">
-        <h3 className="font-semibold text-violet-800">Data Tables</h3>
-        <p className="text-sm text-violet-700">Structured tables extracted from research materials.</p>
-      </div>
-      <div className="overflow-auto border rounded-lg shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200 bg-white">
-          <thead className="bg-gray-100">
+    <div className="space-y-4 p-6 bg-[#1A1F2C] text-white rounded-lg">
+      <div className="overflow-auto">
+        <table className="min-w-full divide-y divide-gray-800">
+          <thead className="bg-[#2A2F3C]">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Study</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Participants</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Method</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Result</th>
+              {['Method', 'Accuracy', 'Precision', 'Recall'].map((header) => (
+                <th key={header} className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <tr key={i}>
-                <td className="px-4 py-3 text-sm text-gray-900">Study {i + 1}</td>
-                <td className="px-4 py-3 text-sm text-gray-900">{Math.floor(Math.random() * 500)}</td>
-                <td className="px-4 py-3 text-sm text-gray-900">{['Survey', 'Interview', 'Experiment', 'Case Study'][i]}</td>
-                <td className="px-4 py-3 text-sm text-gray-900">p {Math.random().toFixed(3)}</td>
+          <tbody className="divide-y divide-gray-800">
+            {[
+              { method: 'Neural Network', accuracy: '89%', precision: '0.87', recall: '0.91' },
+              { method: 'Random Forest', accuracy: '85%', precision: '0.84', recall: '0.86' },
+              { method: 'SVM', accuracy: '82%', precision: '0.81', recall: '0.83' },
+            ].map((row, i) => (
+              <tr key={i} className="bg-[#2A2F3C]">
+                <td className="px-4 py-3 text-sm text-white">{row.method}</td>
+                <td className="px-4 py-3 text-sm text-white">{row.accuracy}</td>
+                <td className="px-4 py-3 text-sm text-white">{row.precision}</td>
+                <td className="px-4 py-3 text-sm text-white">{row.recall}</td>
               </tr>
             ))}
           </tbody>
@@ -191,24 +227,37 @@ const ResearchDashboard: React.FC = () => {
   );
 
   const threadsContent = (
-    <div className="space-y-4 p-4">
-      <div className="bg-violet-100 p-4 rounded-lg">
-        <h3 className="font-semibold text-violet-800">Discussion Threads</h3>
-        <p className="text-sm text-violet-700">Related discussions and insights from various sources.</p>
-      </div>
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="border rounded-lg overflow-hidden bg-white shadow-sm">
-          <div className="bg-gray-50 py-3 px-4 border-b">
-            <div className="flex justify-between items-center">
-              <h4 className="font-medium text-gray-900">Thread topic {i + 1}</h4>
-              <span className="text-xs text-gray-500">2 days ago</span>
+    <div className="space-y-4 p-6 bg-[#1A1F2C] text-white rounded-lg">
+      {[
+        {
+          title: 'Impact of AI on Mental Health Treatment',
+          date: '2 days ago',
+          content: 'Latest research suggests significant improvements in early diagnosis accuracy.',
+          replies: 5
+        },
+        {
+          title: 'Ethical Considerations in AI Healthcare',
+          date: '3 days ago',
+          content: 'Discussion on privacy concerns and data protection in AI-assisted diagnosis.',
+          replies: 3
+        },
+        {
+          title: 'Future of AI in Clinical Practice',
+          date: '4 days ago',
+          content: 'Exploring potential applications and limitations in clinical settings.',
+          replies: 7
+        }
+      ].map((thread, i) => (
+        <div key={i} className="border border-gray-800 rounded-lg overflow-hidden bg-[#2A2F3C]">
+          <div className="p-4 border-b border-gray-800">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="font-medium text-white">{thread.title}</h4>
+              <span className="text-xs text-gray-400">{thread.date}</span>
             </div>
-          </div>
-          <div className="p-4">
-            <p className="text-sm text-gray-700 mb-3">This is a sample discussion related to the research topic, highlighting key insights and perspectives.</p>
+            <p className="text-sm text-gray-400 mb-3">{thread.content}</p>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-500">{3 + i} replies</span>
-              <Button variant="ghost" size="sm" className="text-xs">
+              <span className="text-xs text-gray-500">{thread.replies} replies</span>
+              <Button variant="ghost" size="sm" className="text-xs text-violet-400">
                 View Thread <ChevronRight className="ml-1 h-3 w-3" />
               </Button>
             </div>
@@ -220,7 +269,6 @@ const ResearchDashboard: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-[#1A1F2C] text-white overflow-hidden">
-      {/* Left Sidebar */}
       <div className="w-64 flex flex-col bg-[#1A1F2C] border-r border-gray-800">
         <div className="p-6">
           <h1 className="text-xl font-semibold mb-6">Research View</h1>
@@ -277,7 +325,6 @@ const ResearchDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 bg-white overflow-auto">
         {isGenerating && (
           <div className="bg-violet-100 p-4 flex items-center gap-2 text-violet-700">
@@ -337,7 +384,6 @@ const ResearchDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Right Sidebar - Follow-up Questions */}
       <div className="w-80 bg-[#1A1F2C] border-l border-gray-800 flex flex-col">
         <div className="p-6">
           <h2 className="text-xl font-semibold mb-6">Follow-up Questions</h2>
