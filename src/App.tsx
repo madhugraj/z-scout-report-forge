@@ -9,25 +9,31 @@ import UploadPanel from "./components/UploadPanel";
 import ResearchDashboard from "./components/ResearchDashboard";
 import WorkspaceHistory from "./components/WorkspaceHistory";
 import NotFound from "./pages/NotFound";
+import React from "react";
 
+// Create a client
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/upload" element={<UploadPanel />} />
-          <Route path="/dashboard" element={<ResearchDashboard />} />
-          <Route path="/workspace" element={<WorkspaceHistory />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/upload" element={<UploadPanel />} />
+              <Route path="/dashboard" element={<ResearchDashboard />} />
+              <Route path="/workspace" element={<WorkspaceHistory />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+          <Toaster />
+          <Sonner />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </React.StrictMode>
+  );
+};
 
 export default App;
