@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -432,9 +431,9 @@ const ResearchDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-1 relative">
+      <div className="flex flex-1 relative flex-col">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={activeSideView ? 60 : 100}>
+          <ResizablePanel defaultSize={100}>
             <div className="bg-white overflow-auto h-full">
               {isGenerating && (
                 <div className="bg-violet-100 p-4 flex items-center gap-2 text-violet-700">
@@ -443,7 +442,7 @@ const ResearchDashboard: React.FC = () => {
                 </div>
               )}
 
-              <div className="max-w-4xl mx-auto p-8">
+              <div className="max-w-4xl mx-auto p-8 pb-32">
                 {activeView === 'full-report' && (
                   <>
                     <div className="flex justify-between items-center mb-6">
@@ -572,14 +571,12 @@ const ResearchDashboard: React.FC = () => {
                         <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
                         <div className="prose max-w-none">
                           {section.content.split('\n\n').map((paragraph, idx) => {
-                            // Handle HTML content for images
                             if (paragraph.startsWith('<div class="my-4')) {
                               return (
                                 <div key={idx} dangerouslySetInnerHTML={{ __html: paragraph }} />
                               );
                             }
                             
-                            // Handle regular text paragraphs with citations
                             const citationRegex = /\[(\d+)\]/g;
                             const parts = [];
                             let lastIndex = 0;
@@ -619,45 +616,22 @@ const ResearchDashboard: React.FC = () => {
               </div>
             </div>
           </ResizablePanel>
-
-          {activeSideView && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={40}>
-                <div className="h-full overflow-auto">
-                  {renderSidePanel()}
-                </div>
-              </ResizablePanel>
-            </>
-          )}
         </ResizablePanelGroup>
 
-        {/* Collaborator toggle button */}
-        <div className="absolute bottom-4 right-4 z-10">
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button className="rounded-full" size="icon">
-                <Users className="h-5 w-5" />
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent className="bg-[#1A1F2C] text-white max-w-md mx-auto p-4">
-              <DrawerHeader>
-                <DrawerTitle className="text-white">Collaborators</DrawerTitle>
-                <DrawerDescription className="text-gray-400">
-                  Invite and collaborate with team members
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="px-4 py-2">
-                <CollaborationWindow />
-              </div>
-              <DrawerFooter>
-                <DrawerClose asChild>
-                  <Button variant="outline">Close</Button>
-                </DrawerClose>
-              </DrawerFooter>
-            </DrawerContent>
-          </Drawer>
-        </div>
+        <Drawer>
+          <DrawerTrigger asChild>
+            <Button 
+              className="fixed bottom-4 right-4 rounded-full shadow-lg"
+              size="icon"
+            >
+              <Users className="h-5 w-5" />
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent className="h-[400px] bg-[#1A1F2C] p-0">
+            <div className="h-1 w-12 rounded-full bg-gray-600 mx-auto my-2" />
+            <CollaborationWindow />
+          </DrawerContent>
+        </Drawer>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Users, Send, Edit, UserPlus, X } from 'lucide-react';
+import { Users, Send, Edit, UserPlus, X, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
@@ -9,6 +10,7 @@ interface CollaboratorInfo {
   name: string;
   status: 'online' | 'offline';
   lastEdit?: string;
+  isAI?: boolean;
 }
 
 interface Message {
@@ -16,15 +18,22 @@ interface Message {
   sender: string;
   text: string;
   timestamp: Date;
+  isAI?: boolean;
 }
 
 const CollaborationWindow = () => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
-  const [showInviteDialog, setShowInviteDialog] = useState(true);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [hasCollaborators, setHasCollaborators] = useState(false);
-  const [collaborators, setCollaborators] = useState<CollaboratorInfo[]>([]);
+  const [collaborators, setCollaborators] = useState<CollaboratorInfo[]>([
+    {
+      name: 'Research AI',
+      status: 'online',
+      lastEdit: 'AI Assistant ready to help',
+      isAI: true
+    }
+  ]);
 
   const handleInvite = () => {
     if (!inviteEmail.trim()) {
@@ -44,14 +53,11 @@ const CollaborationWindow = () => {
     // Simulate new collaborator joining
     setTimeout(() => {
       const name = inviteEmail.split('@')[0];
-      setCollaborators([
-        { 
-          name: name.charAt(0).toUpperCase() + name.slice(1), 
-          status: 'online',
-          lastEdit: 'Just joined'
-        }
-      ]);
-      setHasCollaborators(true);
+      setCollaborators(prev => [...prev, {
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        status: 'online',
+        lastEdit: 'Just joined'
+      }]);
       toast.success(`${name} joined the collaboration`);
     }, 3000);
   };
@@ -64,8 +70,20 @@ const CollaborationWindow = () => {
         text: message,
         timestamp: new Date()
       };
-      setMessages([...messages, newMessage]);
+      setMessages(prev => [...prev, newMessage]);
       setMessage('');
+
+      // Simulate AI response
+      setTimeout(() => {
+        const aiMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: 'Research AI',
+          text: 'I've analyzed your comment. Would you like me to help you research this topic further or make edits to the report?',
+          timestamp: new Date(),
+          isAI: true
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      }, 1500);
     }
   };
 
@@ -80,135 +98,98 @@ const CollaborationWindow = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  if (!hasCollaborators) {
-    return (
-      <div className="bg-[#1A1F2C] text-white p-4 rounded-lg flex flex-col h-full justify-center items-center">
-        <Users className="h-12 w-12 mb-4 text-violet-400" />
-        <h3 className="text-lg font-semibold mb-2">Start Collaborating</h3>
-        <p className="text-sm text-gray-400 mb-4 text-center">
-          Invite team members to collaborate on this research report
-        </p>
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+        <div className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          <h3 className="text-lg font-semibold">Collaborators</h3>
+          <span className="text-sm text-green-400">
+            {collaborators.filter(c => c.status === 'online').length} online
+          </span>
+        </div>
         <Button 
+          size="sm" 
+          variant="secondary"
           onClick={() => setShowInviteDialog(true)}
-          className="gap-2"
+          className="h-8 px-2"
         >
           <UserPlus className="h-4 w-4" />
-          Invite Collaborators
         </Button>
-
-        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-          <DialogContent className="bg-[#1A1F2C] text-white border-gray-700">
-            <DialogHeader>
-              <DialogTitle>Invite Collaborator</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <p className="text-sm text-gray-300">
-                Enter the email address of the person you want to collaborate with on this research report.
-              </p>
-              <Input
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="colleague@example.com"
-                className="bg-[#2A2F3C] border-gray-700 text-white"
-              />
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="ghost" onClick={() => setShowInviteDialog(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleInvite}>
-                  Send Invite
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-[#1A1F2C] text-white p-4 rounded-lg flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Collaborators
-        </h3>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-green-400">{collaborators.filter(c => c.status === 'online').length} online</span>
-          <Button 
-            size="sm" 
-            variant="secondary"
-            onClick={() => setShowInviteDialog(true)}
-            className="h-8 px-2"
-          >
-            <UserPlus className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
 
-      <div className="flex-1 space-y-3 mb-4 overflow-y-auto">
-        {collaborators.map((collaborator, index) => (
-          <div
-            key={index}
-            className="flex items-start gap-3 p-2 rounded-lg bg-[#2A2F3C]"
-          >
-            <div className="relative">
-              <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center">
-                {collaborator.name.charAt(0)}
+      <div className="flex flex-row h-[300px]">
+        <div className="w-1/3 border-r border-gray-800 overflow-y-auto p-4 space-y-3">
+          {collaborators.map((collaborator, index) => (
+            <div
+              key={index}
+              className="flex items-start gap-3 p-2 rounded-lg bg-[#2A2F3C]"
+            >
+              <div className="relative">
+                <div className={`w-8 h-8 rounded-full ${collaborator.isAI ? 'bg-violet-800' : 'bg-violet-600'} flex items-center justify-center`}>
+                  {collaborator.isAI ? <Bot className="h-4 w-4" /> : collaborator.name.charAt(0)}
+                </div>
+                <div 
+                  className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1A1F2C] ${
+                    collaborator.status === 'online' ? 'bg-green-500' : 'bg-gray-500'
+                  }`}
+                />
               </div>
-              <div 
-                className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1A1F2C] ${
-                  collaborator.status === 'online' ? 'bg-green-500' : 'bg-gray-500'
-                }`}
-              />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{collaborator.name}</span>
-                <span className={`text-xs ${
-                  collaborator.status === 'online' ? 'text-green-400' : 'text-gray-400'
-                }`}>
-                  {collaborator.status}
-                </span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{collaborator.name}</span>
+                  <span className={`text-xs ${
+                    collaborator.status === 'online' ? 'text-green-400' : 'text-gray-400'
+                  }`}>
+                    {collaborator.status}
+                  </span>
+                </div>
+                {collaborator.lastEdit && (
+                  <p className="text-sm text-gray-400 flex items-center gap-1">
+                    {collaborator.isAI ? <Bot className="h-3 w-3" /> : <Edit className="h-3 w-3" />}
+                    {collaborator.lastEdit}
+                  </p>
+                )}
               </div>
-              {collaborator.lastEdit && (
-                <p className="text-sm text-gray-400 flex items-center gap-1">
-                  <Edit className="h-3 w-3" />
-                  {collaborator.lastEdit}
-                </p>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="border-t border-gray-800 pt-3 mb-3">
-        <h4 className="text-sm font-medium mb-2">Chat</h4>
-        <div className="space-y-3 max-h-40 overflow-y-auto mb-3">
-          {messages.map((msg) => (
-            <div key={msg.id} className={`p-2 rounded-lg ${msg.sender === 'You' ? 'bg-violet-800 ml-6' : 'bg-[#2A2F3C] mr-6'}`}>
-              <div className="flex justify-between items-start">
-                <span className="font-medium text-sm">{msg.sender}</span>
-                <span className="text-xs text-gray-400">{formatTime(msg.timestamp)}</span>
-              </div>
-              <p className="text-sm mt-1">{msg.text}</p>
             </div>
           ))}
         </div>
-      </div>
 
-      <div className="mt-auto">
-        <div className="flex gap-2">
-          <Input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            className="flex-1 bg-[#2A2F3C] border-gray-700 text-white"
-          />
-          <Button size="icon" variant="secondary" onClick={handleSendMessage}>
-            <Send className="h-4 w-4" />
-          </Button>
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {messages.map((msg) => (
+              <div 
+                key={msg.id} 
+                className={`p-2 rounded-lg ${
+                  msg.isAI ? 'bg-violet-800/20 mr-6' : 'bg-[#2A2F3C] ml-6'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <span className="font-medium text-sm flex items-center gap-1">
+                    {msg.isAI && <Bot className="h-3 w-3" />}
+                    {msg.sender}
+                  </span>
+                  <span className="text-xs text-gray-400">{formatTime(msg.timestamp)}</span>
+                </div>
+                <p className="text-sm mt-1">{msg.text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-4 border-t border-gray-800">
+            <div className="flex gap-2">
+              <Input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type a message..."
+                className="flex-1 bg-[#2A2F3C] border-gray-700 text-white"
+              />
+              <Button size="icon" variant="secondary" onClick={handleSendMessage}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
