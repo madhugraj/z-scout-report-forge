@@ -1,24 +1,19 @@
 
 import React, { useState } from 'react';
-import { Upload, File, Link, AlertCircle, X, ChevronLeft, Check, Clock } from 'lucide-react';
+import { Upload, Link, AlertCircle, X, ChevronLeft, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 
 const UploadPanel: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [urls, setUrls] = useState<string[]>([]);
   const [newUrl, setNewUrl] = useState('');
-  const [useDocuments, setUseDocuments] = useState(true);
-  const [useWebSources, setUseWebSources] = useState(true);
-  const [useAcademic, setUseAcademic] = useState(true);
-  const [queryText, setQueryText] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const uploadType = location.state?.uploadType || 'drive';
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -56,149 +51,92 @@ const UploadPanel: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (files.length === 0 && urls.length === 0 && !queryText) {
-      toast.error('Please upload files, add URLs, or enter a research question');
+    if ((uploadType === 'computer' && files.length === 0) || 
+        (uploadType === 'url' && urls.length === 0)) {
+      toast.error('Please add required content before proceeding');
       return;
     }
     
     setIsUploading(true);
     
-    // Simulate processing
     setTimeout(() => {
       setIsUploading(false);
-      
-      // Navigate to dashboard with state
       navigate('/dashboard', { 
         state: { 
           files: files.map(f => f.name),
           urls,
-          useDocuments,
-          useWebSources,
-          useAcademic,
-          query: queryText,
           source: 'upload'
         } 
       });
       
-      toast.success('Files and references added successfully');
+      toast.success('Content added successfully');
     }, 2000);
   };
 
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <div className="container max-w-5xl py-8">
-        <Button 
-          variant="ghost" 
-          className="mb-8 pl-0 hover:bg-transparent hover:text-primary"
-          onClick={() => navigate('/')}
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back to search
-        </Button>
-
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">Upload & References</h1>
-            <p className="text-muted-foreground mt-2">
-              Add your research materials and set preferences for your report
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <Tabs defaultValue="upload" className="w-full">
-                <TabsList className="mb-4 grid grid-cols-4 w-full max-w-md">
-                  <TabsTrigger value="upload">Local</TabsTrigger>
-                  <TabsTrigger value="gdrive">Google Drive</TabsTrigger>
-                  <TabsTrigger value="onedrive">OneDrive</TabsTrigger>
-                  <TabsTrigger value="sharepoint">SharePoint</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="upload" className="space-y-4">
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                    <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Drag and drop your files here</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Support for PDF, DOCX, TXT, CSV, and more
-                    </p>
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => document.getElementById('file-upload')?.click()}
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Choose files
-                    </Button>
-                    <input
-                      id="file-upload"
-                      type="file"
-                      multiple
-                      onChange={handleFileChange}
-                      className="hidden"
-                      accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
-                    />
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="gdrive">
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                    <File className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Connect Google Drive</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Select documents directly from your Google Drive
-                    </p>
-                    <Button type="button" variant="outline" disabled>
-                      Connect Google Drive
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-4">
-                      (This is a demo feature)
-                    </p>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="onedrive" className="space-y-4">
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                    <File className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Connect OneDrive</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Select documents directly from your OneDrive
-                    </p>
-                    <Button type="button" variant="outline" disabled>
-                      Connect OneDrive
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-4">
-                      (This is a demo feature)
-                    </p>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="sharepoint" className="space-y-4">
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                    <File className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Connect SharePoint</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Select documents directly from your SharePoint
-                    </p>
-                    <Button type="button" variant="outline" disabled>
-                      Connect SharePoint
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-4">
-                      (This is a demo feature)
-                    </p>
-                  </div>
-                </TabsContent>
-              </Tabs>
+  const renderContent = () => {
+    switch (uploadType) {
+      case 'drive':
+        return (
+          <div className="space-y-6">
+            <div className="border-2 border-dashed rounded-lg p-8 text-center">
+              <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Connect Cloud Storage</h3>
+              <p className="text-muted-foreground mb-6">
+                Select documents directly from your cloud storage services
+              </p>
+              <div className="space-y-4">
+                <Button type="button" variant="outline" className="w-full max-w-sm" disabled>
+                  Connect Google Drive
+                </Button>
+                <Button type="button" variant="outline" className="w-full max-w-sm" disabled>
+                  Connect OneDrive
+                </Button>
+                <Button type="button" variant="outline" className="w-full max-w-sm" disabled>
+                  Connect Dropbox
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-4">
+                (Cloud storage integration coming soon)
+              </p>
             </div>
-            
-            {/* Files list */}
+          </div>
+        );
+
+      case 'computer':
+        return (
+          <div className="space-y-6">
+            <div className="border-2 border-dashed rounded-lg p-8 text-center">
+              <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Upload Local Files</h3>
+              <p className="text-muted-foreground mb-4">
+                Support for PDF, DOCX, TXT, CSV, and more
+              </p>
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => document.getElementById('file-upload')?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Choose files
+              </Button>
+              <input
+                id="file-upload"
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
+              />
+            </div>
+
             {files.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm p-4 border">
-                <h3 className="font-medium mb-2">Uploaded Files</h3>
+                <h3 className="font-medium mb-2">Selected Files</h3>
                 <div className="space-y-2">
                   {files.map((file, index) => (
                     <div key={index} className="flex items-center justify-between bg-muted/40 rounded-md p-2">
                       <div className="flex items-center">
-                        <File className="h-4 w-4 text-muted-foreground mr-2" />
+                        <FileText className="h-4 w-4 text-muted-foreground mr-2" />
                         <span className="text-sm">{file.name}</span>
                       </div>
                       <Button 
@@ -215,10 +153,14 @@ const UploadPanel: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        );
 
-            {/* URL Reference section */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="font-medium mb-4">URL References</h3>
+      case 'url':
+        return (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl p-6 border">
+              <h3 className="font-medium mb-4">Add URL References</h3>
               <div className="flex items-center gap-2 mb-4">
                 <Input
                   type="text"
@@ -238,7 +180,7 @@ const UploadPanel: React.FC = () => {
               </div>
               
               {urls.length > 0 && (
-                <div className="space-y-2 mt-4">
+                <div className="space-y-2">
                   {urls.map((url, index) => (
                     <div key={index} className="flex items-center justify-between bg-muted/40 rounded-md p-2">
                       <div className="flex items-center overflow-hidden">
@@ -259,101 +201,72 @@ const UploadPanel: React.FC = () => {
                 </div>
               )}
               
-              {urls.length === 0 && files.length === 0 && (
+              {urls.length === 0 && (
                 <div className="bg-muted/30 rounded-lg p-4 flex items-start">
                   <AlertCircle className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
                   <div>
                     <p className="text-sm text-muted-foreground">
-                      Add URLs to specific sources you want to reference in your report. 
+                      Add URLs to specific sources you want to reference. 
                       For example: research papers, news articles, or web pages.
                     </p>
                   </div>
                 </div>
               )}
             </div>
+          </div>
+        );
+    }
+  };
 
-            {/* Research question */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="font-medium mb-4">Research Question</h3>
-              <Input
-                type="text"
-                placeholder="What is your research question? (optional if uploading files)"
-                value={queryText}
-                onChange={(e) => setQueryText(e.target.value)}
-                className="mb-2"
-              />
-              <p className="text-sm text-muted-foreground">
-                For example: "Impact of AI on mental health research" or "Climate change adaptation strategies"
-              </p>
-            </div>
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <div className="container max-w-3xl py-8">
+        <Button 
+          variant="ghost" 
+          className="mb-8 pl-0 hover:bg-transparent hover:text-primary"
+          onClick={() => navigate('/')}
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back to search
+        </Button>
 
-            {/* Source preferences */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="font-medium mb-4">Source Preferences</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="use-documents">Use uploaded documents</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Analyze and extract data from your uploaded files
-                    </p>
-                  </div>
-                  <Switch
-                    id="use-documents"
-                    checked={useDocuments}
-                    onCheckedChange={setUseDocuments}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="use-web">Use real-time web sources</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Search the internet for additional relevant sources
-                    </p>
-                  </div>
-                  <Switch
-                    id="use-web"
-                    checked={useWebSources}
-                    onCheckedChange={setUseWebSources}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="use-academic">Include academic sources</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Search academic databases and journals
-                    </p>
-                  </div>
-                  <Switch
-                    id="use-academic"
-                    checked={useAcademic}
-                    onCheckedChange={setUseAcademic}
-                  />
-                </div>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold">
+              {uploadType === 'drive' && 'Cloud Storage'}
+              {uploadType === 'computer' && 'Upload Files'}
+              {uploadType === 'url' && 'URL References'}
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              {uploadType === 'drive' && 'Connect and import documents from your cloud storage'}
+              {uploadType === 'computer' && 'Upload documents from your computer'}
+              {uploadType === 'url' && 'Add web references and URLs to your research'}
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {renderContent()}
+
+            {(uploadType === 'computer' && files.length > 0) || 
+             (uploadType === 'url' && urls.length > 0) ? (
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isUploading}
+                  className="px-8"
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>Continue</>
+                  )}
+                </Button>
               </div>
-            </div>
-
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isUploading}
-                className="px-8"
-              >
-                {isUploading ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    Generate Report
-                  </>
-                )}
-              </Button>
-            </div>
+            ) : null}
           </form>
         </div>
       </div>
