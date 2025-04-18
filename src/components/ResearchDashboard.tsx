@@ -11,6 +11,7 @@ import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CitationPopover from './CitationPopover';
 import { ResearchImagePanel } from './ResearchImagePanel';
+import CollaborationWindow from './CollaborationWindow';
 import { mockReport, mockReferences } from '@/data/mockData';
 
 interface DashboardState {
@@ -402,37 +403,9 @@ const ResearchDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-80 bg-[#1A1F2C] border-l border-gray-800 flex flex-col">
-        <div className="p-6">
-          <h2 className="text-xl font-semibold mb-6">Follow-up Questions</h2>
-          <div className="space-y-4 mb-6">
-            <Button variant="ghost" className="w-full justify-start text-left">
-              What are the most promising AI applications in mental health?
-            </Button>
-            <Button variant="ghost" className="w-full justify-start text-left">
-              Compare effectiveness of AI vs. traditional therapy approaches
-            </Button>
-            <Button variant="ghost" className="w-full justify-start text-left">
-              What ethical concerns have been raised in recent studies?
-            </Button>
-          </div>
-          
-          <div className="mt-auto pt-4">
-            <div className="space-y-4">
-              <h3 className="font-medium">Ask a question</h3>
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="Type your question..."
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  className="bg-gray-800 border-gray-700"
-                />
-                <Button size="icon">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
+      <div className="w-80 bg-[#1A1F2C] border-l border-gray-800 flex flex-col overflow-hidden">
+        <div className="flex-1 p-4">
+          <CollaborationWindow />
         </div>
       </div>
     </div>
