@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, Link, AlertCircle, X, ChevronLeft, FileText, HardDrive, Globe, Mic, CloudUpload, FolderUp } from 'lucide-react';
+import { Upload, Link, AlertCircle, X, ChevronLeft, FileText, HardDrive, Globe, Mic, CloudUpload, FolderUp, Laptop } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -77,66 +77,63 @@ const UploadPanel: React.FC = () => {
     switch (uploadType) {
       case 'drive':
         return (
-          <div className="space-y-8">
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-100 rounded-2xl p-8 border border-purple-100/50 shadow-lg">
+          <div className="space-y-6">
+            <div className="bg-white/50 backdrop-blur-sm rounded-xl p-8 border shadow-sm">
               <div className="text-center space-y-6">
-                <div className="relative inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-purple-500/10 mb-4 mx-auto">
-                  <HardDrive className="h-12 w-12 text-purple-600" />
+                <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-xl bg-primary/5 mb-2 mx-auto">
+                  <HardDrive className="h-8 w-8 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-3 text-gray-900">Cloud Storage Integration</h3>
-                  <p className="text-muted-foreground text-base max-w-md mx-auto">
+                  <h3 className="text-xl font-semibold mb-2">Cloud Storage</h3>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
                     Select your preferred cloud storage platform to import documents
                   </p>
                 </div>
               </div>
 
-              <div className="mt-10 space-y-4 max-w-xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { 
-                      name: 'Google Drive', 
-                      logo: 'https://www.gstatic.com/images/branding/product/1x/google_drive_2020q4_48dp.png', 
-                      description: 'Import from Google Drive',
-                      bgColor: 'bg-blue-50'
-                    },
-                    { 
-                      name: 'OneDrive', 
-                      logo: 'https://www.microsoft.com/en-us/microsoft-365/blog/wp-content/uploads/sites/2/2020/11/OneDrive-Icon.png', 
-                      description: 'Connect Microsoft OneDrive',
-                      bgColor: 'bg-sky-50'
-                    },
-                    { 
-                      name: 'Dropbox', 
-                      logo: 'https://www.dropbox.com/static/images/logo.svg', 
-                      description: 'Access Dropbox files',
-                      bgColor: 'bg-indigo-50'
-                    }
-                  ].map((service) => (
-                    <Button 
-                      key={service.name}
-                      variant="outline" 
-                      className={`w-full h-auto p-4 flex flex-col items-center justify-center space-y-3 
-                        border-2 border-transparent hover:border-purple-300 
-                        ${service.bgColor} hover:bg-purple-50/50 transition-all duration-300 group`}
-                    >
-                      <div className={`p-3 rounded-xl ${service.bgColor} group-hover:bg-white transition-all`}>
-                        <img 
-                          src={service.logo} 
-                          alt={`${service.name} logo`} 
-                          className="w-10 h-10 object-contain"
-                        />
-                      </div>
-                      <div className="text-center">
-                        <h4 className="font-semibold text-gray-800 group-hover:text-purple-700 transition-colors">
-                          {service.name}
-                        </h4>
-                        <p className="text-xs text-muted-foreground group-hover:text-purple-600 transition-colors">
-                          {service.description}
-                        </p>
-                      </div>
-                    </Button>
-                  ))}
+              <div className="mt-8 max-w-xl mx-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col items-center justify-center space-y-3 
+                      hover:bg-primary/5 transition-all duration-300"
+                  >
+                    <div className="p-3 rounded-lg bg-blue-500/5">
+                      <CloudUpload className="h-6 w-6 text-blue-500" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">Google Drive</p>
+                      <p className="text-xs text-muted-foreground">Import files</p>
+                    </div>
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col items-center justify-center space-y-3 
+                      hover:bg-primary/5 transition-all duration-300"
+                  >
+                    <div className="p-3 rounded-lg bg-sky-500/5">
+                      <CloudUpload className="h-6 w-6 text-sky-500" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">OneDrive</p>
+                      <p className="text-xs text-muted-foreground">Microsoft files</p>
+                    </div>
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col items-center justify-center space-y-3 
+                      hover:bg-primary/5 transition-all duration-300"
+                  >
+                    <div className="p-3 rounded-lg bg-blue-600/5">
+                      <CloudUpload className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">Dropbox</p>
+                      <p className="text-xs text-muted-foreground">Cloud files</p>
+                    </div>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -308,45 +305,20 @@ const UploadPanel: React.FC = () => {
 
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-2xl font-semibold">
               {uploadType === 'drive' && 'Cloud Storage'}
               {uploadType === 'computer' && 'Upload Files'}
               {uploadType === 'url' && 'URL References'}
             </h1>
-            <p className="text-muted-foreground mt-2 text-lg">
+            <p className="text-muted-foreground mt-1">
               {uploadType === 'drive' && 'Connect and import documents from your cloud storage'}
               {uploadType === 'computer' && 'Upload documents from your computer'}
               {uploadType === 'url' && 'Add web references and URLs to your research'}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {renderContent()}
-
-            {((uploadType === 'computer' && files.length > 0) || 
-              (uploadType === 'url' && urls.length > 0)) && (
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={isUploading}
-                  className={cn(
-                    "px-8",
-                    uploadType === 'computer' && "bg-orange-600 hover:bg-orange-700",
-                    uploadType === 'url' && "bg-green-600 hover:bg-green-700"
-                  )}
-                >
-                  {isUploading ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>Continue</>
-                  )}
-                </Button>
-              </div>
-            )}
           </form>
         </div>
       </div>
