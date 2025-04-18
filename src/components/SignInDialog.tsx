@@ -2,7 +2,8 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Google, Mail, Github, Building2 } from 'lucide-react';
+import { Mail, Github, Building2, Search } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
 
 interface SignInDialogProps {
   open: boolean;
@@ -13,9 +14,9 @@ const SignInDialog: React.FC<SignInDialogProps> = ({ open, onOpenChange }) => {
   const handleSignIn = (provider: string) => {
     // Simulate sign in
     console.log(`Signing in with ${provider}`);
+    toast.success(`Signed in with ${provider}`);
     setTimeout(() => {
       onOpenChange(false);
-      // Show success toast
     }, 1000);
   };
 
@@ -31,7 +32,7 @@ const SignInDialog: React.FC<SignInDialogProps> = ({ open, onOpenChange }) => {
             className="w-full py-6 text-lg flex gap-4"
             onClick={() => handleSignIn('Google')}
           >
-            <Google className="h-5 w-5" />
+            <Search className="h-5 w-5" />
             Continue with Google
           </Button>
           <Button 
