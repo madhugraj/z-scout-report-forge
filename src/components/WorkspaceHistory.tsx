@@ -1,0 +1,244 @@
+
+import React from 'react';
+import { Clock, Filter, ChevronRight, Tag, MoreHorizontal, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/sonner';
+
+const WorkspaceHistory: React.FC = () => {
+  const navigate = useNavigate();
+
+  const researchHistory = [
+    {
+      id: 1,
+      title: "Impact of AI on Mental Health Research",
+      date: "2025-04-17",
+      tags: ["AI & Health", "Mental Health", "Research"],
+      lastUpdated: "Yesterday",
+    },
+    {
+      id: 2,
+      title: "Climate Change Adaptation Strategies",
+      date: "2025-04-15",
+      tags: ["Climate", "Adaptation", "Policy"],
+      lastUpdated: "3 days ago",
+    },
+    {
+      id: 3,
+      title: "Quantum Computing Applications in Drug Discovery",
+      date: "2025-04-10",
+      tags: ["Quantum", "Pharma", "Technology"],
+      lastUpdated: "1 week ago",
+    },
+    {
+      id: 4,
+      title: "Sustainable Urban Development Models",
+      date: "2025-04-05",
+      tags: ["Urban", "Sustainability", "Planning"],
+      lastUpdated: "2 weeks ago",
+    },
+    {
+      id: 5,
+      title: "Neural Interfaces for Accessibility",
+      date: "2025-03-28",
+      tags: ["Neuroscience", "Accessibility", "Technology"],
+      lastUpdated: "3 weeks ago",
+    },
+  ];
+
+  const handleRegenerate = (id: number) => {
+    toast.success(`Regenerating report #${id}`);
+    setTimeout(() => {
+      navigate('/dashboard', { 
+        state: { 
+          query: researchHistory.find(r => r.id === id)?.title,
+          source: 'history'
+        } 
+      });
+    }, 1000);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container max-w-6xl py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Research Workspace</h1>
+          <p className="text-muted-foreground">
+            Your research memory, versioned and always within reach
+          </p>
+        </div>
+
+        <div className="flex space-x-6">
+          {/* Sidebar */}
+          <div className="w-64 space-y-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Recent Reports
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm space-y-1 pb-3">
+                <Button variant="ghost" className="w-full justify-start font-normal">All Reports</Button>
+                <Button variant="ghost" className="w-full justify-start font-normal">Last 7 Days</Button>
+                <Button variant="ghost" className="w-full justify-start font-normal">Last 30 Days</Button>
+                <Button variant="ghost" className="w-full justify-start font-normal">Archived</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
+                  <Tag className="h-4 w-4 mr-2" />
+                  Research Topics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm space-y-1 pb-3">
+                <Button variant="ghost" className="w-full justify-start font-normal">
+                  <Badge variant="outline" className="mr-2 bg-blue-100">AI & Health</Badge>
+                  <span className="text-muted-foreground ml-auto">3</span>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start font-normal">
+                  <Badge variant="outline" className="mr-2 bg-green-100">Climate</Badge>
+                  <span className="text-muted-foreground ml-auto">2</span>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start font-normal">
+                  <Badge variant="outline" className="mr-2 bg-purple-100">Technology</Badge>
+                  <span className="text-muted-foreground ml-auto">5</span>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start font-normal">
+                  <Badge variant="outline" className="mr-2 bg-amber-100">Policy</Badge>
+                  <span className="text-muted-foreground ml-auto">1</span>
+                </Button>
+                <Button variant="ghost" className="w-full justify-start font-normal text-primary">
+                  View all tags...
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main content */}
+          <div className="flex-1">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center space-x-4">
+                <div className="relative w-64">
+                  <Input
+                    type="text"
+                    placeholder="Search research..."
+                    className="pl-10"
+                  />
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                    <Filter className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </div>
+              <Button onClick={() => navigate('/')}>
+                New Research
+              </Button>
+            </div>
+
+            <ScrollArea className="h-[calc(100vh-220px)]">
+              <div className="space-y-4 pr-4">
+                {researchHistory.map((item) => (
+                  <Card key={item.id} className="hover:border-primary/50 transition-colors">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-xl">{item.title}</CardTitle>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleRegenerate(item.id)}>
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Regenerate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Clock className="h-4 w-4 mr-2" />
+                              View Version History
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive">
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex space-x-2 mb-2">
+                        {item.tags.map((tag, idx) => (
+                          <Badge key={idx} variant="outline" className="bg-primary/10">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Created: {item.date} • Last updated: {item.lastUpdated}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="pt-0">
+                      <div className="flex justify-between w-full">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleRegenerate(item.id)}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Regenerate
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => {
+                            navigate('/dashboard', { 
+                              state: { 
+                                query: item.title,
+                                source: 'history'
+                              } 
+                            });
+                          }}
+                        >
+                          <span>View Report</span>
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default WorkspaceHistory;

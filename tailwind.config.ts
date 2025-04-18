@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -52,6 +53,14 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				research: {
+					blue: '#4F46E5',
+					purple: '#8B5CF6',
+					lightPurple: '#C4B5FD',
+					dark: '#1E293B',
+					gray: '#94A3B8',
+					lightGray: '#F1F5F9',
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -84,11 +93,35 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-subtle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.7' }
+				},
+				typing: {
+					from: { width: '0' },
+					to: { width: '100%' }
+				},
+				blink: {
+					'50%': { borderColor: 'transparent' }
+				},
+				'fade-in': {
+					from: { opacity: '0', transform: 'translateY(10px)' },
+					to: { opacity: '1', transform: 'translateY(0)' }
+				},
+				'slide-in': {
+					from: { transform: 'translateX(100%)' },
+					to: { transform: 'translateX(0)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite',
+				typing: 'typing 3.5s steps(40, end)',
+				'cursor-blink': 'blink 1s step-end infinite',
+				'fade-in': 'fade-in 0.5s ease-out',
+				'slide-in': 'slide-in 0.5s ease-out'
 			}
 		}
 	},
