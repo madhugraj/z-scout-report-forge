@@ -1,15 +1,18 @@
+
 import React, { useState } from 'react';
-import { Search, Upload, Globe, GraduationCap, FileText, Mic } from 'lucide-react';
+import { Search, Upload, Globe, GraduationCap, FileText, Mic, CloudUpload, GoogleDrive, FolderUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import SignInDialog from './SignInDialog';
+import { cn } from '@/lib/utils';
 
 const LandingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [showUploadOptions, setShowUploadOptions] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,10 +36,14 @@ const LandingPage: React.FC = () => {
     }, 1500);
   };
 
+  const handleUpload = (type: string) => {
+    navigate('/upload', { state: { uploadType: type } });
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="w-full border-b">
+      <header className="w-full border-b bg-white/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
@@ -55,71 +62,115 @@ const LandingPage: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
         <div className="w-full max-w-3xl mx-auto space-y-8">
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-              What do you want to know?
+          <div className="text-center space-y-4 animate-fade-in">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-balance">
+              The research assistant you always needed
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Ask anything. Get comprehensive research insights instantly.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
+              Just upload documents or reference live links, or ask, and get intelligent, cited answers grounded in your documents and trusted sources.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="w-full">
-            <div className="relative">
-              <div className="relative rounded-xl border bg-background shadow-sm transition-colors focus-within:border-primary">
+          <div className="relative">
+            <div 
+              className={cn(
+                "fixed inset-x-4 top-24 z-50 mx-auto max-w-2xl overflow-hidden rounded-2xl border bg-background shadow-2xl transition-all",
+                showUploadOptions ? "block" : "hidden"
+              )}
+            >
+              <div className="flex flex-col divide-y">
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-3 p-4 h-auto hover:bg-accent"
+                  onClick={() => handleUpload('drive')}
+                >
+                  <GoogleDrive className="h-5 w-5 text-blue-500" />
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Connect to Google Drive</span>
+                    <span className="text-sm text-muted-foreground">Access your Drive documents</span>
+                  </div>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-3 p-4 h-auto hover:bg-accent"
+                  onClick={() => handleUpload('computer')}
+                >
+                  <FolderUp className="h-5 w-5 text-orange-500" />
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Upload from computer</span>
+                    <span className="text-sm text-muted-foreground">PDF, Word, or text files</span>
+                  </div>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-3 p-4 h-auto hover:bg-accent"
+                  onClick={() => handleUpload('url')}
+                >
+                  <Globe className="h-5 w-5 text-green-500" />
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Add URL reference</span>
+                    <span className="text-sm text-muted-foreground">Import from web pages</span>
+                  </div>
+                </Button>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="w-full" onClick={() => setShowUploadOptions(false)}>
+              <div className="relative rounded-xl border bg-background shadow-lg transition-colors focus-within:border-primary">
                 <Input
                   type="text"
-                  placeholder="Ask anything..."
-                  className="pl-12 pr-16 py-6 text-lg border-0 focus-visible:ring-0 rounded-xl"
+                  placeholder="Ask a question or upload documents..."
+                  className="pl-12 pr-16 py-7 text-lg border-0 focus-visible:ring-0 rounded-xl"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
-                  disabled={isGenerating}
-                >
-                  <Mic className="h-5 w-5" />
-                </Button>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="hover:bg-accent"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowUploadOptions(!showUploadOptions);
+                    }}
+                  >
+                    <CloudUpload className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    disabled={isGenerating}
+                  >
+                    <Mic className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
 
-              <div className="mt-2 flex gap-2">
+              <div className="mt-4 flex flex-wrap gap-2 justify-center">
                 <Button variant="outline" size="sm" className="rounded-full">
                   <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button>
-                <Button variant="outline" size="sm" className="rounded-full">
-                  <Globe className="h-4 w-4 mr-2" />
                   Research
                 </Button>
                 <Button variant="outline" size="sm" className="rounded-full">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Documents
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Documents
+                </Button>
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  Academic Search
                 </Button>
               </div>
-            </div>
-          </form>
-
-          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-            <Button variant="link" size="sm" className="text-muted-foreground">
-              <GraduationCap className="h-4 w-4 mr-2" />
-              Academic Search
-            </Button>
-            <span>•</span>
-            <Button variant="link" size="sm" className="text-muted-foreground">
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Documents
-            </Button>
+            </form>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t">
+      <footer className="border-t bg-white/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-4">
             <span>© 2025 Z-Scout</span>
