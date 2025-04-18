@@ -181,185 +181,165 @@ const TableDataView: React.FC<TableDataViewProps> = ({ activeTab = 'tables' }) =
 
   return (
     <div className={`h-full flex flex-col ${isMaximized ? 'fixed inset-0 z-50 bg-background' : ''}`}>
-      {selectedTable === null ? (
-        <div className="h-full flex flex-col overflow-auto p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-700">Data Tables & Analysis</h3>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={toggleMaximize}
-              className="flex items-center gap-1"
-            >
-              {isMaximized ? (
-                <>
-                  <Minimize2 className="h-4 w-4" />
-                  <span>Minimize</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="h-4 w-4" />
-                  <span>Maximize</span>
-                </>
-              )}
-            </Button>
-          </div>
-          
-          <ResizablePanelGroup 
-            direction="horizontal" 
-            className="flex-1 rounded-lg border"
+      <div className="h-full flex flex-col overflow-auto p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-gray-700">Data Tables & Analysis</h3>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={toggleMaximize}
+            className="flex items-center gap-1"
           >
-            <ResizablePanel defaultSize={30} minSize={20}>
-              <div className="h-full bg-white p-4 overflow-y-auto">
-                <h4 className="text-sm font-medium mb-3 text-gray-700">Available Tables</h4>
-                <div className="grid gap-2">
-                  {tableData.map((table) => (
-                    <div 
-                      key={table.id} 
-                      className="
-                        flex items-center justify-between 
-                        bg-white border border-gray-200 
-                        rounded-lg 
-                        p-3 
-                        hover:bg-gray-50 
-                        transition-colors 
-                        cursor-pointer
-                        group
-                      "
-                      onClick={() => handleTableSelect(table.id)}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <FileText className="h-5 w-5 text-neutral-500 group-hover:text-primary transition-colors" />
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-800 group-hover:text-primary transition-colors">
-                            {table.title}
-                          </h4>
-                          <p className="text-xs text-gray-500">
-                            {table.source} • {table.date}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownload(table.title);
-                          }}
-                        >
-                          <Download className="h-4 w-4 text-neutral-400 group-hover:text-primary" />
-                        </Button>
+            {isMaximized ? (
+              <>
+                <Minimize2 className="h-4 w-4" />
+                <span>Minimize</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="h-4 w-4" />
+                <span>Maximize</span>
+              </>
+            )}
+          </Button>
+        </div>
+        
+        <ResizablePanelGroup 
+          direction="horizontal" 
+          className="flex-1 rounded-lg border"
+        >
+          <ResizablePanel defaultSize={30} minSize={20}>
+            <div className="h-full bg-white p-4 overflow-y-auto">
+              <h4 className="text-sm font-medium mb-3 text-gray-700">Available Tables</h4>
+              <div className="grid gap-2">
+                {tableData.map((table) => (
+                  <div 
+                    key={table.id} 
+                    className="
+                      flex items-center justify-between 
+                      bg-white border border-gray-200 
+                      rounded-lg 
+                      p-3 
+                      hover:bg-gray-50 
+                      transition-colors 
+                      cursor-pointer
+                      group
+                    "
+                    onClick={() => handleTableSelect(table.id)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <FileText className="h-5 w-5 text-neutral-500 group-hover:text-primary transition-colors" />
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-800 group-hover:text-primary transition-colors">
+                          {table.title}
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          {table.source} • {table.date}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(table.title);
+                        }}
+                      >
+                        <Download className="h-4 w-4 text-neutral-400 group-hover:text-primary" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </ResizablePanel>
-            
-            <ResizableHandle withHandle />
-            
-            <ResizablePanel defaultSize={70}>
-              <div className="h-full flex flex-col bg-gray-50 p-4">
-                <div className="flex-1 overflow-auto">
+            </div>
+          </ResizablePanel>
+          
+          <ResizableHandle withHandle />
+          
+          <ResizablePanel defaultSize={70}>
+            <div className="h-full flex flex-col bg-gray-50 p-4">
+              {selectedTable !== null ? (
+                <div className="flex-1 flex flex-col h-full bg-white rounded-lg shadow-sm border">
+                  <div className="flex justify-between items-center px-6 py-4 border-b">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-primary" />
+                      <h2 className="text-lg font-medium text-gray-900">
+                        {tableData.find(table => table.id === selectedTable)?.title}
+                      </h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={toggleViewMode}
+                        className="flex gap-1 items-center"
+                      >
+                        {viewMode === 'table' ? (
+                          <>
+                            <BarChart className="h-4 w-4" />
+                            <span>Chart View</span>
+                          </>
+                        ) : (
+                          <>
+                            <List className="h-4 w-4" />
+                            <span>Table View</span>
+                          </>
+                        )}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={handleCloseTable}>
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 overflow-auto p-6">
+                    {viewMode === 'table' ? (
+                      <div className="bg-white rounded-lg p-6">
+                        <h3 className="text-md font-medium mb-4 text-gray-700">
+                          {tableData.find(table => table.id === selectedTable)?.title} - Data Overview
+                        </h3>
+                        
+                        <Table>
+                          <TableCaption>
+                            Source: {tableData.find(table => table.id === selectedTable)?.source}
+                          </TableCaption>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Metric</TableHead>
+                              <TableHead>AI-Assisted Treatment</TableHead>
+                              <TableHead>Traditional Treatment</TableHead>
+                              <TableHead>Difference</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {sampleTableContent.map((row, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">{row.metric}</TableCell>
+                                <TableCell>{row.ai_treatment}</TableCell>
+                                <TableCell>{row.traditional}</TableCell>
+                                <TableCell className={row.difference.startsWith('+') ? 'text-green-600' : 'text-red-600'}>
+                                  {row.difference}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : renderChartView()}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
                   {renderDummyTableImage()}
                 </div>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </div>
-      ) : (
-        <div className="flex-1 flex flex-col h-full">
-          <div className="flex justify-between items-center px-6 py-4 border-b">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-medium text-gray-900">
-                {tableData.find(table => table.id === selectedTable)?.title}
-              </h2>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={toggleViewMode}
-                className="flex gap-1 items-center"
-              >
-                {viewMode === 'table' ? (
-                  <>
-                    <BarChart className="h-4 w-4" />
-                    <span>Chart View</span>
-                  </>
-                ) : (
-                  <>
-                    <List className="h-4 w-4" />
-                    <span>Table View</span>
-                  </>
-                )}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={toggleMaximize}
-                className="flex items-center gap-1"
-              >
-                {isMaximized ? (
-                  <>
-                    <Minimize2 className="h-4 w-4" />
-                    <span>Minimize</span>
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="h-4 w-4" />
-                    <span>Maximize</span>
-                  </>
-                )}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleCloseTable}>
-                Close
-              </Button>
-            </div>
-          </div>
-          
-          <div className="flex-1 overflow-auto bg-gray-50 p-6">
-            <div className="max-w-4xl mx-auto">
-              {viewMode === 'table' ? (
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h3 className="text-md font-medium mb-4 text-gray-700">
-                    {tableData.find(table => table.id === selectedTable)?.title} - Data Overview
-                  </h3>
-                  
-                  <Table>
-                    <TableCaption>
-                      Source: {tableData.find(table => table.id === selectedTable)?.source}
-                    </TableCaption>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Metric</TableHead>
-                        <TableHead>AI-Assisted Treatment</TableHead>
-                        <TableHead>Traditional Treatment</TableHead>
-                        <TableHead>Difference</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sampleTableContent.map((row, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">{row.metric}</TableCell>
-                          <TableCell>{row.ai_treatment}</TableCell>
-                          <TableCell>{row.traditional}</TableCell>
-                          <TableCell className={row.difference.startsWith('+') ? 'text-green-600' : 'text-red-600'}>
-                            {row.difference}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : renderChartView()}
-            </div>
-          </div>
-        </div>
-      )}
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
     </div>
   );
 };
