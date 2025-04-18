@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   FileText, Image, Table, BookOpen, MessageSquare, Download, Share2, 
-  ChevronRight, ExternalLink, Edit, Copy, Info, ChevronDown, Search, Send
+  ChevronRight, ExternalLink, Edit, Copy, Info, ChevronDown, Search, Send,
+  FilePdf
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/sonner';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import CitationPopover from './CitationPopover';
 import ImagePopover from './ImagePopover';
 import TableDataView from './TableDataView';
@@ -25,7 +27,7 @@ const samplePdfs = [
     source: "Journal of Digital Psychiatry",
     date: "2024",
     pages: 12,
-    url: "https://example.com/pdf1.pdf"
+    url: "https://arxiv.org/pdf/2106.05358.pdf"
   },
   {
     id: 2,
@@ -33,7 +35,7 @@ const samplePdfs = [
     source: "AI in Medicine Quarterly",
     date: "2023",
     pages: 28,
-    url: "https://example.com/pdf2.pdf"
+    url: "https://arxiv.org/pdf/2212.04173.pdf"
   },
   {
     id: 3,
@@ -41,7 +43,7 @@ const samplePdfs = [
     source: "Ethics in Healthcare Technology",
     date: "2024",
     pages: 15,
-    url: "https://example.com/pdf3.pdf"
+    url: "https://arxiv.org/pdf/2301.10700.pdf"
   }
 ];
 
@@ -68,6 +70,8 @@ const ResearchDashboard: React.FC = () => {
   const [question, setQuestion] = useState('');
   const [history, setHistory] = useState<{question: string; answer: string}[]>([]);
   const [showHistory, setShowHistory] = useState(true);
+  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
   
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -189,8 +193,28 @@ const ResearchDashboard: React.FC = () => {
   };
 
   const handlePdfPreview = (pdfUrl: string, title: string) => {
-    toast.info(`Opening preview for: ${title}`);
-    window.open(pdfUrl, '_blank');
+    setPdfLoading(true);
+    setSelectedPdf(pdfUrl);
+    toast.info(`Loading PDF: ${title}`);
+    setTimeout(() => setPdfLoading(false), 1000);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const imageId = e.dataTransfer.getData('text/plain');
+    if (imageId) {
+      toast.success('Image added to the report');
+    }
+  };
+
+  const closePdfViewer = () => {
+    setSelectedPdf(null);
   };
 
   return (
@@ -305,13 +329,18 @@ const ResearchDashboard: React.FC = () => {
                   <Card key={pdf.id} className="hover:bg-muted/50 transition-colors">
                     <CardHeader className="p-4">
                       <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="text-base font-medium">
-                            {pdf.title}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {pdf.source} • {pdf.date} • {pdf.pages} pages
-                          </p>
+                        <div className="flex items-start space-x-3">
+                          <div className="bg-muted p-2 rounded">
+                            <FilePdf className="h-8 w-8 text-primary" />
+                          </div>
+                          <div className="space-y-1">
+                            <CardTitle className="text-base font-medium">
+                              {pdf.title}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                              {pdf.source} • {pdf.date} • {pdf.pages} pages
+                            </p>
+                          </div>
                         </div>
                         <Button
                           variant="outline"
@@ -319,7 +348,7 @@ const ResearchDashboard: React.FC = () => {
                           onClick={() => handlePdfPreview(pdf.url, pdf.title)}
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
-                          Preview
+                          View PDF
                         </Button>
                       </div>
                     </CardHeader>
@@ -356,72 +385,101 @@ const ResearchDashboard: React.FC = () => {
           </div>
         )}
         
-        <ScrollArea className="flex-1">
-          <div className="max-w-3xl mx-auto py-8 px-4">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold mb-4">
-                {state.query || "Impact of AI on Mental Health Research"}
-              </h1>
-              <div className="flex items-center text-sm text-muted-foreground space-x-4">
-                <span>Generated {new Date().toLocaleDateString()}</span>
-                <span>•</span>
-                <span>{sections.length} sections</span>
-                <span>•</span>
-                <span>{mockReferences.length} sources</span>
-              </div>
+        {selectedPdf ? (
+          <div className="flex-1 flex flex-col">
+            <div className="flex justify-between items-center px-4 py-2 border-b">
+              <h2 className="text-lg font-medium">PDF Viewer</h2>
+              <Button variant="ghost" size="sm" onClick={closePdfViewer}>
+                Close
+              </Button>
             </div>
-            
-            {sections.length > 0 ? (
-              <div className="space-y-8">
-                {sections.map((section, index) => (
-                  <div 
-                    key={index} 
-                    id={`section-${index}`}
-                    className={`space-y-4 ${index === sections.length - 1 && isGenerating ? 'animate-pulse' : ''}`}
-                  >
-                    <h2 className="text-2xl font-semibold">{section.title}</h2>
-                    <div className="prose max-w-none">
-                      {section.content.split('\n\n').map((paragraph, idx) => {
-                        const citationRegex = /\[(\d+)\]/g;
-                        const parts = [];
-                        let lastIndex = 0;
-                        let match;
-                        
-                        while ((match = citationRegex.exec(paragraph)) !== null) {
-                          parts.push(paragraph.substring(lastIndex, match.index));
-                          
-                          const citationNumber = parseInt(match[1]);
-                          parts.push(
-                            <CitationPopover 
-                              key={`${idx}-${citationNumber}`}
-                              reference={mockReferences[citationNumber - 1] || mockReferences[0]} 
-                              index={citationNumber - 1}
-                              inline
-                            />
-                          );
-                          
-                          lastIndex = match.index + match[0].length;
-                        }
-                        
-                        parts.push(paragraph.substring(lastIndex));
-                        
-                        return (
-                          <p key={idx}>
-                            {parts}
-                          </p>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+            {pdfLoading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p>Loading PDF...</p>
+                </div>
               </div>
             ) : (
-              <div className="text-center text-muted-foreground p-12">
-                <div className="animate-pulse">Preparing your report...</div>
-              </div>
+              <iframe 
+                src={`${selectedPdf}#toolbar=1&navpanes=1`} 
+                className="w-full h-full"
+                title="PDF Viewer"
+              />
             )}
           </div>
-        </ScrollArea>
+        ) : (
+          <ScrollArea 
+            className="flex-1"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            <div className="max-w-3xl mx-auto py-8 px-4">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold mb-4">
+                  {state.query || "Impact of AI on Mental Health Research"}
+                </h1>
+                <div className="flex items-center text-sm text-muted-foreground space-x-4">
+                  <span>Generated {new Date().toLocaleDateString()}</span>
+                  <span>•</span>
+                  <span>{sections.length} sections</span>
+                  <span>•</span>
+                  <span>{mockReferences.length} sources</span>
+                </div>
+              </div>
+              
+              {sections.length > 0 ? (
+                <div className="space-y-8">
+                  {sections.map((section, index) => (
+                    <div 
+                      key={index} 
+                      id={`section-${index}`}
+                      className={`space-y-4 ${index === sections.length - 1 && isGenerating ? 'animate-pulse' : ''}`}
+                    >
+                      <h2 className="text-2xl font-semibold">{section.title}</h2>
+                      <div className="prose max-w-none">
+                        {section.content.split('\n\n').map((paragraph, idx) => {
+                          const citationRegex = /\[(\d+)\]/g;
+                          const parts = [];
+                          let lastIndex = 0;
+                          let match;
+                          
+                          while ((match = citationRegex.exec(paragraph)) !== null) {
+                            parts.push(paragraph.substring(lastIndex, match.index));
+                            
+                            const citationNumber = parseInt(match[1]);
+                            parts.push(
+                              <CitationPopover 
+                                key={`${idx}-${citationNumber}`}
+                                reference={mockReferences[citationNumber - 1] || mockReferences[0]} 
+                                index={citationNumber - 1}
+                                inline
+                              />
+                            );
+                            
+                            lastIndex = match.index + match[0].length;
+                          }
+                          
+                          parts.push(paragraph.substring(lastIndex));
+                          
+                          return (
+                            <p key={idx}>
+                              {parts}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground p-12">
+                  <div className="animate-pulse">Preparing your report...</div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        )}
       </div>
       
       <div className="w-96 border-l bg-white flex flex-col">

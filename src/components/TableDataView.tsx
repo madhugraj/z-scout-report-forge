@@ -18,7 +18,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, Info, GripVertical } from 'lucide-react';
+import { Download, ExternalLink, Info, GripVertical, FilePdf } from 'lucide-react';
 import {
   Table,
   TableBody,
