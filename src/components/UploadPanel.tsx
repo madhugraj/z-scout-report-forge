@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { Upload, Link, AlertCircle, X, ChevronLeft, FileText } from 'lucide-react';
+import { Upload, Link, AlertCircle, X, ChevronLeft, FileText, HardDrive, Globe, Laptop, CloudOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
+import { cn } from '@/lib/utils';
 
 const UploadPanel: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -77,73 +78,121 @@ const UploadPanel: React.FC = () => {
     switch (uploadType) {
       case 'drive':
         return (
-          <div className="space-y-6">
-            <div className="border-2 border-dashed rounded-lg p-8 text-center">
-              <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Connect Cloud Storage</h3>
-              <p className="text-muted-foreground mb-6">
-                Select documents directly from your cloud storage services
-              </p>
-              <div className="space-y-4">
-                <Button type="button" variant="outline" className="w-full max-w-sm" disabled>
-                  Connect Google Drive
+          <div className="space-y-8">
+            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-8 border shadow-sm">
+              <div className="text-center space-y-6">
+                <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2 mx-auto">
+                  <HardDrive className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Connect Cloud Storage</h3>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                    Securely connect and import documents from your preferred cloud storage services
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8 space-y-4 max-w-md mx-auto">
+                <Button variant="outline" className="w-full justify-start h-14 relative hover:border-primary/50" disabled>
+                  <img src="https://www.google.com/images/about/drive.png" alt="" className="w-6 h-6 mr-3" />
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Google Drive</span>
+                    <span className="text-xs text-muted-foreground">Connect your Drive account</span>
+                  </div>
+                  <CloudOff className="h-4 w-4 text-muted-foreground absolute right-4" />
                 </Button>
-                <Button type="button" variant="outline" className="w-full max-w-sm" disabled>
-                  Connect OneDrive
+                
+                <Button variant="outline" className="w-full justify-start h-14 relative hover:border-primary/50" disabled>
+                  <img src="https://www.microsoft.com/onedrive.png" alt="" className="w-6 h-6 mr-3" />
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">OneDrive</span>
+                    <span className="text-xs text-muted-foreground">Connect Microsoft OneDrive</span>
+                  </div>
+                  <CloudOff className="h-4 w-4 text-muted-foreground absolute right-4" />
                 </Button>
-                <Button type="button" variant="outline" className="w-full max-w-sm" disabled>
-                  Connect Dropbox
+                
+                <Button variant="outline" className="w-full justify-start h-14 relative hover:border-primary/50" disabled>
+                  <img src="https://www.dropbox.com/static/images/logo.png" alt="" className="w-6 h-6 mr-3" />
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Dropbox</span>
+                    <span className="text-xs text-muted-foreground">Connect your Dropbox</span>
+                  </div>
+                  <CloudOff className="h-4 w-4 text-muted-foreground absolute right-4" />
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-4">
-                (Cloud storage integration coming soon)
-              </p>
+
+              <div className="mt-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Cloud storage integration coming soon
+                </p>
+              </div>
             </div>
           </div>
         );
 
       case 'computer':
         return (
-          <div className="space-y-6">
-            <div className="border-2 border-dashed rounded-lg p-8 text-center">
-              <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Upload Local Files</h3>
-              <p className="text-muted-foreground mb-4">
-                Support for PDF, DOCX, TXT, CSV, and more
-              </p>
-              <Button 
-                type="button" 
-                variant="outline"
-                onClick={() => document.getElementById('file-upload')?.click()}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                Choose files
-              </Button>
-              <input
-                id="file-upload"
-                type="file"
-                multiple
-                onChange={handleFileChange}
-                className="hidden"
-                accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
-              />
+          <div className="space-y-8">
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-8 border shadow-sm">
+              <div className="text-center space-y-6">
+                <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-orange-500/10 mb-2 mx-auto">
+                  <Laptop className="h-8 w-8 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Upload Local Files</h3>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                    Select and upload documents directly from your computer
+                  </p>
+                </div>
+
+                <Button 
+                  variant="outline"
+                  className="relative overflow-hidden hover:border-orange-500/50 bg-white"
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  <Upload className="mr-2 h-4 w-4 text-orange-600" />
+                  Choose files to upload
+                  <input
+                    id="file-upload"
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
+                  />
+                </Button>
+
+                <div className="text-xs text-muted-foreground">
+                  Supported formats: PDF, DOCX, TXT, CSV, XLS
+                </div>
+              </div>
             </div>
 
             {files.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm p-4 border">
-                <h3 className="font-medium mb-2">Selected Files</h3>
-                <div className="space-y-2">
+              <div className="bg-white rounded-xl shadow-sm p-6 border">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-medium">Selected Files</h3>
+                  <span className="text-sm text-muted-foreground">{files.length} files</span>
+                </div>
+                <div className="space-y-3">
                   {files.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between bg-muted/40 rounded-md p-2">
-                      <div className="flex items-center">
-                        <FileText className="h-4 w-4 text-muted-foreground mr-2" />
-                        <span className="text-sm">{file.name}</span>
+                    <div key={index} className="flex items-center justify-between bg-muted/30 rounded-lg p-3 pr-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 rounded-lg bg-orange-500/10">
+                          <FileText className="h-4 w-4 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium truncate max-w-[200px]">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
                       </div>
                       <Button 
                         type="button" 
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 hover:bg-orange-500/10 hover:text-orange-600"
                         onClick={() => removeFile(index)}
                       >
                         <X className="h-4 w-4" />
@@ -158,60 +207,74 @@ const UploadPanel: React.FC = () => {
 
       case 'url':
         return (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl p-6 border">
-              <h3 className="font-medium mb-4">Add URL References</h3>
-              <div className="flex items-center gap-2 mb-4">
-                <Input
-                  type="text"
-                  placeholder="Paste URL for specific reference"
-                  value={newUrl}
-                  onChange={(e) => setNewUrl(e.target.value)}
-                  className="flex-1"
-                />
-                <Button 
-                  type="button" 
-                  onClick={addUrl}
-                  className="whitespace-nowrap"
-                >
-                  <Link className="mr-2 h-4 w-4" />
-                  Add URL
-                </Button>
+          <div className="space-y-8">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 border shadow-sm">
+              <div className="text-center space-y-6">
+                <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-500/10 mb-2 mx-auto">
+                  <Globe className="h-8 w-8 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">URL References</h3>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                    Add web references by pasting URLs to include in your research
+                  </p>
+                </div>
               </div>
-              
-              {urls.length > 0 && (
-                <div className="space-y-2">
-                  {urls.map((url, index) => (
-                    <div key={index} className="flex items-center justify-between bg-muted/40 rounded-md p-2">
-                      <div className="flex items-center overflow-hidden">
-                        <Link className="h-4 w-4 text-muted-foreground mr-2 flex-shrink-0" />
-                        <span className="text-sm truncate">{url}</span>
-                      </div>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 flex-shrink-0"
-                        onClick={() => removeUrl(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+
+              <div className="mt-8 max-w-2xl mx-auto">
+                <div className="flex items-center gap-3 mb-6">
+                  <Input
+                    type="text"
+                    placeholder="https://example.com/article"
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button 
+                    type="button" 
+                    onClick={addUrl}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Link className="mr-2 h-4 w-4" />
+                    Add URL
+                  </Button>
+                </div>
+                
+                {urls.length === 0 ? (
+                  <div className="bg-green-500/5 rounded-xl p-4 flex items-start">
+                    <AlertCircle className="h-5 w-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-muted-foreground text-left">
+                      <p className="font-medium text-green-800 mb-1">Getting Started</p>
+                      <p>
+                        Add URLs to specific sources you want to reference. 
+                        Supported content includes research papers, news articles, and web pages.
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
-              
-              {urls.length === 0 && (
-                <div className="bg-muted/30 rounded-lg p-4 flex items-start">
-                  <AlertCircle className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Add URLs to specific sources you want to reference. 
-                      For example: research papers, news articles, or web pages.
-                    </p>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="space-y-3">
+                    {urls.map((url, index) => (
+                      <div key={index} className="flex items-center justify-between bg-white rounded-lg p-3 border">
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className="p-2 rounded-lg bg-green-500/10">
+                            <Link className="h-4 w-4 text-green-600" />
+                          </div>
+                          <span className="text-sm truncate flex-1">{url}</span>
+                        </div>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 ml-2 hover:bg-green-500/10 hover:text-green-600"
+                          onClick={() => removeUrl(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -237,7 +300,7 @@ const UploadPanel: React.FC = () => {
               {uploadType === 'computer' && 'Upload Files'}
               {uploadType === 'url' && 'URL References'}
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-lg">
               {uploadType === 'drive' && 'Connect and import documents from your cloud storage'}
               {uploadType === 'computer' && 'Upload documents from your computer'}
               {uploadType === 'url' && 'Add web references and URLs to your research'}
@@ -247,18 +310,22 @@ const UploadPanel: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-8">
             {renderContent()}
 
-            {(uploadType === 'computer' && files.length > 0) || 
-             (uploadType === 'url' && urls.length > 0) ? (
+            {((uploadType === 'computer' && files.length > 0) || 
+              (uploadType === 'url' && urls.length > 0)) && (
               <div className="flex justify-end">
                 <Button
                   type="submit"
                   size="lg"
                   disabled={isUploading}
-                  className="px-8"
+                  className={cn(
+                    "px-8",
+                    uploadType === 'computer' && "bg-orange-600 hover:bg-orange-700",
+                    uploadType === 'url' && "bg-green-600 hover:bg-green-700"
+                  )}
                 >
                   {isUploading ? (
                     <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
                       Processing...
                     </>
                   ) : (
@@ -266,7 +333,7 @@ const UploadPanel: React.FC = () => {
                   )}
                 </Button>
               </div>
-            ) : null}
+            )}
           </form>
         </div>
       </div>
@@ -275,3 +342,4 @@ const UploadPanel: React.FC = () => {
 };
 
 export default UploadPanel;
+
