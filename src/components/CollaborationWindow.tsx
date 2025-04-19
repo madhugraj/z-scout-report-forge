@@ -153,9 +153,9 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       { name: "LibreOffice Online", url: "https://libreoffice.org/" }
     ];
     
-    toast({
-      title: "Open in External Editor",
-      description: "This feature would integrate with external document editors.",
+    // Fix: Instead of passing an object directly to toast, use separate title and description parameters
+    toast("Open in External Editor", {
+      description: "This feature would integrate with external document editors."
     });
   };
 
