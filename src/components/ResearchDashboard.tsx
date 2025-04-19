@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Share2, Mail, FileDown, Send, Users,
   FileText, Image, Table, BookOpen, MessageSquare, 
-  ChevronRight, ExternalLink, Search, Edit, Download, Maximize2, Minimize2, X
+  ChevronRight, ExternalLink, Search, Edit, Download, Maximize2, Minimize2, X,
+  FolderTree
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -436,7 +438,7 @@ const ResearchDashboard: React.FC = () => {
             className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/5"
             onClick={() => navigate('/workspace')}
           >
-            <Folders className="h-5 w-5 mr-3" />
+            <FolderTree className="h-5 w-5 mr-3" />
             Research Workspace
           </Button>
         </div>
