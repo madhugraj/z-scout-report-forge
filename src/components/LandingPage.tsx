@@ -13,6 +13,7 @@ const LandingPage: React.FC = () => {
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const navigate = useNavigate();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
@@ -30,6 +31,7 @@ const LandingPage: React.FC = () => {
       });
     }, 1500);
   };
+
   const handleUpload = (type: 'drive' | 'computer' | 'url') => {
     navigate('/upload', {
       state: {
@@ -37,9 +39,11 @@ const LandingPage: React.FC = () => {
       }
     });
   };
+
   const handleWorkspaceClick = () => {
     navigate('/workspace');
   };
+
   return <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white flex flex-col">
       <header className="w-full border-b border-gray-800/50 bg-black/10 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -135,12 +139,7 @@ The research assistant you always needed</h1>
       </main>
 
       <footer className="border-t border-gray-800/50 bg-black/10 backdrop-blur-sm mt-auto">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between text-sm text-gray-400">
-          <div className="flex items-center gap-4">
-            <div className="h-8">
-              <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
-            </div>
-          </div>
+        <div className="container mx-auto px-4 h-16 flex items-center justify-end text-sm text-gray-400">
           <div className="text-right">
             <div className="text-sm text-gray-400">
               Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved.
@@ -159,4 +158,5 @@ The research assistant you always needed</h1>
       <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>;
 };
+
 export default LandingPage;

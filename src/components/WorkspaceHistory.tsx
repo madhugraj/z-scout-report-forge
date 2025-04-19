@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, Filter, ChevronRight, Tag, MoreHorizontal, RefreshCw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -91,9 +90,6 @@ const WorkspaceHistory: React.FC = () => {
               Back to Home
             </Button>
             <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research Workspace</h1>
-            <p className="text-gray-300">
-              Your research memory, versioned and always within reach
-            </p>
           </div>
           <div className="h-8">
             <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
