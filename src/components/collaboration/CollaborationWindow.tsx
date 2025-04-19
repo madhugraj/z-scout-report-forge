@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import CollaborationHeader from './CollaborationHeader';
@@ -143,7 +142,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-6 w-6 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-700/50"
+            className="h-6 w-6 rounded-full bg-gray-800 text-gray-400 hover:bg-gray-700"
             onClick={onClose}
           >
             <X className="h-4 w-4" />
@@ -158,7 +157,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         setEditorMode={setEditorMode}
       />
 
-      <div className="flex flex-row flex-1 overflow-hidden bg-[#1A1F2C]/90 backdrop-blur-sm">
+      <div className="flex flex-row flex-1 overflow-hidden">
         <CollaboratorsList 
           collaborators={collaborators} 
           currentUser={currentUser} 
