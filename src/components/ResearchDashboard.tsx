@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -435,7 +434,7 @@ const ResearchDashboard: React.FC = () => {
 
       <div className="flex flex-1 relative flex-col">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={collaborationMode === 'panel' ? 65 : 100}>
+          <ResizablePanel defaultSize={collaborationMode === 'panel' ? 65 : 100} minSize={50}>
             <div className="bg-white overflow-auto h-full">
               {isGenerating && (
                 <div className="bg-violet-100 p-4 flex items-center gap-2 text-violet-700">
@@ -632,7 +631,15 @@ const ResearchDashboard: React.FC = () => {
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={30} minSize={25}>
-                <div className="h-full bg-[#1A1F2C]">
+                <div className="h-full bg-[#1A1F2C] relative">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute top-2 right-2 z-10 text-gray-400 hover:text-white"
+                    onClick={() => setCollaborationMode('drawer')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                   <CollaborationWindow
                     reportSections={sections}
                     isFloating={false}
@@ -655,20 +662,34 @@ const ResearchDashboard: React.FC = () => {
                 <Users className="h-5 w-5" />
               </Button>
             </DrawerTrigger>
-            <DrawerContent className="h-[400px] bg-[#1A1F2C] p-0">
+            <DrawerContent className="h-[60vh] bg-[#1A1F2C] p-0">
               <div className="h-1 w-12 rounded-full bg-gray-600 mx-auto my-2" />
-              <div className="flex justify-end px-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-xs text-gray-400"
-                  onClick={() => {
-                    setCollaborationMode('panel');
-                    setShowCollaborator(false);
-                  }}
-                >
-                  Dock to Panel
-                </Button>
+              <div className="flex justify-between px-4">
+                <span className="text-sm text-gray-400 font-medium">Collaboration</span>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs text-gray-400 hover:text-white"
+                    onClick={() => {
+                      setCollaborationMode('panel');
+                      setShowCollaborator(false);
+                    }}
+                  >
+                    <Maximize2 className="h-3 w-3 mr-1" />
+                    Dock to Panel
+                  </Button>
+                  <DrawerClose asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-gray-400 hover:text-white"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Close
+                    </Button>
+                  </DrawerClose>
+                </div>
               </div>
               <CollaborationWindow 
                 reportSections={sections}
