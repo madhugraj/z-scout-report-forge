@@ -288,29 +288,6 @@ const WorkspaceHistory: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <div className="fixed bottom-4 left-4 right-4 flex justify-center z-50">
-        <div className="text-sm text-white text-center backdrop-blur-sm bg-black/50 px-6 py-3 rounded-full shadow-lg border border-gray-800/20">
-          Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
-          <a 
-            href="https://www.yavar.ai/privacy-policy/" 
-            className="mx-2 text-violet-300 hover:text-violet-200 transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Privacy Policy
-          </a>
-          •
-          <a 
-            href="https://www.yavar.ai/terms-and-conditions/" 
-            className="mx-2 text-violet-300 hover:text-violet-200 transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Terms & Conditions
-          </a>
-        </div>
-      </div>
     </div>
   );
 };

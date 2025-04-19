@@ -49,12 +49,12 @@ const ResearchDashboard: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [question, setQuestion] = useState('');
   const [report, setReport] = useState('');
-  const [activeSideView, setActiveSideView] = useState<'pdf-viewer' | 'images' | 'tables' | null>(null);
-  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
-  const [showCollaborator, setShowCollaborator] = useState(false);
-  const [collaborationMode, setCollaborationMode] = useState<'drawer' | 'panel'>('drawer');
-  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
-  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [activeSideView, setActiveSideView<'pdf-viewer' | 'images' | 'tables' | null>(null);
+  const [selectedPdf, setSelectedPdf: React.useState<string | null> = useState<string | null>(null);
+  const [showCollaborator, setShowCollaborator: React.useState<boolean> = useState(false);
+  const [collaborationMode, setCollaborationMode: React.useState<'drawer' | 'panel'> = useState<'drawer' | 'panel'>('drawer');
+  const [dropTargetIndex, setDropTargetIndex: React.useState<number | null> = useState<number | null>(null);
+  const [isFullScreen, setIsFullScreen: React.useState<boolean> = useState(false);
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -375,6 +375,7 @@ const ResearchDashboard: React.FC = () => {
     }
   };
 
+  // Modify the collaborator button to make it more visible and clickable
   return (
     <div className="flex h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white overflow-hidden">
       <div className="w-64 flex flex-col border-r border-gray-800/50 backdrop-blur-sm">
@@ -686,7 +687,7 @@ const ResearchDashboard: React.FC = () => {
           <Drawer>
             <DrawerTrigger asChild>
               <Button 
-                className="fixed bottom-4 right-4 rounded-full shadow-lg"
+                className="fixed bottom-4 right-4 rounded-full shadow-lg bg-violet-600 hover:bg-violet-700 z-50"
                 size="icon"
                 onClick={() => setShowCollaborator(true)}
               >
@@ -729,19 +730,6 @@ const ResearchDashboard: React.FC = () => {
             </DrawerContent>
           </Drawer>
         )}
-      </div>
-
-      <div className="fixed bottom-4 left-4 right-4 flex justify-center">
-        <div className="text-sm text-white text-center backdrop-blur-sm bg-black/50 px-6 py-3 rounded-full shadow-lg border border-gray-800/20">
-          Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
-          <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
-            Privacy Policy
-          </a>
-          •
-          <a href="https://www.yavar.ai/terms-and-conditions/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
-            Terms & Conditions
-          </a>
-        </div>
       </div>
     </div>
   );
