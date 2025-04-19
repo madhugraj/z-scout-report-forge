@@ -375,8 +375,8 @@ const ResearchDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#1A1F2C] text-white overflow-hidden">
-      <div className="w-64 flex flex-col bg-[#1A1F2C] border-r border-gray-800">
+    <div className="flex h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white overflow-hidden">
+      <div className="w-64 flex flex-col border-r border-gray-800/50 backdrop-blur-sm">
         <div className="p-6">
           <h1 className="text-xl font-semibold mb-6">Research View</h1>
           <nav className="space-y-2">
@@ -429,6 +429,16 @@ const ResearchDashboard: React.FC = () => {
               Discussions
             </Button>
           </nav>
+        </div>
+        <div className="mt-auto p-4 border-t border-gray-800/50">
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/5"
+            onClick={() => navigate('/workspace')}
+          >
+            <Folders className="h-5 w-5 mr-3" />
+            Research Workspace
+          </Button>
         </div>
       </div>
 
@@ -698,6 +708,19 @@ const ResearchDashboard: React.FC = () => {
             </DrawerContent>
           </Drawer>
         )}
+      </div>
+
+      <div className="fixed bottom-4 left-4 right-4 flex justify-center">
+        <div className="text-xs text-gray-500 text-center">
+          Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
+          <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 hover:text-violet-400" target="_blank" rel="noopener noreferrer">
+            Privacy Policy
+          </a>
+          •
+          <a href="https://www.yavar.ai/terms-and-conditions/" className="mx-2 hover:text-violet-400" target="_blank" rel="noopener noreferrer">
+            Terms & Conditions
+          </a>
+        </div>
       </div>
     </div>
   );
