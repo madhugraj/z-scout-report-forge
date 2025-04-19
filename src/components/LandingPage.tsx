@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import SignInDialog from './SignInDialog';
 import { cn } from '@/lib/utils';
+
 const LandingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -136,7 +137,9 @@ The research assistant you always needed</h1>
       <footer className="border-t border-gray-800/50 bg-black/10 backdrop-blur-sm mt-auto">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between text-sm text-gray-400">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">English</Button>
+            <div className="h-8">
+              <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
+            </div>
           </div>
         </div>
       </footer>
