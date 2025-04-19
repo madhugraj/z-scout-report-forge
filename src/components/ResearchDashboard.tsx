@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -49,12 +50,12 @@ const ResearchDashboard: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [question, setQuestion] = useState('');
   const [report, setReport] = useState('');
-  const [activeSideView, setActiveSideView<'pdf-viewer' | 'images' | 'tables' | null>(null);
-  const [selectedPdf, setSelectedPdf: React.useState<string | null> = useState<string | null>(null);
-  const [showCollaborator, setShowCollaborator: React.useState<boolean> = useState(false);
-  const [collaborationMode, setCollaborationMode: React.useState<'drawer' | 'panel'> = useState<'drawer' | 'panel'>('drawer');
-  const [dropTargetIndex, setDropTargetIndex: React.useState<number | null> = useState<number | null>(null);
-  const [isFullScreen, setIsFullScreen: React.useState<boolean> = useState(false);
+  const [activeSideView, setActiveSideView] = useState<'pdf-viewer' | 'images' | 'tables' | null>(null);
+  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
+  const [showCollaborator, setShowCollaborator] = useState(false);
+  const [collaborationMode, setCollaborationMode] = useState<'drawer' | 'panel'>('drawer');
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
