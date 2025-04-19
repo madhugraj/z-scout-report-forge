@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, Filter, ChevronRight, Tag, MoreHorizontal, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -77,11 +76,11 @@ const WorkspaceHistory: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white">
       <div className="container max-w-6xl py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Research Workspace</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research Workspace</h1>
+          <p className="text-gray-300">
             Your research memory, versioned and always within reach
           </p>
         </div>
@@ -89,46 +88,46 @@ const WorkspaceHistory: React.FC = () => {
         <div className="flex space-x-6">
           {/* Sidebar */}
           <div className="w-64 space-y-6">
-            <Card>
+            <Card className="border-gray-800 bg-[#2A2F3C]/80 backdrop-blur-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <Clock className="h-4 w-4 mr-2" />
+                <CardTitle className="text-lg flex items-center text-white">
+                  <Clock className="h-4 w-4 mr-2 text-violet-400" />
                   Recent Reports
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm space-y-1 pb-3">
-                <Button variant="ghost" className="w-full justify-start font-normal">All Reports</Button>
-                <Button variant="ghost" className="w-full justify-start font-normal">Last 7 Days</Button>
-                <Button variant="ghost" className="w-full justify-start font-normal">Last 30 Days</Button>
-                <Button variant="ghost" className="w-full justify-start font-normal">Archived</Button>
+                <Button variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:text-white hover:bg-white/5">All Reports</Button>
+                <Button variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:text-white hover:bg-white/5">Last 7 Days</Button>
+                <Button variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:text-white hover:bg-white/5">Last 30 Days</Button>
+                <Button variant="ghost" className="w-full justify-start font-normal text-gray-300 hover:text-white hover:bg-white/5">Archived</Button>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-gray-800 bg-[#2A2F3C]/80 backdrop-blur-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <Tag className="h-4 w-4 mr-2" />
+                <CardTitle className="text-lg flex items-center text-white">
+                  <Tag className="h-4 w-4 mr-2 text-violet-400" />
                   Research Topics
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm space-y-1 pb-3">
-                <Button variant="ghost" className="w-full justify-start font-normal">
-                  <Badge variant="outline" className="mr-2 bg-blue-100">AI & Health</Badge>
-                  <span className="text-muted-foreground ml-auto">3</span>
+                <Button variant="ghost" className="w-full justify-start font-normal hover:bg-white/5">
+                  <Badge variant="outline" className="mr-2 bg-blue-900/30 text-blue-300 border-blue-800">AI & Health</Badge>
+                  <span className="text-gray-400 ml-auto">3</span>
                 </Button>
-                <Button variant="ghost" className="w-full justify-start font-normal">
-                  <Badge variant="outline" className="mr-2 bg-green-100">Climate</Badge>
-                  <span className="text-muted-foreground ml-auto">2</span>
+                <Button variant="ghost" className="w-full justify-start font-normal hover:bg-white/5">
+                  <Badge variant="outline" className="mr-2 bg-green-900/30 text-green-300 border-green-800">Climate</Badge>
+                  <span className="text-gray-400 ml-auto">2</span>
                 </Button>
-                <Button variant="ghost" className="w-full justify-start font-normal">
-                  <Badge variant="outline" className="mr-2 bg-purple-100">Technology</Badge>
-                  <span className="text-muted-foreground ml-auto">5</span>
+                <Button variant="ghost" className="w-full justify-start font-normal hover:bg-white/5">
+                  <Badge variant="outline" className="mr-2 bg-purple-900/30 text-purple-300 border-purple-800">Technology</Badge>
+                  <span className="text-gray-400 ml-auto">5</span>
                 </Button>
-                <Button variant="ghost" className="w-full justify-start font-normal">
-                  <Badge variant="outline" className="mr-2 bg-amber-100">Policy</Badge>
-                  <span className="text-muted-foreground ml-auto">1</span>
+                <Button variant="ghost" className="w-full justify-start font-normal hover:bg-white/5">
+                  <Badge variant="outline" className="mr-2 bg-amber-900/30 text-amber-300 border-amber-800">Policy</Badge>
+                  <span className="text-gray-400 ml-auto">1</span>
                 </Button>
-                <Button variant="ghost" className="w-full justify-start font-normal text-primary">
+                <Button variant="ghost" className="w-full justify-start font-normal text-violet-400 hover:text-violet-300 hover:bg-white/5">
                   View all tags...
                 </Button>
               </CardContent>
@@ -162,7 +161,7 @@ const WorkspaceHistory: React.FC = () => {
             <ScrollArea className="h-[calc(100vh-220px)]">
               <div className="space-y-4 pr-4">
                 {researchHistory.map((item) => (
-                  <Card key={item.id} className="hover:border-primary/50 transition-colors">
+                  <Card key={item.id} className="hover:border-violet-500/50 transition-colors border-gray-800 bg-[#2A2F3C]/80 backdrop-blur-sm">
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-xl">{item.title}</CardTitle>
@@ -209,6 +208,7 @@ const WorkspaceHistory: React.FC = () => {
                           variant="outline" 
                           size="sm"
                           onClick={() => handleRegenerate(item.id)}
+                          className="border-gray-700 text-gray-300 hover:text-white hover:bg-white/5"
                         >
                           <RefreshCw className="h-4 w-4 mr-2" />
                           Regenerate
@@ -224,6 +224,7 @@ const WorkspaceHistory: React.FC = () => {
                               } 
                             });
                           }}
+                          className="bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-700 hover:to-violet-800"
                         >
                           <span>View Report</span>
                           <ChevronRight className="h-4 w-4 ml-1" />
@@ -235,6 +236,19 @@ const WorkspaceHistory: React.FC = () => {
               </div>
             </ScrollArea>
           </div>
+        </div>
+      </div>
+
+      <div className="fixed bottom-4 left-4 right-4 flex justify-center">
+        <div className="text-xs text-gray-300 text-center backdrop-blur-sm bg-black/30 px-6 py-2 rounded-full shadow-lg border border-gray-800/20">
+          Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
+          <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
+            Privacy Policy
+          </a>
+          •
+          <a href="https://www.yavar.ai/terms-and-conditions/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
+            Terms & Conditions
+          </a>
         </div>
       </div>
     </div>

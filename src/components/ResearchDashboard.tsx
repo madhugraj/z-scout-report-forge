@@ -383,50 +383,50 @@ const ResearchDashboard: React.FC = () => {
           <nav className="space-y-2">
             <Button
               variant={activeView === 'full-report' ? 'secondary' : 'ghost'}
-              className="w-full justify-start"
+              className="w-full justify-start hover:bg-white/5 transition-colors"
               onClick={() => setActiveView('full-report')}
             >
-              <FileText className="h-5 w-5 mr-3" />
+              <FileText className="h-5 w-5 mr-3 text-violet-400" />
               Full Report
             </Button>
             <Button
               variant={activeView === 'pdf-viewer' ? 'secondary' : 'ghost'}
-              className="w-full justify-start"
+              className="w-full justify-start hover:bg-white/5 transition-colors"
               onClick={() => setActiveView('pdf-viewer')}
             >
-              <BookOpen className="h-5 w-5 mr-3" />
+              <BookOpen className="h-5 w-5 mr-3 text-violet-400" />
               Source PDFs
             </Button>
             <Button
               variant={activeView === 'images' ? 'secondary' : 'ghost'}
-              className="w-full justify-start"
+              className="w-full justify-start hover:bg-white/5 transition-colors"
               onClick={() => setActiveView('images')}
             >
-              <Image className="h-5 w-5 mr-3" />
+              <Image className="h-5 w-5 mr-3 text-violet-400" />
               Research Images
             </Button>
             <Button
               variant={activeView === 'citations' ? 'secondary' : 'ghost'}
-              className="w-full justify-start"
+              className="w-full justify-start hover:bg-white/5 transition-colors"
               onClick={() => setActiveView('citations')}
             >
-              <FileText className="h-5 w-5 mr-3" />
+              <FileText className="h-5 w-5 mr-3 text-violet-400" />
               Citations
             </Button>
             <Button
               variant={activeView === 'tables' ? 'secondary' : 'ghost'}
-              className="w-full justify-start"
+              className="w-full justify-start hover:bg-white/5 transition-colors"
               onClick={() => setActiveView('tables')}
             >
-              <Table className="h-5 w-5 mr-3" />
+              <Table className="h-5 w-5 mr-3 text-violet-400" />
               Data Tables
             </Button>
             <Button
               variant={activeView === 'threads' ? 'secondary' : 'ghost'}
-              className="w-full justify-start"
+              className="w-full justify-start hover:bg-white/5 transition-colors"
               onClick={() => setActiveView('threads')}
             >
-              <MessageSquare className="h-5 w-5 mr-3" />
+              <MessageSquare className="h-5 w-5 mr-3 text-violet-400" />
               Discussions
             </Button>
           </nav>
@@ -434,14 +434,15 @@ const ResearchDashboard: React.FC = () => {
         <div className="mt-auto p-4 border-t border-gray-800/50">
           <Button
             variant="ghost"
-            className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/5 group transition-all"
+            className="w-full justify-start text-gray-300 hover:text-white hover:bg-white/5 group transition-all py-4"
             onClick={() => navigate('/workspace')}
           >
-            <FolderTree className="h-5 w-5 mr-3 group-hover:text-violet-400" />
+            <FolderTree className="h-5 w-5 mr-3 text-violet-400 group-hover:text-violet-300" />
             <div className="flex flex-col items-start">
-              <span>Research Workspace</span>
+              <span className="text-sm font-medium">Research Workspace</span>
               <span className="text-xs text-gray-500">View all research projects</span>
             </div>
+            <ChevronRight className="ml-auto h-4 w-4 text-gray-600 group-hover:text-violet-400 transition-transform group-hover:translate-x-1" />
           </Button>
         </div>
       </div>
@@ -715,13 +716,13 @@ const ResearchDashboard: React.FC = () => {
       </div>
 
       <div className="fixed bottom-4 left-4 right-4 flex justify-center">
-        <div className="text-xs text-gray-500 text-center backdrop-blur-sm bg-black/10 px-4 py-2 rounded-full">
+        <div className="text-xs text-gray-300 text-center backdrop-blur-sm bg-black/30 px-6 py-2 rounded-full shadow-lg border border-gray-800/20">
           Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
-          <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 text-violet-400 hover:text-violet-300 transition-colors" target="_blank" rel="noopener noreferrer">
+          <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
             Privacy Policy
           </a>
-          ��
-          <a href="https://www.yavar.ai/terms-and-conditions/" className="mx-2 text-violet-400 hover:text-violet-300 transition-colors" target="_blank" rel="noopener noreferrer">
+          •
+          <a href="https://www.yavar.ai/terms-and-conditions/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
             Terms & Conditions
           </a>
         </div>

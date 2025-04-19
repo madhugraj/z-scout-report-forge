@@ -3,6 +3,7 @@ import React from 'react';
 import { Users, UserPlus, Edit2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import ExternalEditorButton from './ExternalEditorButton';
 
 interface CollaborationHeaderProps {
@@ -26,29 +27,36 @@ const CollaborationHeader: React.FC<CollaborationHeaderProps> = ({
         <span className="text-sm text-emerald-400 animate-pulse">online</span>
       </div>
       <div className="flex gap-2 items-center">
-        <ToggleGroup 
-          type="single" 
-          value={editorMode} 
-          onValueChange={(value) => value && setEditorMode(value as 'minimal' | 'advanced')}
-          className="bg-gray-800/50 rounded-lg p-1"
-        >
-          <ToggleGroupItem 
-            value="minimal" 
-            aria-label="Simple Editor Mode"
-            className="data-[state=on]:bg-violet-600 hover:bg-violet-500/30"
-            title="Simple Editor - Basic text editing features"
-          >
-            <Edit2 className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem 
-            value="advanced" 
-            aria-label="Advanced Editor"
-            className="data-[state=on]:bg-violet-600 hover:bg-violet-500/30"
-            title="Advanced Editor - Rich text formatting and features"
-          >
-            <FileText className="h-4 w-4" />
-          </ToggleGroupItem>
-        </ToggleGroup>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <ToggleGroup 
+              type="single" 
+              value={editorMode} 
+              onValueChange={(value) => value && setEditorMode(value as 'minimal' | 'advanced')}
+              className="bg-gray-800/50 rounded-lg p-1"
+            >
+              <ToggleGroupItem 
+                value="minimal" 
+                aria-label="Simple Editor Mode"
+                className="data-[state=on]:bg-violet-600 hover:bg-violet-500/30"
+                title="Simple Editor - Basic text editing features"
+              >
+                <Edit2 className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="advanced" 
+                aria-label="Advanced Editor"
+                className="data-[state=on]:bg-violet-600 hover:bg-violet-500/30"
+                title="Advanced Editor - Rich text formatting and features"
+              >
+                <FileText className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Toggle between Simple (Pen) and Advanced (Document) editing modes</p>
+          </TooltipContent>
+        </Tooltip>
         <ExternalEditorButton />
         <Button 
           size="sm" 
