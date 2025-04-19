@@ -6,12 +6,14 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import SignInDialog from './SignInDialog';
 import { cn } from '@/lib/utils';
+
 const LandingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const navigate = useNavigate();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
@@ -29,6 +31,7 @@ const LandingPage: React.FC = () => {
       });
     }, 1500);
   };
+
   const handleUpload = (type: 'drive' | 'computer' | 'url') => {
     navigate('/upload', {
       state: {
@@ -36,15 +39,18 @@ const LandingPage: React.FC = () => {
       }
     });
   };
+
   const handleWorkspaceClick = () => {
     navigate('/workspace');
   };
+
   return <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white flex flex-col">
       <header className="w-full border-b border-gray-800/50 bg-black/10 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6 text-violet-400" />
-            
+            <div className="h-8">
+              <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" className="text-gray-400 hover:text-white">
@@ -136,19 +142,13 @@ const LandingPage: React.FC = () => {
       <footer className="border-t border-gray-800/50 bg-black/10 backdrop-blur-sm mt-auto">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between text-sm text-gray-400">
           <div className="flex items-center gap-4">
-            <span>© 2025 Z-Scout</span>
-            <Button variant="link" size="sm" className="text-gray-400 hover:text-violet-400">Terms</Button>
-            <Button variant="link" size="sm" className="text-gray-400 hover:text-violet-400">Privacy</Button>
-          </div>
-          <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">English</Button>
           </div>
         </div>
       </footer>
 
-      {/* Add consistent copyright footer */}
       <div className="fixed bottom-4 left-4 right-4 flex justify-center">
-        <div className="text-xs text-gray-300 text-center backdrop-blur-sm bg-black/30 px-6 py-2 rounded-full shadow-lg border border-gray-800/20">
+        <div className="text-sm text-white text-center backdrop-blur-sm bg-black/50 px-6 py-3 rounded-full shadow-lg border border-gray-800/20">
           Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
           <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
             Privacy Policy
@@ -163,4 +163,5 @@ const LandingPage: React.FC = () => {
       <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>;
 };
+
 export default LandingPage;

@@ -4,7 +4,7 @@ import {
   Share2, Mail, FileDown, Send, Users,
   FileText, Image, Table, BookOpen, MessageSquare, 
   ChevronRight, ExternalLink, Search, Edit, Download, Maximize2, Minimize2, X,
-  FolderTree
+  FolderTree, ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -379,7 +379,23 @@ const ResearchDashboard: React.FC = () => {
     <div className="flex h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white overflow-hidden">
       <div className="w-64 flex flex-col border-r border-gray-800/50 backdrop-blur-sm">
         <div className="p-6">
-          <h1 className="text-xl font-semibold mb-6 bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research View</h1>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-8">
+              <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
+            </div>
+            <h1 className="text-xl font-semibold bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research View</h1>
+          </div>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/')}
+            className="w-full justify-start mb-4 hover:bg-white/5 text-gray-400 hover:text-white group transition-all py-3"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2 text-violet-400 group-hover:text-violet-300" />
+            Back to Home
+          </Button>
+          
           <nav className="space-y-2">
             <Button
               variant={activeView === 'full-report' ? 'secondary' : 'ghost'}
@@ -716,7 +732,7 @@ const ResearchDashboard: React.FC = () => {
       </div>
 
       <div className="fixed bottom-4 left-4 right-4 flex justify-center">
-        <div className="text-xs text-gray-300 text-center backdrop-blur-sm bg-black/30 px-6 py-2 rounded-full shadow-lg border border-gray-800/20">
+        <div className="text-sm text-white text-center backdrop-blur-sm bg-black/50 px-6 py-3 rounded-full shadow-lg border border-gray-800/20">
           Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
           <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
             Privacy Policy

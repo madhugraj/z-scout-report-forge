@@ -88,11 +88,16 @@ const WorkspaceHistory: React.FC = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research Workspace</h1>
-            <p className="text-gray-300">
-              Your research memory, versioned and always within reach
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="h-8">
+              <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research Workspace</h1>
+              <p className="text-gray-300">
+                Your research memory, versioned and always within reach
+              </p>
+            </div>
           </div>
         </div>
 
@@ -285,7 +290,7 @@ const WorkspaceHistory: React.FC = () => {
       </div>
 
       <div className="fixed bottom-4 left-4 right-4 flex justify-center z-50">
-        <div className="text-sm text-gray-300 text-center backdrop-blur-sm bg-black/30 px-6 py-3 rounded-full shadow-lg border border-gray-800/20">
+        <div className="text-sm text-white text-center backdrop-blur-sm bg-black/50 px-6 py-3 rounded-full shadow-lg border border-gray-800/20">
           Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
           <a 
             href="https://www.yavar.ai/privacy-policy/" 
