@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -380,7 +379,7 @@ const ResearchDashboard: React.FC = () => {
     <div className="flex h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white overflow-hidden">
       <div className="w-64 flex flex-col border-r border-gray-800/50 backdrop-blur-sm">
         <div className="p-6">
-          <h1 className="text-xl font-semibold mb-6">Research View</h1>
+          <h1 className="text-xl font-semibold mb-6 bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research View</h1>
           <nav className="space-y-2">
             <Button
               variant={activeView === 'full-report' ? 'secondary' : 'ghost'}
@@ -435,11 +434,14 @@ const ResearchDashboard: React.FC = () => {
         <div className="mt-auto p-4 border-t border-gray-800/50">
           <Button
             variant="ghost"
-            className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/5"
+            className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/5 group transition-all"
             onClick={() => navigate('/workspace')}
           >
-            <FolderTree className="h-5 w-5 mr-3" />
-            Research Workspace
+            <FolderTree className="h-5 w-5 mr-3 group-hover:text-violet-400" />
+            <div className="flex flex-col items-start">
+              <span>Research Workspace</span>
+              <span className="text-xs text-gray-500">View all research projects</span>
+            </div>
           </Button>
         </div>
       </div>
@@ -713,13 +715,13 @@ const ResearchDashboard: React.FC = () => {
       </div>
 
       <div className="fixed bottom-4 left-4 right-4 flex justify-center">
-        <div className="text-xs text-gray-500 text-center">
+        <div className="text-xs text-gray-500 text-center backdrop-blur-sm bg-black/10 px-4 py-2 rounded-full">
           Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
-          <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 hover:text-violet-400" target="_blank" rel="noopener noreferrer">
+          <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 text-violet-400 hover:text-violet-300 transition-colors" target="_blank" rel="noopener noreferrer">
             Privacy Policy
           </a>
-          •
-          <a href="https://www.yavar.ai/terms-and-conditions/" className="mx-2 hover:text-violet-400" target="_blank" rel="noopener noreferrer">
+          ��
+          <a href="https://www.yavar.ai/terms-and-conditions/" className="mx-2 text-violet-400 hover:text-violet-300 transition-colors" target="_blank" rel="noopener noreferrer">
             Terms & Conditions
           </a>
         </div>
