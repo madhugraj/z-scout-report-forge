@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -384,9 +383,6 @@ const ResearchDashboard: React.FC = () => {
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-semibold bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research View</h1>
-            <div className="h-7">
-              <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
-            </div>
           </div>
           
           <Button 
