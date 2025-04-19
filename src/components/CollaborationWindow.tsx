@@ -7,6 +7,8 @@ import MessageList from './collaboration/MessageList';
 import EditPanel from './collaboration/EditPanel';
 import InviteDialog from './collaboration/InviteDialog';
 import ChatInput from './collaboration/ChatInput';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface CollaboratorInfo {
   name: string;
@@ -27,12 +29,16 @@ interface CollaborationWindowProps {
   onEditRequest?: (sectionIndex: number) => void;
   currentUser?: string;
   reportSections?: {title: string; content: string}[];
+  onClose?: () => void;
+  isFloating?: boolean;
 }
 
 const CollaborationWindow: React.FC<CollaborationWindowProps> = ({ 
   onEditRequest, 
   currentUser = 'You',
-  reportSections = []
+  reportSections = [],
+  onClose,
+  isFloating = false
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -131,7 +137,20 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className={`flex flex-col ${isFloating ? 'h-full rounded-lg border border-gray-700 shadow-lg overflow-hidden' : 'h-full'}`}>
+      {isFloating && (
+        <div className="absolute top-2 right-2 z-10">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6 rounded-full bg-gray-800 text-gray-400 hover:bg-gray-700"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      
       <CollaborationHeader
         showInviteDialog={showInviteDialog}
         setShowInviteDialog={setShowInviteDialog}
@@ -139,13 +158,13 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         setEditorMode={setEditorMode}
       />
 
-      <div className="flex flex-row h-[300px]">
+      <div className="flex flex-row flex-1 overflow-hidden">
         <CollaboratorsList 
           collaborators={collaborators} 
           currentUser={currentUser} 
         />
 
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {editSection !== null ? (
             <EditPanel
               sectionTitle={reportSections[editSection]?.title}

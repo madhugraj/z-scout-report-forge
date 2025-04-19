@@ -52,6 +52,7 @@ const ResearchDashboard: React.FC = () => {
   const [activeSideView, setActiveSideView] = useState<'pdf-viewer' | 'images' | 'tables' | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
   const [showCollaborator, setShowCollaborator] = useState(false);
+  const [collaborationMode, setCollaborationMode] = useState<'drawer' | 'panel'>('drawer');
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -434,7 +435,7 @@ const ResearchDashboard: React.FC = () => {
 
       <div className="flex flex-1 relative flex-col">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={100}>
+          <ResizablePanel defaultSize={collaborationMode === 'panel' ? 65 : 100}>
             <div className="bg-white overflow-auto h-full">
               {isGenerating && (
                 <div className="bg-violet-100 p-4 flex items-center gap-2 text-violet-700">
@@ -626,22 +627,56 @@ const ResearchDashboard: React.FC = () => {
               </ResizablePanel>
             </>
           )}
+
+          {collaborationMode === 'panel' && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={30} minSize={25}>
+                <div className="h-full bg-[#1A1F2C]">
+                  <CollaborationWindow
+                    reportSections={sections}
+                    isFloating={false}
+                    onClose={() => setCollaborationMode('drawer')}
+                  />
+                </div>
+              </ResizablePanel>
+            </>
+          )}
         </ResizablePanelGroup>
 
-        <Drawer>
-          <DrawerTrigger asChild>
-            <Button 
-              className="fixed bottom-4 right-4 rounded-full shadow-lg"
-              size="icon"
-            >
-              <Users className="h-5 w-5" />
-            </Button>
-          </DrawerTrigger>
-          <DrawerContent className="h-[400px] bg-[#1A1F2C] p-0">
-            <div className="h-1 w-12 rounded-full bg-gray-600 mx-auto my-2" />
-            <CollaborationWindow />
-          </DrawerContent>
-        </Drawer>
+        {collaborationMode === 'drawer' && (
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button 
+                className="fixed bottom-4 right-4 rounded-full shadow-lg"
+                size="icon"
+                onClick={() => setShowCollaborator(true)}
+              >
+                <Users className="h-5 w-5" />
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent className="h-[400px] bg-[#1A1F2C] p-0">
+              <div className="h-1 w-12 rounded-full bg-gray-600 mx-auto my-2" />
+              <div className="flex justify-end px-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs text-gray-400"
+                  onClick={() => {
+                    setCollaborationMode('panel');
+                    setShowCollaborator(false);
+                  }}
+                >
+                  Dock to Panel
+                </Button>
+              </div>
+              <CollaborationWindow 
+                reportSections={sections}
+                onClose={() => setShowCollaborator(false)} 
+              />
+            </DrawerContent>
+          </Drawer>
+        )}
       </div>
     </div>
   );
