@@ -141,21 +141,20 @@ The research assistant you always needed</h1>
               <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
             </div>
           </div>
+          <div className="text-right">
+            <div className="text-sm text-gray-400">
+              Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved.
+              <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
+                Privacy Policy
+              </a>
+              •
+              <a href="https://www.yavar.ai/terms-and-conditions/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
+                Terms & Conditions
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
-
-      <div className="fixed bottom-4 left-4 right-4 flex justify-center">
-        <div className="text-sm text-white text-center backdrop-blur-sm bg-black/50 px-6 py-3 rounded-full shadow-lg border border-gray-800/20">
-          Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
-          <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
-            Privacy Policy
-          </a>
-          •
-          <a href="https://www.yavar.ai/terms-and-conditions/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
-            Terms & Conditions
-          </a>
-        </div>
-      </div>
 
       <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>;

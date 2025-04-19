@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -377,16 +378,15 @@ const ResearchDashboard: React.FC = () => {
     }
   };
 
-  // Modify the collaborator button to make it more visible and clickable
   return (
     <div className="flex h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white overflow-hidden">
       <div className="w-64 flex flex-col border-r border-gray-800/50 backdrop-blur-sm">
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-xl font-semibold bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research View</h1>
+            <div className="h-7">
               <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
             </div>
-            <h1 className="text-xl font-semibold bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research View</h1>
           </div>
           
           <Button 
@@ -457,14 +457,14 @@ const ResearchDashboard: React.FC = () => {
             onClick={() => navigate('/workspace')}
           >
             <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <FolderTree className="h-5 w-5 text-violet-400 group-hover:text-violet-300" />
+              <div className="flex items-center">
+                <FolderTree className="h-5 w-5 text-violet-400 group-hover:text-violet-300 mr-3" />
                 <div className="flex flex-col items-start">
                   <span className="text-sm font-medium">Research Workspace</span>
                   <span className="text-xs text-gray-500">View all research projects</span>
                 </div>
               </div>
-              <div className="h-8">
+              <div className="h-6">
                 <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
               </div>
             </div>
@@ -499,6 +499,7 @@ const ResearchDashboard: React.FC = () => {
                                 size="icon"
                                 onClick={() => setActiveSideView(prev => prev === 'pdf-viewer' ? null : 'pdf-viewer')}
                                 className={`h-8 w-8 ${activeSideView === 'pdf-viewer' ? 'bg-violet-100' : ''}`}
+                                aria-label="View PDFs"
                               >
                                 <FileText className="h-4 w-4" />
                               </Button>
@@ -517,6 +518,7 @@ const ResearchDashboard: React.FC = () => {
                                 size="icon"
                                 onClick={() => setActiveSideView(prev => prev === 'images' ? null : 'images')}
                                 className={`h-8 w-8 ${activeSideView === 'images' ? 'bg-violet-100' : ''}`}
+                                aria-label="View Images"
                               >
                                 <Image className="h-4 w-4" />
                               </Button>
@@ -535,6 +537,7 @@ const ResearchDashboard: React.FC = () => {
                                 size="icon"
                                 onClick={() => setActiveSideView(prev => prev === 'tables' ? null : 'tables')}
                                 className={`h-8 w-8 ${activeSideView === 'tables' ? 'bg-violet-100' : ''}`}
+                                aria-label="View Tables"
                               >
                                 <Table className="h-4 w-4" />
                               </Button>
@@ -553,6 +556,7 @@ const ResearchDashboard: React.FC = () => {
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={handleShareReport}
+                                aria-label="Share Report"
                               >
                                 <Share2 className="h-4 w-4" />
                               </Button>
@@ -571,6 +575,7 @@ const ResearchDashboard: React.FC = () => {
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={handleExportReport}
+                                aria-label="Export Report"
                               >
                                 <FileDown className="h-4 w-4" />
                               </Button>
@@ -589,6 +594,7 @@ const ResearchDashboard: React.FC = () => {
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={handleEmailReport}
+                                aria-label="Email Report"
                               >
                                 <Mail className="h-4 w-4" />
                               </Button>

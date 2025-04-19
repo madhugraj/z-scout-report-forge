@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Clock, Filter, ChevronRight, Tag, MoreHorizontal, RefreshCw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,26 +79,24 @@ const WorkspaceHistory: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white">
       <div className="container max-w-6xl py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate('/')}
-            className="text-gray-400 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="h-8">
-              <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research Workspace</h1>
-              <p className="text-gray-300">
-                Your research memory, versioned and always within reach
-              </p>
-            </div>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/')}
+              className="text-gray-400 hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research Workspace</h1>
+            <p className="text-gray-300">
+              Your research memory, versioned and always within reach
+            </p>
+          </div>
+          <div className="h-8">
+            <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
           </div>
         </div>
 
@@ -156,18 +155,18 @@ const WorkspaceHistory: React.FC = () => {
                   <Input
                     type="text"
                     placeholder="Search research..."
-                    className="pl-10"
+                    className="pl-10 bg-[#2A2F3C]/80 border-gray-700 text-white"
                   />
                   <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                    <Filter className="h-4 w-4 text-muted-foreground" />
+                    <Filter className="h-4 w-4 text-gray-400" />
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="border-gray-700 text-white">
                   <Filter className="h-4 w-4 mr-2" />
                   Filters
                 </Button>
               </div>
-              <Button onClick={() => navigate('/')}>
+              <Button onClick={() => navigate('/')} className="bg-violet-600 hover:bg-violet-700">
                 New Research
               </Button>
             </div>
@@ -178,7 +177,7 @@ const WorkspaceHistory: React.FC = () => {
                   <Card key={item.id} className="hover:border-violet-500/50 transition-colors border-gray-800 bg-[#2A2F3C]/80 backdrop-blur-sm">
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
-                        <CardTitle className="text-xl">{item.title}</CardTitle>
+                        <CardTitle className="text-xl text-white">{item.title}</CardTitle>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -243,12 +242,12 @@ const WorkspaceHistory: React.FC = () => {
                     <CardContent>
                       <div className="flex space-x-2 mb-2">
                         {item.tags.map((tag, idx) => (
-                          <Badge key={idx} variant="outline" className="bg-primary/10">
+                          <Badge key={idx} variant="outline" className="bg-primary/10 text-white border-gray-600">
                             {tag}
                           </Badge>
                         ))}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-gray-300">
                         Created: {item.date} • Last updated: {item.lastUpdated}
                       </p>
                     </CardContent>
