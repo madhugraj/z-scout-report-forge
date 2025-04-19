@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,14 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import SignInDialog from './SignInDialog';
 import { cn } from '@/lib/utils';
-
 const LandingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const navigate = useNavigate();
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
@@ -32,7 +29,6 @@ const LandingPage: React.FC = () => {
       });
     }, 1500);
   };
-
   const handleUpload = (type: 'drive' | 'computer' | 'url') => {
     navigate('/upload', {
       state: {
@@ -40,18 +36,15 @@ const LandingPage: React.FC = () => {
       }
     });
   };
-
   const handleWorkspaceClick = () => {
     navigate('/workspace');
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white flex flex-col">
+  return <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white flex flex-col">
       <header className="w-full border-b border-gray-800/50 bg-black/10 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="h-6 w-6 text-violet-400" />
-            <span className="font-semibold text-lg bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Z-Scout</span>
+            
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" className="text-gray-400 hover:text-white">
@@ -60,16 +53,10 @@ const LandingPage: React.FC = () => {
             <Button variant="ghost" className="text-gray-400 hover:text-white">
               About
             </Button>
-            <Button 
-              onClick={handleWorkspaceClick} 
-              className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none"
-            >
+            <Button onClick={handleWorkspaceClick} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
               Workspace
             </Button>
-            <Button 
-              onClick={() => setShowSignIn(true)}
-              className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none"
-            >
+            <Button onClick={() => setShowSignIn(true)} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
               Sign In
             </Button>
           </div>
@@ -88,40 +75,23 @@ const LandingPage: React.FC = () => {
           </div>
 
           <div className="relative animate-fade-in">
-            <div
-              className={cn(
-                "absolute right-14 top-full mt-2 z-50 w-64 rounded-lg border border-gray-800 bg-[#2A2F3C] shadow-lg",
-                showUploadOptions ? "block" : "hidden"
-              )}
-            >
+            <div className={cn("absolute right-14 top-full mt-2 z-50 w-64 rounded-lg border border-gray-800 bg-[#2A2F3C] shadow-lg", showUploadOptions ? "block" : "hidden")}>
               <div className="p-1">
-                <Button
-                  variant="ghost"
-                  className="w-full flex items-center gap-3 p-4 h-auto hover:bg-white/5 text-gray-300 hover:text-white justify-start"
-                  onClick={() => handleUpload('drive')}
-                >
+                <Button variant="ghost" className="w-full flex items-center gap-3 p-4 h-auto hover:bg-white/5 text-gray-300 hover:text-white justify-start" onClick={() => handleUpload('drive')}>
                   <HardDrive className="h-5 w-5 text-blue-400" />
                   <div className="flex flex-col items-start">
                     <span className="font-medium">Cloud Storage</span>
                     <span className="text-xs text-gray-500">Access your cloud documents</span>
                   </div>
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full flex items-center gap-3 p-4 h-auto hover:bg-white/5 text-gray-300 hover:text-white justify-start"
-                  onClick={() => handleUpload('computer')}
-                >
+                <Button variant="ghost" className="w-full flex items-center gap-3 p-4 h-auto hover:bg-white/5 text-gray-300 hover:text-white justify-start" onClick={() => handleUpload('computer')}>
                   <FolderUp className="h-5 w-5 text-orange-400" />
                   <div className="flex flex-col items-start">
                     <span className="font-medium">Local Files</span>
                     <span className="text-xs text-gray-500">PDF, Word, or text files</span>
                   </div>
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full flex items-center gap-3 p-4 h-auto hover:bg-white/5 text-gray-300 hover:text-white justify-start"
-                  onClick={() => handleUpload('url')}
-                >
+                <Button variant="ghost" className="w-full flex items-center gap-3 p-4 h-auto hover:bg-white/5 text-gray-300 hover:text-white justify-start" onClick={() => handleUpload('url')}>
                   <Globe className="h-5 w-5 text-green-400" />
                   <div className="flex flex-col items-start">
                     <span className="font-medium">Web Reference</span>
@@ -133,25 +103,13 @@ const LandingPage: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="w-full" onClick={() => setShowUploadOptions(false)}>
               <div className="relative rounded-xl border border-gray-800 bg-[#2A2F3C]/80 backdrop-blur-sm shadow-lg transition-colors focus-within:border-violet-500">
-                <Input
-                  type="text"
-                  placeholder="Ask a question or search your documents..."
-                  className="pl-12 pr-24 py-7 text-lg border-0 focus-visible:ring-0 rounded-xl bg-transparent text-white placeholder:text-gray-500"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
+                <Input type="text" placeholder="Ask a question or search your documents..." className="pl-12 pr-24 py-7 text-lg border-0 focus-visible:ring-0 rounded-xl bg-transparent text-white placeholder:text-gray-500" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="hover:bg-white/5 text-gray-400 hover:text-violet-400"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowUploadOptions(!showUploadOptions);
-                    }}
-                  >
+                  <Button type="button" size="icon" variant="ghost" className="hover:bg-white/5 text-gray-400 hover:text-violet-400" onClick={e => {
+                  e.stopPropagation();
+                  setShowUploadOptions(!showUploadOptions);
+                }}>
                     <CloudUpload className="h-5 w-5" />
                   </Button>
                   <Button type="button" size="icon" disabled={isGenerating} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
@@ -161,19 +119,11 @@ const LandingPage: React.FC = () => {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="rounded-full border-gray-700 text-gray-300 hover:text-white hover:border-violet-500 hover:bg-white/5"
-                >
+                <Button variant="outline" size="sm" className="rounded-full border-gray-700 text-gray-300 hover:text-white hover:border-violet-500 hover:bg-white/5">
                   <Search className="h-4 w-4 mr-2 text-violet-400" />
                   Research
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="rounded-full border-gray-700 text-gray-300 hover:text-white hover:border-violet-500 hover:bg-white/5"
-                >
+                <Button variant="outline" size="sm" className="rounded-full border-gray-700 text-gray-300 hover:text-white hover:border-violet-500 hover:bg-white/5">
                   <GraduationCap className="h-4 w-4 mr-2 text-violet-400" />
                   Academic Search
                 </Button>
@@ -211,8 +161,6 @@ const LandingPage: React.FC = () => {
       </div>
 
       <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
-    </div>
-  );
+    </div>;
 };
-
 export default LandingPage;
