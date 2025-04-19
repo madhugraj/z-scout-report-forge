@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
-import CollaborationHeader from './collaboration/CollaborationHeader';
-import CollaboratorsList from './collaboration/CollaboratorsList';
-import MessageList from './collaboration/MessageList';
-import EditPanel from './collaboration/EditPanel';
-import InviteDialog from './collaboration/InviteDialog';
-import ChatInput from './collaboration/ChatInput';
+import CollaborationHeader from './CollaborationHeader';
+import CollaboratorsList from './CollaboratorsList';
+import MessageList from './MessageList';
+import EditPanel from './EditPanel';
+import InviteDialog from './InviteDialog';
+import ChatInput from './ChatInput';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 
