@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Filter, ChevronRight, Tag, MoreHorizontal, RefreshCw } from 'lucide-react';
+import { Clock, Filter, ChevronRight, Tag, MoreHorizontal, RefreshCw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
@@ -78,15 +78,25 @@ const WorkspaceHistory: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white">
       <div className="container max-w-6xl py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research Workspace</h1>
-          <p className="text-gray-300">
-            Your research memory, versioned and always within reach
-          </p>
+        <div className="flex items-center gap-4 mb-8">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/')}
+            className="text-gray-400 hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research Workspace</h1>
+            <p className="text-gray-300">
+              Your research memory, versioned and always within reach
+            </p>
+          </div>
         </div>
 
         <div className="flex space-x-6">
-          {/* Sidebar */}
           <div className="w-64 space-y-6">
             <Card className="border-gray-800 bg-[#2A2F3C]/80 backdrop-blur-sm">
               <CardHeader className="pb-2">
@@ -134,7 +144,6 @@ const WorkspaceHistory: React.FC = () => {
             </Card>
           </div>
 
-          {/* Main content */}
           <div className="flex-1">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center space-x-4">
@@ -171,8 +180,44 @@ const WorkspaceHistory: React.FC = () => {
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuContent align="end" className="w-72">
+                            <DropdownMenuLabel>Project Metrics</DropdownMenuLabel>
+                            <DropdownMenuItem className="flex flex-col items-start p-4">
+                              <div className="grid grid-cols-2 gap-4 w-full text-sm">
+                                <div>
+                                  <p className="text-gray-400">References</p>
+                                  <p className="font-medium">24 sources</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Files</p>
+                                  <p className="font-medium">12 PDFs, 8 images</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Collaborators</p>
+                                  <p className="font-medium">5 active members</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Duration</p>
+                                  <p className="font-medium">2 weeks</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Edits</p>
+                                  <p className="font-medium">156 revisions</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Feedback</p>
+                                  <p className="font-medium">4.8/5.0 (12)</p>
+                                </div>
+                              </div>
+                              <div className="mt-4 w-full">
+                                <p className="text-gray-400 mb-2">Key Insights</p>
+                                <ul className="text-sm space-y-1">
+                                  <li>• 78% positive sentiment in research findings</li>
+                                  <li>• High correlation with recent studies (0.92)</li>
+                                  <li>• Featured in 3 academic citations</li>
+                                </ul>
+                              </div>
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleRegenerate(item.id)}>
                               <RefreshCw className="h-4 w-4 mr-2" />
@@ -239,14 +284,24 @@ const WorkspaceHistory: React.FC = () => {
         </div>
       </div>
 
-      <div className="fixed bottom-4 left-4 right-4 flex justify-center">
-        <div className="text-xs text-gray-300 text-center backdrop-blur-sm bg-black/30 px-6 py-2 rounded-full shadow-lg border border-gray-800/20">
+      <div className="fixed bottom-4 left-4 right-4 flex justify-center z-50">
+        <div className="text-sm text-gray-300 text-center backdrop-blur-sm bg-black/30 px-6 py-3 rounded-full shadow-lg border border-gray-800/20">
           Copyright © 2025 Yavar techworks Pte Ltd., All rights reserved. 
-          <a href="https://www.yavar.ai/privacy-policy/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
+          <a 
+            href="https://www.yavar.ai/privacy-policy/" 
+            className="mx-2 text-violet-300 hover:text-violet-200 transition-colors"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Privacy Policy
           </a>
           •
-          <a href="https://www.yavar.ai/terms-and-conditions/" className="mx-2 text-violet-300 hover:text-violet-200 transition-colors" target="_blank" rel="noopener noreferrer">
+          <a 
+            href="https://www.yavar.ai/terms-and-conditions/" 
+            className="mx-2 text-violet-300 hover:text-violet-200 transition-colors"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Terms & Conditions
           </a>
         </div>
