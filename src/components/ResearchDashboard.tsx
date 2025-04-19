@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -28,6 +27,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import PDFViewerDialog from './PDFViewerDialog';
 
 interface DashboardState {
   query?: string;
@@ -56,6 +56,7 @@ const ResearchDashboard: React.FC = () => {
   const [collaborationMode, setCollaborationMode] = useState<'drawer' | 'panel'>('drawer');
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [selectedPdfForView, setSelectedPdfForView] = useState<{title: string; url: string} | null>(null);
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -229,7 +230,7 @@ const ResearchDashboard: React.FC = () => {
                     className="text-violet-400 h-7 text-xs px-2"
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(pdf.url, '_blank');
+                      setSelectedPdfForView({ title: pdf.title, url: pdf.url });
                     }}
                   >
                     <ExternalLink className="h-3 w-3 mr-1" />
@@ -455,12 +456,18 @@ const ResearchDashboard: React.FC = () => {
             className="w-full justify-start text-gray-300 hover:text-white hover:bg-white/5 group transition-all py-4"
             onClick={() => navigate('/workspace')}
           >
-            <FolderTree className="h-5 w-5 mr-3 text-violet-400 group-hover:text-violet-300" />
-            <div className="flex flex-col items-start">
-              <span className="text-sm font-medium">Research Workspace</span>
-              <span className="text-xs text-gray-500">View all research projects</span>
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <FolderTree className="h-5 w-5 text-violet-400 group-hover:text-violet-300" />
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium">Research Workspace</span>
+                  <span className="text-xs text-gray-500">View all research projects</span>
+                </div>
+              </div>
+              <div className="h-8">
+                <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
+              </div>
             </div>
-            <ChevronRight className="ml-auto h-4 w-4 text-gray-600 group-hover:text-violet-400 transition-transform group-hover:translate-x-1" />
           </Button>
         </div>
       </div>
@@ -732,6 +739,13 @@ const ResearchDashboard: React.FC = () => {
           </Drawer>
         )}
       </div>
+      {selectedPdfForView && (
+        <PDFViewerDialog
+          isOpen={!!selectedPdfForView}
+          onClose={() => setSelectedPdfForView(null)}
+          pdf={selectedPdfForView}
+        />
+      )}
     </div>
   );
 };
