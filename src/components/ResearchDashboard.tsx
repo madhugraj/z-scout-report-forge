@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -626,6 +627,21 @@ const ResearchDashboard: React.FC = () => {
               </ResizablePanel>
             </>
           )}
+          
+          {collaborationMode === 'panel' && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={30} minSize={25}>
+                <div className="h-full bg-[#1A1F2C]">
+                  <CollaborationWindow
+                    reportSections={sections}
+                    isFloating={false}
+                    onClose={() => setCollaborationMode('drawer')}
+                  />
+                </div>
+              </ResizablePanel>
+            </>
+          )}
         </ResizablePanelGroup>
 
         {collaborationMode === 'drawer' && (
@@ -660,21 +676,6 @@ const ResearchDashboard: React.FC = () => {
               />
             </DrawerContent>
           </Drawer>
-        )}
-
-        {collaborationMode === 'panel' && (
-          <>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={30} minSize={25}>
-              <div className="h-full bg-[#1A1F2C]">
-                <CollaborationWindow
-                  reportSections={sections}
-                  isFloating={false}
-                  onClose={() => setCollaborationMode('drawer')}
-                />
-              </div>
-            </ResizablePanel>
-          </>
         )}
       </div>
     </div>
