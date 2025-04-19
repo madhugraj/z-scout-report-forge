@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
-import { Send } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { SendHorizontal } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -11,35 +10,37 @@ interface ChatInputProps {
 const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
   const [message, setMessage] = useState('');
 
-  const handleSendMessage = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (message.trim()) {
       onSendMessage(message);
       setMessage('');
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   return (
-    <div className="p-4 border-t border-gray-800">
-      <div className="flex gap-2">
-        <Input
+    <form 
+      onSubmit={handleSubmit}
+      className="border-t border-gray-800/50 bg-[#1A1F2C]/90 p-4 backdrop-blur-sm"
+    >
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message or 'edit section 1'..."
-          className="flex-1 bg-[#2A2F3C] border-gray-700 text-white"
+          placeholder="Type your message..."
+          className="flex-1 bg-[#2A2F3C]/50 text-white border-0 rounded-lg px-4 py-2 focus:ring-2 focus:ring-violet-500/50 focus:outline-none placeholder:text-gray-500"
         />
-        <Button size="icon" variant="secondary" onClick={handleSendMessage}>
-          <Send className="h-4 w-4" />
+        <Button 
+          type="submit"
+          size="icon"
+          className="bg-violet-600 hover:bg-violet-700 text-white"
+          disabled={!message.trim()}
+        >
+          <SendHorizontal className="h-4 w-4" />
         </Button>
       </div>
-    </div>
+    </form>
   );
 };
 
