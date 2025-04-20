@@ -6,77 +6,56 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import SignInDialog from './SignInDialog';
 import { cn } from '@/lib/utils';
-
 const WhatYouCanBuildSection = () => {
-  const cards = [
-    {
-      title: "Market Intelligence Dashboards",
-      description: "Interactive, data-rich visual dashboards driven by insights."
-    },
-    {
-      title: "Investor & Board Reports",
-      description: "Beautifully formatted, insight-packed boardroom-ready reports."
-    },
-    {
-      title: "Policy Briefs & Whitepapers",
-      description: "Crisp, well-cited policy and research documents in minutes."
-    },
-    {
-      title: "Research Summaries with Citations",
-      description: "Concise research digests with linked citation trails."
-    },
-    {
-      title: "Knowledge Graphs",
-      description: "Auto-generated relationship graphs from raw documents."
-    },
-    {
-      title: "Natural Language Financial Queries",
-      description: "Ask in plain English, get deep answers grounded in data."
-    },
-    {
-      title: "Auto Slides, Blogs & Copy",
-      description: "Transform research into slides, blogs, press releases and more."
-    },
-    {
-      title: "Competitor & Sentiment Analysis",
-      description: "Compare competitors, track tone, themes, and market mood."
-    },
-    {
-      title: "Smart Q&A",
-      description: "Ask direct questions and receive grounded, sourced answers."
-    }
-  ];
-
-  return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-16">
-      <h2 className="text-2xl font-bold tracking-tight text-balance bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent mb-8">
+  const cards = [{
+    title: "Market Intelligence Dashboards",
+    description: "Interactive, data-rich visual dashboards driven by insights."
+  }, {
+    title: "Investor & Board Reports",
+    description: "Beautifully formatted, insight-packed boardroom-ready reports."
+  }, {
+    title: "Policy Briefs & Whitepapers",
+    description: "Crisp, well-cited policy and research documents in minutes."
+  }, {
+    title: "Research Summaries with Citations",
+    description: "Concise research digests with linked citation trails."
+  }, {
+    title: "Knowledge Graphs",
+    description: "Auto-generated relationship graphs from raw documents."
+  }, {
+    title: "Natural Language Financial Queries",
+    description: "Ask in plain English, get deep answers grounded in data."
+  }, {
+    title: "Auto Slides, Blogs & Copy",
+    description: "Transform research into slides, blogs, press releases and more."
+  }, {
+    title: "Competitor & Sentiment Analysis",
+    description: "Compare competitors, track tone, themes, and market mood."
+  }, {
+    title: "Smart Q&A",
+    description: "Ask direct questions and receive grounded, sourced answers."
+  }];
+  return <div className="w-full max-w-7xl mx-auto px-4 py-16">
+      <h2 className="text-2xl font-bold tracking-tight text-balance bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent mb-8 text-center">
         What You Can Build
       </h2>
-      <p className="text-gray-300 mb-12 max-w-3xl">
+      <p className="text-gray-300 mb-12 max-w-3xl text-center text-xs">
         From intelligent dashboards to executive-ready documents — Z Scout builds everything you need from your research, data, or queries.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cards.map((card, index) => (
-          <div
-            key={index}
-            className="p-6 rounded-2xl bg-[#2A2F3C]/80 border border-gray-800/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200"
-          >
+        {cards.map((card, index) => <div key={index} className="p-6 rounded-2xl bg-[#2A2F3C]/80 border border-gray-800/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200">
             <h3 className="font-semibold text-lg text-white">{card.title}</h3>
             <p className="mt-2 text-sm text-gray-400">{card.description}</p>
-          </div>
-        ))}
+          </div>)}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 const LandingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const navigate = useNavigate();
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
@@ -94,7 +73,6 @@ const LandingPage: React.FC = () => {
       });
     }, 1500);
   };
-
   const handleUpload = (type: 'drive' | 'computer' | 'url') => {
     navigate('/upload', {
       state: {
@@ -102,15 +80,12 @@ const LandingPage: React.FC = () => {
       }
     });
   };
-
   const handleWorkspaceClick = () => {
     navigate('/workspace');
   };
-
   const handleTrustSafetyClick = () => {
     navigate('/trust-safety');
   };
-
   return <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white flex flex-col">
       <header className="w-full border-b border-gray-800/50 bg-black/10 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -230,5 +205,4 @@ The research assistant you always needed</h1>
       <SignInDialog open={showSignIn} onOpenChange={setShowSignIn} />
     </div>;
 };
-
 export default LandingPage;
