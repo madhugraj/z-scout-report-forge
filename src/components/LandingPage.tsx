@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,69 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import SignInDialog from './SignInDialog';
 import { cn } from '@/lib/utils';
+
+const WhatYouCanBuildSection = () => {
+  const cards = [
+    {
+      title: "Market Intelligence Dashboards",
+      description: "Interactive, data-rich visual dashboards driven by insights."
+    },
+    {
+      title: "Investor & Board Reports",
+      description: "Beautifully formatted, insight-packed boardroom-ready reports."
+    },
+    {
+      title: "Policy Briefs & Whitepapers",
+      description: "Crisp, well-cited policy and research documents in minutes."
+    },
+    {
+      title: "Research Summaries with Citations",
+      description: "Concise research digests with linked citation trails."
+    },
+    {
+      title: "Knowledge Graphs",
+      description: "Auto-generated relationship graphs from raw documents."
+    },
+    {
+      title: "Natural Language Financial Queries",
+      description: "Ask in plain English, get deep answers grounded in data."
+    },
+    {
+      title: "Auto Slides, Blogs & Copy",
+      description: "Transform research into slides, blogs, press releases and more."
+    },
+    {
+      title: "Competitor & Sentiment Analysis",
+      description: "Compare competitors, track tone, themes, and market mood."
+    },
+    {
+      title: "Smart Q&A",
+      description: "Ask direct questions and receive grounded, sourced answers."
+    }
+  ];
+
+  return (
+    <div className="w-full max-w-7xl mx-auto px-4 py-16">
+      <h2 className="text-2xl font-bold tracking-tight text-balance bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent mb-8">
+        What You Can Build
+      </h2>
+      <p className="text-gray-300 mb-12 max-w-3xl">
+        From intelligent dashboards to executive-ready documents — Z Scout builds everything you need from your research, data, or queries.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {cards.map((card, index) => (
+          <div
+            key={index}
+            className="p-6 rounded-2xl bg-[#2A2F3C]/80 border border-gray-800/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            <h3 className="font-semibold text-lg text-white">{card.title}</h3>
+            <p className="mt-2 text-sm text-gray-400">{card.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const LandingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,7 +139,7 @@ const LandingPage: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
+      <main className="flex-1 flex flex-col items-center justify-start px-4">
         <div className="w-full max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4 animate-fade-in">
             <h1 className="text-4xl font-bold tracking-tight text-balance bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent sm:text-3xl">Z Scout -
@@ -145,6 +207,8 @@ The research assistant you always needed</h1>
           </div>
         </div>
       </main>
+
+      <WhatYouCanBuildSection />
 
       <footer className="border-t border-gray-800/50 bg-black/10 backdrop-blur-sm mt-auto">
         <div className="container mx-auto px-4 h-16 flex items-center justify-end text-sm text-gray-400">

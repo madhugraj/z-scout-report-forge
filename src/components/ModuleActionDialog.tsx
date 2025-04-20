@@ -30,18 +30,13 @@ const getActionContent = (moduleId: string, actionType: string): ActionContent =
         title: "Biased Language Review",
         description: "Detected language that may introduce bias or personal opinion.",
         location: "Executive Summary, Paragraph 2",
-        context: "\"...the revolutionary impact of AI in medicine has transformed healthcare delivery across all sectors...\""
-      },
-      "Accept Revision": {
-        title: "Suggested Language Change",
-        description: "Review and accept the proposed neutral alternative:",
+        context: "\"...the revolutionary impact of AI in medicine has transformed healthcare delivery across all sectors...\"",
         suggestions: [
           "significant impact",
           "measurable impact",
           "documented impact",
           "substantial impact"
-        ],
-        context: "Changes will be applied to Executive Summary, Paragraph 2"
+        ]
       }
     },
     "hallucination-detection": {
@@ -186,6 +181,7 @@ const ModuleActionDialog = ({ isOpen, onClose, actionType, moduleId }: ModuleAct
             </DialogDescription>
           )}
         </DialogHeader>
+        
         <div className="space-y-4">
           <p className="text-gray-300">{content.description}</p>
           
@@ -198,19 +194,19 @@ const ModuleActionDialog = ({ isOpen, onClose, actionType, moduleId }: ModuleAct
           
           {content.suggestions && (
             <div className="space-y-2">
+              <p className="text-sm text-gray-400">Suggestions:</p>
               {content.suggestions.map((suggestion, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Button 
-                    variant="secondary" 
-                    className="w-full text-left justify-start"
-                    onClick={() => {
-                      console.log('Selected suggestion:', suggestion);
-                      onClose();
-                    }}
-                  >
-                    {suggestion}
-                  </Button>
-                </div>
+                <Button 
+                  key={index}
+                  variant="secondary" 
+                  className="w-full text-left justify-start"
+                  onClick={() => {
+                    console.log('Selected suggestion:', suggestion);
+                    onClose();
+                  }}
+                >
+                  {suggestion}
+                </Button>
               ))}
             </div>
           )}
