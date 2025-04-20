@@ -26,7 +26,6 @@ const TrustSafetyDashboard: React.FC = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("last-7-days");
   const [selectedAgent, setSelectedAgent] = useState<string>("gemini");
 
-  // Updated mock data for modules with more detailed content
   const auditModules: AuditModule[] = [
     {
       id: "bias-detection",
@@ -225,7 +224,6 @@ const TrustSafetyDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white">
-      {/* Top header */}
       <header className="w-full border-b border-gray-800/50 bg-black/10 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -242,9 +240,7 @@ const TrustSafetyDashboard: React.FC = () => {
       </header>
 
       <div className="container mx-auto p-4 flex flex-col lg:flex-row gap-6">
-        {/* Left Sidebar */}
         <div className="w-full lg:w-64 space-y-6">
-          {/* Add Audit Agent Dropdown */}
           <div className="bg-[#2A2F3C] rounded-xl border border-gray-800/50 p-4 shadow-md">
             <AuditAgentDropdown onAgentChange={setSelectedAgent} />
           </div>
@@ -337,9 +333,7 @@ const TrustSafetyDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="flex-1 space-y-6">
-          {/* Top-Level Report Card */}
           <Card className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
@@ -353,8 +347,8 @@ const TrustSafetyDashboard: React.FC = () => {
                 </div>
                 <div className="text-right text-sm text-gray-400">
                   <div>Created: 2025-04-17</div>
-                  <div>Last Audited: Yesterday</div>
-                  <div>Audit Agent: Gemini T&S</div>
+                  <div>Last Run: Apr 20, 2025 @ 08:12 AM</div>
+                  <div>Overall Score: <span className="text-emerald-400 font-semibold">B+</span></div>
                 </div>
               </div>
             </CardHeader>
@@ -374,7 +368,6 @@ const TrustSafetyDashboard: React.FC = () => {
             </CardFooter>
           </Card>
 
-          {/* Safety Audit Summary Card */}
           <Card className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -407,44 +400,48 @@ const TrustSafetyDashboard: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Module Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {getFilteredModules().map(module => (
               <Card key={module.id} className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg text-white flex items-center">
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                       {getStatusIcon(module.status)}
-                      <span className="ml-2">{module.title}</span>
-                    </CardTitle>
+                      {module.title}
+                    </h3>
                     <Badge className={getStatusColor(module.status)}>
                       {module.status.charAt(0).toUpperCase() + module.status.slice(1)}
                     </Badge>
                   </div>
-                  <div className="flex gap-2 mt-2">
-                    {module.tags.map(tag => (
-                      <Badge key={tag} className={getTagColor(tag)}>
-                        {tag}
-                      </Badge>
+                  <div className="flex gap-2 mb-2">
+                    {module.tags.map((tag, idx) => (
+                      <span key={idx} className="text-sm text-gray-400">
+                        {idx > 0 ? ' | ' : ''}{tag}
+                      </span>
                     ))}
                   </div>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <p className="text-gray-300">{module.summary}</p>
-                  <p className="text-xs text-gray-500 mt-1">Last Checked: {module.lastChecked}</p>
-                </CardContent>
-                <CardFooter className="pt-0 flex flex-wrap gap-2">
-                  {module.actions.map((action, idx) => (
-                    <Button key={idx} variant="secondary" size="sm" onClick={action.action}>
-                      {action.label}
-                    </Button>
-                  ))}
-                </CardFooter>
+                  <p className="text-gray-300 mb-2">{module.summary}</p>
+                  <div className="text-xs text-gray-500 mb-3">
+                    Last Checked: {module.lastChecked}
+                  </div>
+                  <div className="flex gap-2">
+                    {module.actions.map((action, idx) => (
+                      <Button 
+                        key={idx} 
+                        variant="secondary" 
+                        size="sm" 
+                        onClick={action.action}
+                        className="text-violet-300 hover:text-violet-200"
+                      >
+                        {action.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               </Card>
             ))}
           </div>
           
-          {/* Footer Action Bar */}
           <div className="sticky bottom-4 mt-auto">
             <Card className="border-gray-800/50 bg-[#2A2F3C]/90 backdrop-blur-sm shadow-md">
               <CardContent className="p-4 flex items-center justify-between">
