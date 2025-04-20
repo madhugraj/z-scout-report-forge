@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { ArrowLeft, Download, Share, FileText, FileSearch, CheckCircle, AlertTriangle, XCircle, Shield, Info } from 'lucide-react';
+import { ArrowLeft, FileSearch, CheckCircle, AlertTriangle, XCircle, Shield, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import AuditAgentDropdown from './AuditAgentDropdown';
 import ModuleActionDialog from './ModuleActionDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import TrustSafetySummary from './TrustSafetySummary';
 
 interface AuditModule {
   id: string;
@@ -30,6 +30,9 @@ const TrustSafetyDashboard: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<string>("gemini");
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [currentAction, setCurrentAction] = useState<{ type: string; moduleId: string } | null>(null);
+
+  const [trustGrade, setTrustGrade] = useState('A-');
+  const [previousGrade, setPreviousGrade] = useState('B+');
 
   const auditModules: AuditModule[] = [
     {
@@ -207,79 +210,17 @@ const TrustSafetyDashboard: React.FC = () => {
 
       <div className="container mx-auto p-4 flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-64 space-y-6">
-          <Card className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
-            <CardContent className="p-4">
-              <AuditAgentDropdown onAgentChange={setSelectedAgent} />
-            </CardContent>
-          </Card>
-
-          <Card className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
-            <CardContent className="p-4">
-              <h2 className="font-bold text-white mb-3">Filter Status</h2>
-              <div className="space-y-2">
-                <Button 
-                  variant="ghost" 
-                  className={`w-full justify-start ${selectedModule === 'all' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
-                  onClick={() => setSelectedModule('all')}
-                >
-                  All Modules ({auditModules.length})
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className={`w-full justify-start ${selectedModule === 'passed' ? 'bg-emerald-500/20 text-emerald-300' : 'text-gray-300'}`}
-                  onClick={() => setSelectedModule('passed')}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2 text-emerald-400" />
-                  Passed ({getStatusCount('passed')})
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className={`w-full justify-start ${selectedModule === 'warning' ? 'bg-amber-500/20 text-amber-300' : 'text-gray-300'}`}
-                  onClick={() => setSelectedModule('warning')}
-                >
-                  <AlertTriangle className="h-4 w-4 mr-2 text-amber-400" />
-                  Warning ({getStatusCount('warning')})
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className={`w-full justify-start ${selectedModule === 'failed' ? 'bg-red-500/20 text-red-300' : 'text-gray-300'}`}
-                  onClick={() => setSelectedModule('failed')}
-                >
-                  <XCircle className="h-4 w-4 mr-2 text-red-400" />
-                  Failed ({getStatusCount('failed')})
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
-            <CardContent className="p-4">
-              <h2 className="font-bold text-white mb-3">Time Range</h2>
-              <div className="space-y-2">
-                <Button 
-                  variant="ghost" 
-                  className={`w-full justify-start ${selectedTimeRange === 'last-7-days' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
-                  onClick={() => setSelectedTimeRange('last-7-days')}
-                >
-                  Last 7 Days
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className={`w-full justify-start ${selectedTimeRange === 'last-30-days' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
-                  onClick={() => setSelectedTimeRange('last-30-days')}
-                >
-                  Last 30 Days
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className={`w-full justify-start ${selectedTimeRange === 'archived' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
-                  onClick={() => setSelectedTimeRange('archived')}
-                >
-                  Archived
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <TrustSafetySummary
+            grade={trustGrade}
+            previousGrade={previousGrade}
+            agent={selectedAgent}
+            onAgentChange={setSelectedAgent}
+            stats={{
+              passed: getStatusCount('passed'),
+              warning: getStatusCount('warning'),
+              failed: getStatusCount('failed')
+            }}
+          />
         </div>
 
         <div className="flex-1 space-y-6">
