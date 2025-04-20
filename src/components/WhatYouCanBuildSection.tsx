@@ -26,31 +26,29 @@ const WhatYouCanBuildSection = () => {
   }, {
     title: "Competitor & Sentiment Analysis",
     description: "Compare competitors, track tone, themes, and market mood."
-  }, {
-    title: "Smart Q&A",
-    description: "Ask direct questions and receive grounded, sourced answers."
   }];
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-16">
-      <h2 className="text-2xl font-bold tracking-tight text-balance bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent mb-8 text-center">
+    <section className="w-full max-w-7xl mx-auto px-4 py-12">
+      <h2 className="text-3xl font-semibold tracking-tight text-center md:text-left mb-8 text-white">
         What You Can Build
       </h2>
-      <p className="text-gray-300 mb-12 max-w-3xl text-center text-xs">
-        From intelligent dashboards to executive-ready documents — Z Scout builds everything you need from your research, data, or queries.
-      </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cards.map((card, index) => (
-          <div
+          <button
             key={index}
-            className="p-6 rounded-2xl bg-[#2A2F3C]/80 border border-gray-800/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200"
+            className="text-left p-6 rounded-2xl bg-[#2A2F3C]/80 border border-gray-800/50 backdrop-blur-sm transition-all duration-200 hover:bg-[#2A2F3C] hover:border-gray-700/50 hover:shadow-lg group"
           >
-            <h3 className="font-semibold text-lg text-white">{card.title}</h3>
-            <p className="mt-2 text-sm text-gray-400">{card.description}</p>
-          </div>
+            <h3 className="font-semibold text-lg text-white group-hover:text-violet-200 transition-colors">
+              {card.title}
+            </h3>
+            <p className="mt-2 text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+              {card.description}
+            </p>
+          </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 };
 
