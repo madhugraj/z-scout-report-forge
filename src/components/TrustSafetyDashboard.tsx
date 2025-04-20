@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { ArrowLeft, Download, Share, FileText, FileSearch, CheckCircle, AlertTriangle, XCircle, Shield, Info } from 'lucide-react';
+import { ArrowLeft, Share, FileSearch, CheckCircle, AlertTriangle, XCircle, Shield, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import AuditAgentDropdown from './AuditAgentDropdown';
 import ModuleActionDialog from './ModuleActionDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import TrustSafetySummary from './TrustSafetySummary';
 
 interface AuditModule {
   id: string;
@@ -283,27 +283,8 @@ const TrustSafetyDashboard: React.FC = () => {
         </div>
 
         <div className="flex-1 space-y-6">
-          <Card className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-xl text-white">Trust & Safety Summary</CardTitle>
-                  <div className="text-sm text-gray-400 mt-1">
-                    <span className="text-emerald-400 font-medium">{getStatusCount('passed')} Passed</span> • 
-                    <span className="text-amber-400 font-medium ml-2">{getStatusCount('warning')} Warning</span> • 
-                    <span className="text-red-400 font-medium ml-2">{getStatusCount('failed')} Failed</span>
-                  </div>
-                </div>
-                <div>
-                  <Button variant="outline" size="sm" className="text-violet-300 hover:text-violet-200">
-                    <FileSearch className="h-4 w-4 mr-1" />
-                    Rerun Audit
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-
+          <TrustSafetySummary />
+          
           <Tabs defaultValue="grid" className="w-full">
             <div className="flex justify-between items-center mb-4">
               <TabsList className="bg-[#2A2F3C]">
