@@ -67,17 +67,17 @@ const WhatYouCanBuildSection = () => {
         >
           <CarouselContent className="-ml-4">
             {cards.map((card, index) => (
-              <CarouselItem key={index} className="pl-4 basis-[280px] md:basis-[320px]">
+              <CarouselItem key={index} className="pl-4 basis-[220px] md:basis-[250px]">
                 <button
                   onClick={() => handleCardClick(card.title)}
-                  className="w-full h-full text-left p-6 rounded-2xl bg-[#181B2C]/90 backdrop-blur-sm border border-gray-800/30 
-                    transition-all duration-300 hover:border-violet-500/30 hover:shadow-[0_0_15px_rgba(139,92,246,0.15)] 
+                  className="w-full h-full text-left p-4 rounded-xl bg-[#181B2C]/90 backdrop-blur-sm border border-gray-800/30 
+                    transition-all duration-300 hover:border-violet-500/30 hover:shadow-[0_0_10px_rgba(139,92,246,0.15)] 
                     group cursor-pointer"
                 >
-                  <h3 className="font-medium text-base text-violet-100 group-hover:text-violet-200 transition-colors">
+                  <h3 className="font-medium text-sm text-violet-100 group-hover:text-violet-200 transition-colors mb-2">
                     {card.title}
                   </h3>
-                  <p className="mt-3 text-sm text-gray-400 group-hover:text-violet-200/70 transition-colors">
+                  <p className="text-xs text-gray-400 group-hover:text-violet-200/70 transition-colors">
                     {card.description}
                   </p>
                 </button>
