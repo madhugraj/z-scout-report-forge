@@ -35,11 +35,10 @@ const TrustSafetyDashboard: React.FC = () => {
       title: "Bias & Stereotyping Protection",
       status: "warning",
       tags: ["Bias", "Language Framing"],
-      summary: "Detected 1 biased phrase in \"Executive Summary\". The phrase \"revolutionary impact\" implies strong opinion.",
+      summary: "1 biased phrase detected",
       lastChecked: "Just now",
       actions: [
-        { label: "View Phrase", action: () => console.log("View phrase") },
-        { label: "Edit Suggestion", action: () => console.log("Edit suggestion") },
+        { label: "Review", action: () => console.log("Review bias") },
         { label: "Accept Revision", action: () => console.log("Accept revision") }
       ]
     },
@@ -48,12 +47,11 @@ const TrustSafetyDashboard: React.FC = () => {
       title: "Hallucination Detection",
       status: "warning",
       tags: ["No Citation", "Claim Risk"],
-      summary: "\"AI has reduced anxiety levels by 70%\" lacks citation.",
+      summary: "1 uncited statistical claim",
       lastChecked: "10 minutes ago",
       actions: [
-        { label: "Review Insight", action: () => console.log("Review insight") },
-        { label: "Add Citation", action: () => console.log("Add citation") },
-        { label: "Rephrase", action: () => console.log("Rephrase") }
+        { label: "Review", action: () => console.log("Review hallucination") },
+        { label: "Add Citation", action: () => console.log("Add citation") }
       ]
     },
     {
@@ -61,7 +59,7 @@ const TrustSafetyDashboard: React.FC = () => {
       title: "Citation Integrity",
       status: "passed",
       tags: ["APA Format", "Valid URLs"],
-      summary: "All 17 citations match proper formatting and are resolvable.",
+      summary: "17 citations verified",
       lastChecked: "1 hour ago",
       actions: [
         { label: "View Citation Tree", action: () => console.log("View citation tree") }
@@ -72,11 +70,11 @@ const TrustSafetyDashboard: React.FC = () => {
       title: "Factual Consistency",
       status: "failed",
       tags: ["Conflicting Facts", "Mismatched Year"],
-      summary: "Found a 2019 date conflicting with a 2021 reference.",
+      summary: "1 timeline conflict found",
       lastChecked: "2 hours ago",
       actions: [
-        { label: "Resolve Conflict", action: () => console.log("Resolve conflict") },
-        { label: "Review Context", action: () => console.log("Review context") }
+        { label: "Review", action: () => console.log("Review consistency") },
+        { label: "Resolve Conflict", action: () => console.log("Resolve conflict") }
       ]
     },
     {
@@ -84,7 +82,7 @@ const TrustSafetyDashboard: React.FC = () => {
       title: "Toxicity & Hate Speech Detection",
       status: "passed",
       tags: ["Safe Language", "Professional Tone"],
-      summary: "No harmful or offensive phrases detected in any section.",
+      summary: "No issues detected",
       lastChecked: "3 hours ago",
       actions: [
         { label: "Module Logs", action: () => console.log("Module logs") }
@@ -95,11 +93,11 @@ const TrustSafetyDashboard: React.FC = () => {
       title: "Sensitive Data Leakage Prevention",
       status: "warning",
       tags: ["PII Risk", "Personal Name"],
-      summary: "\"Dr. Sarah Jain from Bengaluru\" might reveal identity.",
+      summary: "1 PII instance found",
       lastChecked: "4 hours ago",
       actions: [
-        { label: "Mask Entity", action: () => console.log("Mask entity") },
-        { label: "Confirm Context", action: () => console.log("Confirm context") }
+        { label: "Review", action: () => console.log("Review PII") },
+        { label: "Mask Entity", action: () => console.log("Mask entity") }
       ]
     },
     {
@@ -107,11 +105,11 @@ const TrustSafetyDashboard: React.FC = () => {
       title: "Inappropriate Tone Detection",
       status: "failed",
       tags: ["Overconfidence", "Aggressive Framing"],
-      summary: "Detected tone mismatch in \"Conclusion\": overly assertive.",
+      summary: "2 tone mismatches found",
       lastChecked: "5 hours ago",
       actions: [
-        { label: "Suggest Softer Tone", action: () => console.log("Suggest softer tone") },
-        { label: "Edit Phrase", action: () => console.log("Edit phrase") }
+        { label: "Review", action: () => console.log("Review tone") },
+        { label: "Suggest Softer Tone", action: () => console.log("Suggest tone") }
       ]
     },
     {
@@ -119,10 +117,10 @@ const TrustSafetyDashboard: React.FC = () => {
       title: "Prompt Injection Defense",
       status: "passed",
       tags: ["Injection Prevention", "Sanitized Input"],
-      summary: "No unauthorized instructions or prompt injection found.",
+      summary: "No vulnerabilities found",
       lastChecked: "6 hours ago",
       actions: [
-        { label: "View Input Sanitation Logs", action: () => console.log("View logs") }
+        { label: "View Logs", action: () => console.log("View logs") }
       ]
     },
     {
@@ -130,12 +128,11 @@ const TrustSafetyDashboard: React.FC = () => {
       title: "External Source Verification",
       status: "warning",
       tags: ["Low Credibility", "Unverified Blog"],
-      summary: "Reference to \"healthhacks.xyz\" may lack authority.",
+      summary: "1 questionable source",
       lastChecked: "7 hours ago",
       actions: [
-        { label: "Replace Source", action: () => console.log("Replace source") },
-        { label: "View Alternatives", action: () => console.log("View alternatives") },
-        { label: "Accept Anyway", action: () => console.log("Accept anyway") }
+        { label: "Review", action: () => console.log("Review source") },
+        { label: "Replace Source", action: () => console.log("Replace source") }
       ]
     },
     {
