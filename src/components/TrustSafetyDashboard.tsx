@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import AuditAgentDropdown from './AuditAgentDropdown';
+import ModuleActionDialog from './ModuleActionDialog';
 
 interface AuditModule {
   id: string;
@@ -25,6 +26,8 @@ const TrustSafetyDashboard: React.FC = () => {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("last-7-days");
   const [selectedAgent, setSelectedAgent] = useState<string>("gemini");
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [currentAction, setCurrentAction] = useState<{ type: string; moduleId: string } | null>(null);
 
   const auditModules: AuditModule[] = [
     {
@@ -220,6 +223,11 @@ const TrustSafetyDashboard: React.FC = () => {
     };
     
     return tagColors[tag] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  };
+
+  const handleActionClick = (actionType: string, moduleId: string) => {
+    setCurrentAction({ type: actionType, moduleId });
+    setActionDialogOpen(true);
   };
 
   return (
@@ -426,11 +434,11 @@ const TrustSafetyDashboard: React.FC = () => {
                   </div>
                   <div className="flex gap-2">
                     {module.actions.map((action, idx) => (
-                      <Button 
-                        key={idx} 
-                        variant="secondary" 
-                        size="sm" 
-                        onClick={action.action}
+                      <Button
+                        key={idx}
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleActionClick(action.label, module.id)}
                         className="text-violet-300 hover:text-violet-200"
                       >
                         {action.label}
@@ -468,6 +476,18 @@ const TrustSafetyDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {currentAction && (
+        <ModuleActionDialog
+          isOpen={actionDialogOpen}
+          onClose={() => {
+            setActionDialogOpen(false);
+            setCurrentAction(null);
+          }}
+          actionType={currentAction.type}
+          moduleId={currentAction.moduleId}
+        />
+      )}
     </div>
   );
 };
