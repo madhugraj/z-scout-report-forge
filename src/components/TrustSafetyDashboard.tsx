@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   ArrowLeft, 
@@ -209,7 +210,7 @@ const TrustSafetyDashboard: React.FC = () => {
             </Button>
             <Separator orientation="vertical" className="h-6 bg-gray-700/50" />
             <h1 className="text-xl font-semibold bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">
-              Trust & Safety Dashboard
+              Z-Grid (Trust & Safety) Dashboard
             </h1>
           </div>
         </div>

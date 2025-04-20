@@ -66,7 +66,7 @@ const LandingPage: React.FC = () => {
               About
             </Button>
             <Button onClick={handleTrustSafetyClick} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
-              Trust & Safety
+              Z-Grid (Trust & Safety)
             </Button>
             <Button onClick={handleWorkspaceClick} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
               Workspace
