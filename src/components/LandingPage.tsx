@@ -14,6 +14,7 @@ const LandingPage: React.FC = () => {
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const navigate = useNavigate();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
@@ -31,6 +32,7 @@ const LandingPage: React.FC = () => {
       });
     }, 1500);
   };
+
   const handleUpload = (type: 'drive' | 'computer' | 'url') => {
     navigate('/upload', {
       state: {
@@ -38,12 +40,15 @@ const LandingPage: React.FC = () => {
       }
     });
   };
+
   const handleWorkspaceClick = () => {
     navigate('/workspace');
   };
+
   const handleTrustSafetyClick = () => {
     navigate('/trust-safety');
   };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white flex flex-col">
       <header className="w-full border-b border-gray-800/50 bg-black/10 backdrop-blur-sm sticky top-0 z-50">
@@ -73,11 +78,12 @@ const LandingPage: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-start px-4">
-        <div className="w-full max-w-3xl mx-auto space-y-8">
-          <div className="text-center space-y-4 animate-fade-in">
-            <h1 className="text-4xl font-bold tracking-tight text-balance bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent sm:text-3xl">Z Scout -
-The research assistant you always needed</h1>
+      <main className="flex-1 flex items-center justify-center px-4">
+        <div className="w-full max-w-3xl mx-auto space-y-8 text-center">
+          <div className="space-y-4 animate-fade-in">
+            <h1 className="text-4xl font-bold tracking-tight text-balance bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent sm:text-3xl">
+              Z Scout - The research assistant you always needed
+            </h1>
             <p className="max-w-2xl mx-auto text-balance text-md font-light text-gray-300">
               Just upload documents or reference live links, or ask, and get intelligent, cited answers grounded in your documents and trusted sources.
             </p>
@@ -116,9 +122,9 @@ The research assistant you always needed</h1>
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
                   <Button type="button" size="icon" variant="ghost" className="hover:bg-white/5 text-gray-400 hover:text-violet-400" onClick={e => {
-                  e.stopPropagation();
-                  setShowUploadOptions(!showUploadOptions);
-                }}>
+                    e.stopPropagation();
+                    setShowUploadOptions(!showUploadOptions);
+                  }}>
                     <CloudUpload className="h-5 w-5" />
                   </Button>
                   <Button type="button" size="icon" disabled={isGenerating} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
