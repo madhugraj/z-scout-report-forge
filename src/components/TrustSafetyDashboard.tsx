@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, Download, Share, FileText, FileSearch, CheckCircle, AlertTriangle, XCircle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import AuditAgentDropdown from './AuditAgentDropdown';
 
 interface AuditModule {
   id: string;
@@ -24,20 +24,21 @@ const TrustSafetyDashboard: React.FC = () => {
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("last-7-days");
+  const [selectedAgent, setSelectedAgent] = useState<string>("gemini");
 
-  // Mock data for modules
+  // Updated mock data for modules with more detailed content
   const auditModules: AuditModule[] = [
     {
       id: "bias-detection",
-      title: "Bias Detection",
+      title: "Bias & Stereotyping Protection",
       status: "warning",
       tags: ["Bias", "Language Framing"],
-      summary: "Detected 1 biased phrase in \"Executive Summary\".",
+      summary: "Detected 1 biased phrase in \"Executive Summary\". The phrase \"revolutionary impact\" implies strong opinion.",
       lastChecked: "Just now",
       actions: [
-        { label: "View Details", action: () => console.log("View details") },
-        { label: "Edit Text", action: () => console.log("Edit text") },
-        { label: "Accept Suggestion", action: () => console.log("Accept suggestion") }
+        { label: "View Phrase", action: () => console.log("View phrase") },
+        { label: "Edit Suggestion", action: () => console.log("Edit suggestion") },
+        { label: "Accept Revision", action: () => console.log("Accept revision") }
       ]
     },
     {
@@ -45,43 +46,90 @@ const TrustSafetyDashboard: React.FC = () => {
       title: "Hallucination Detection",
       status: "warning",
       tags: ["No Citation", "Claim Risk"],
-      summary: "One insight lacks source support in \"Key Takeaways\".",
+      summary: "\"AI has reduced anxiety levels by 70%\" lacks citation.",
       lastChecked: "10 minutes ago",
       actions: [
-        { label: "Review Line", action: () => console.log("Review line") },
+        { label: "Review Insight", action: () => console.log("Review insight") },
         { label: "Add Citation", action: () => console.log("Add citation") },
         { label: "Rephrase", action: () => console.log("Rephrase") }
       ]
     },
     {
-      id: "citation-accuracy",
-      title: "Citation Accuracy",
+      id: "citation-integrity",
+      title: "Citation Integrity",
       status: "passed",
       tags: ["APA Format", "Valid URLs"],
-      summary: "All citations are traceable and valid.",
+      summary: "All 17 citations match proper formatting and are resolvable.",
       lastChecked: "1 hour ago",
       actions: [
         { label: "View Citation Tree", action: () => console.log("View citation tree") }
       ]
     },
     {
-      id: "toxicity-check",
-      title: "Toxicity & Hate Speech",
-      status: "passed",
-      tags: ["Toxicity", "Safe Language"],
-      summary: "No toxic or harmful content detected.",
+      id: "factual-consistency",
+      title: "Factual Consistency",
+      status: "failed",
+      tags: ["Conflicting Facts", "Mismatched Year"],
+      summary: "Found a 2019 date conflicting with a 2021 reference.",
       lastChecked: "2 hours ago",
+      actions: [
+        { label: "Resolve Conflict", action: () => console.log("Resolve conflict") },
+        { label: "Review Context", action: () => console.log("Review context") }
+      ]
+    },
+    {
+      id: "toxicity-check",
+      title: "Toxicity & Hate Speech Detection",
+      status: "passed",
+      tags: ["Safe Language", "Professional Tone"],
+      summary: "No harmful or offensive phrases detected in any section.",
+      lastChecked: "3 hours ago",
       actions: [
         { label: "Module Logs", action: () => console.log("Module logs") }
       ]
     },
     {
-      id: "external-source",
-      title: "External Source Check",
+      id: "sensitive-data",
+      title: "Sensitive Data Leakage Prevention",
       status: "warning",
-      tags: ["Untrusted Source"],
-      summary: "One citation is from a low-credibility blog.",
-      lastChecked: "3 hours ago",
+      tags: ["PII Risk", "Personal Name"],
+      summary: "\"Dr. Sarah Jain from Bengaluru\" might reveal identity.",
+      lastChecked: "4 hours ago",
+      actions: [
+        { label: "Mask Entity", action: () => console.log("Mask entity") },
+        { label: "Confirm Context", action: () => console.log("Confirm context") }
+      ]
+    },
+    {
+      id: "tone-detection",
+      title: "Inappropriate Tone Detection",
+      status: "failed",
+      tags: ["Overconfidence", "Aggressive Framing"],
+      summary: "Detected tone mismatch in \"Conclusion\": overly assertive.",
+      lastChecked: "5 hours ago",
+      actions: [
+        { label: "Suggest Softer Tone", action: () => console.log("Suggest softer tone") },
+        { label: "Edit Phrase", action: () => console.log("Edit phrase") }
+      ]
+    },
+    {
+      id: "prompt-injection",
+      title: "Prompt Injection Defense",
+      status: "passed",
+      tags: ["Injection Prevention", "Sanitized Input"],
+      summary: "No unauthorized instructions or prompt injection found.",
+      lastChecked: "6 hours ago",
+      actions: [
+        { label: "View Input Sanitation Logs", action: () => console.log("View logs") }
+      ]
+    },
+    {
+      id: "external-source",
+      title: "External Source Verification",
+      status: "warning",
+      tags: ["Low Credibility", "Unverified Blog"],
+      summary: "Reference to \"healthhacks.xyz\" may lack authority.",
+      lastChecked: "7 hours ago",
       actions: [
         { label: "Replace Source", action: () => console.log("Replace source") },
         { label: "View Alternatives", action: () => console.log("View alternatives") },
@@ -89,37 +137,14 @@ const TrustSafetyDashboard: React.FC = () => {
       ]
     },
     {
-      id: "pii-detection",
-      title: "PII Detection",
-      status: "passed",
-      tags: ["Privacy", "GDPR"],
-      summary: "No personally identifiable information detected.",
-      lastChecked: "1 day ago",
-      actions: [
-        { label: "View Scan Results", action: () => console.log("View scan results") }
-      ]
-    },
-    {
-      id: "policy-compliance",
-      title: "Policy Compliance",
-      status: "passed",
-      tags: ["Policy Risk"],
-      summary: "Content adheres to all company policies.",
-      lastChecked: "1 day ago",
-      actions: [
-        { label: "View Policies", action: () => console.log("View policies") }
-      ]
-    },
-    {
       id: "safety-net",
-      title: "SafetyNet Evaluation",
-      status: "failed",
-      tags: ["SafetyNet"],
-      summary: "Critical safety issue detected in conclusion section.",
-      lastChecked: "2 days ago",
+      title: "SafetyNet Final Scan",
+      status: "passed",
+      tags: ["Safe Output", "No Critical Issues"],
+      summary: "Full validation complete. No Trust & Safety violations found.",
+      lastChecked: "8 hours ago",
       actions: [
-        { label: "View Issues", action: () => console.log("View issues") },
-        { label: "Auto-Fix", action: () => console.log("Auto-fix") }
+        { label: "View Full Scan Log", action: () => console.log("View full scan log") }
       ]
     }
   ];
@@ -219,6 +244,11 @@ const TrustSafetyDashboard: React.FC = () => {
       <div className="container mx-auto p-4 flex flex-col lg:flex-row gap-6">
         {/* Left Sidebar */}
         <div className="w-full lg:w-64 space-y-6">
+          {/* Add Audit Agent Dropdown */}
+          <div className="bg-[#2A2F3C] rounded-xl border border-gray-800/50 p-4 shadow-md">
+            <AuditAgentDropdown onAgentChange={setSelectedAgent} />
+          </div>
+
           <div className="bg-[#2A2F3C] rounded-xl border border-gray-800/50 p-4 shadow-md">
             <h2 className="font-bold text-white mb-3">Trust & Safety Modules</h2>
             <div className="space-y-2">
