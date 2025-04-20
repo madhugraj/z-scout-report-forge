@@ -8,6 +8,7 @@ import LandingPage from "./components/LandingPage";
 import UploadPanel from "./components/UploadPanel";
 import ResearchDashboard from "./components/ResearchDashboard";
 import WorkspaceHistory from "./components/WorkspaceHistory";
+import TrustSafetyDashboard from "./components/TrustSafetyDashboard";
 import NotFound from "./pages/NotFound";
 import React from "react";
 
@@ -25,6 +26,7 @@ const App = () => {
               <Route path="/upload" element={<UploadPanel />} />
               <Route path="/dashboard" element={<ResearchDashboard />} />
               <Route path="/workspace" element={<WorkspaceHistory />} />
+              <Route path="/trust-safety" element={<TrustSafetyDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

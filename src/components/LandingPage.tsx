@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,10 @@ const LandingPage: React.FC = () => {
     navigate('/workspace');
   };
 
+  const handleTrustSafetyClick = () => {
+    navigate('/trust-safety');
+  };
+
   return <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white flex flex-col">
       <header className="w-full border-b border-gray-800/50 bg-black/10 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -58,6 +63,9 @@ const LandingPage: React.FC = () => {
             </Button>
             <Button variant="ghost" className="text-gray-400 hover:text-white">
               About
+            </Button>
+            <Button onClick={handleTrustSafetyClick} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
+              Trust & Safety
             </Button>
             <Button onClick={handleWorkspaceClick} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
               Workspace
