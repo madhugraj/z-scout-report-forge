@@ -1,6 +1,13 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { toast } from "@/components/ui/sonner";
 
 const WhatYouCanBuildSection = () => {
   const cards = [{
@@ -38,25 +45,48 @@ const WhatYouCanBuildSection = () => {
     description: "See online presence and influence mapped into a single view."
   }];
 
+  const handleCardClick = (title: string) => {
+    toast("Feature Integration", {
+      description: `${title} feature integration is in progress...`,
+      duration: 3000,
+    });
+  };
+
   return (
-    <section className="w-full max-w-7xl mx-auto px-4 py-12">
+    <section className="w-full max-w-[95rem] mx-auto px-4 py-12">
       <h2 className="text-2xl font-medium tracking-tight text-center md:text-left mb-8 text-violet-100">
         What You Can Build
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {cards.map((card, index) => (
-          <button
-            key={index}
-            className="group text-left p-4 rounded-xl bg-[#2A2F3C]/60 border border-gray-800/30 backdrop-blur-sm transition-all duration-200 hover:bg-[#2A2F3C]/80 hover:border-violet-500/20"
-          >
-            <h3 className="font-medium text-sm text-violet-100 group-hover:text-violet-200 transition-colors opacity-80 group-hover:opacity-100">
-              {card.title}
-            </h3>
-            <p className="mt-2 text-xs text-gray-400 group-hover:text-violet-200/70 transition-colors opacity-0 group-hover:opacity-100">
-              {card.description}
-            </p>
-          </button>
-        ))}
+      <div className="relative">
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+          className="w-full"
+        >
+          <CarouselContent className="-ml-4">
+            {cards.map((card, index) => (
+              <CarouselItem key={index} className="pl-4 basis-[280px] md:basis-[320px]">
+                <button
+                  onClick={() => handleCardClick(card.title)}
+                  className="w-full h-full text-left p-6 rounded-2xl bg-[#181B2C]/90 backdrop-blur-sm border border-gray-800/30 
+                    transition-all duration-300 hover:border-violet-500/30 hover:shadow-[0_0_15px_rgba(139,92,246,0.15)] 
+                    group cursor-pointer"
+                >
+                  <h3 className="font-medium text-base text-violet-100 group-hover:text-violet-200 transition-colors">
+                    {card.title}
+                  </h3>
+                  <p className="mt-3 text-sm text-gray-400 group-hover:text-violet-200/70 transition-colors">
+                    {card.description}
+                  </p>
+                </button>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="hidden md:flex -left-12 bg-violet-500/10 hover:bg-violet-500/20 border-violet-500/30" />
+          <CarouselNext className="hidden md:flex -right-12 bg-violet-500/10 hover:bg-violet-500/20 border-violet-500/30" />
+        </Carousel>
       </div>
     </section>
   );
