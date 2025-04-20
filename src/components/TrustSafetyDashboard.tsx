@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { ArrowLeft, FileSearch, CheckCircle, AlertTriangle, XCircle, Shield, Info } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  FileSearch, 
+  CheckCircle, 
+  AlertTriangle, 
+  XCircle, 
+  Shield, 
+  Info,
+  FileText 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
