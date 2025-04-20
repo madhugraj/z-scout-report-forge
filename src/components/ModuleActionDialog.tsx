@@ -1,12 +1,17 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, Edit, Eye, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ActionContent {
   title: string;
@@ -58,7 +63,7 @@ const getActionContent = (moduleId: string, actionType: string): ActionContent =
       }
     },
     "citation-integrity": {
-      "View Citation Tree": {
+      "View Tree": {
         title: "Citation Network Analysis",
         description: "Review of citation interconnections and validity:",
         location: "Full Document",
@@ -108,7 +113,7 @@ const getActionContent = (moduleId: string, actionType: string): ActionContent =
       }
     },
     "toxicity-check": {
-      "Module Logs": {
+      "View Log": {
         title: "Content Safety Analysis",
         description: "Complete toxicity scan results:",
         suggestions: [
@@ -167,12 +172,37 @@ const getActionContent = (moduleId: string, actionType: string): ActionContent =
 
 const ModuleActionDialog = ({ isOpen, onClose, actionType, moduleId }: ModuleActionDialogProps) => {
   const content = getActionContent(moduleId, actionType);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
+  const [isApplied, setIsApplied] = useState(false);
+
+  const handleApplyChange = () => {
+    if (!selectedSuggestion) return;
+    setIsApplied(true);
+    // In a real app, this would update the actual content
+    setTimeout(() => {
+      // Simulate success and close dialog
+      onClose();
+    }, 1500);
+  };
+
+  const resetState = () => {
+    setSelectedSuggestion(null);
+    setIsApplied(false);
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-[#2A2F3C] text-white border-gray-700">
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        resetState();
+        onClose();
+      }
+    }}>
+      <DialogContent className="bg-[#2A2F3C] text-white border-gray-700 max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-white">
+          <DialogTitle className="text-lg font-semibold text-white flex items-center">
+            {moduleId === "bias-detection" && <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 mr-2">Warning</Badge>}
+            {moduleId === "factual-consistency" && <Badge className="bg-red-500/20 text-red-400 border-red-500/30 mr-2">Failed</Badge>}
+            {moduleId === "citation-integrity" && <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 mr-2">Passed</Badge>}
             {content.title}
           </DialogTitle>
           {content.location && (
@@ -186,31 +216,86 @@ const ModuleActionDialog = ({ isOpen, onClose, actionType, moduleId }: ModuleAct
           <p className="text-gray-300">{content.description}</p>
           
           {content.context && (
-            <div className="bg-gray-800/50 p-3 rounded-md text-gray-300">
-              <p className="text-sm text-gray-400">Context:</p>
-              <p className="mt-1">{content.context}</p>
+            <div className="bg-gray-800/50 p-3 rounded-md text-gray-300 relative">
+              <p className="text-sm text-gray-400 mb-2">Context:</p>
+              <p className="font-mono text-sm">{content.context}</p>
             </div>
           )}
           
           {content.suggestions && (
             <div className="space-y-2">
-              <p className="text-sm text-gray-400">Suggestions:</p>
-              {content.suggestions.map((suggestion, index) => (
-                <Button 
-                  key={index}
-                  variant="secondary" 
-                  className="w-full text-left justify-start"
-                  onClick={() => {
-                    console.log('Selected suggestion:', suggestion);
-                    onClose();
-                  }}
-                >
-                  {suggestion}
-                </Button>
-              ))}
+              <Tabs defaultValue="suggestions">
+                <TabsList className="bg-gray-800/50 mb-2">
+                  <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
+                  <TabsTrigger value="preview">Preview Changes</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="suggestions" className="mt-0">
+                  <div className="space-y-2">
+                    {content.suggestions.map((suggestion, index) => (
+                      <Button 
+                        key={index}
+                        variant={selectedSuggestion === suggestion ? "default" : "secondary"}
+                        className={`w-full text-left justify-start ${selectedSuggestion === suggestion ? 'border-violet-500' : ''}`}
+                        onClick={() => setSelectedSuggestion(suggestion)}
+                      >
+                        {selectedSuggestion === suggestion && (
+                          <CheckCircle className="h-4 w-4 mr-2 text-white" />
+                        )}
+                        {suggestion}
+                      </Button>
+                    ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="preview" className="mt-0">
+                  <div className="bg-gray-800/50 p-3 rounded-md text-gray-300">
+                    <p className="text-sm text-gray-400 mb-2">Preview with changes:</p>
+                    <p className="font-mono text-sm">
+                      {moduleId === "bias-detection" && (
+                        <>...the {selectedSuggestion || "___________"} of AI in medicine has transformed healthcare delivery across all sectors...</>
+                      )}
+                      {moduleId === "hallucination-detection" && (
+                        <>AI solutions have reduced patient anxiety levels by 70% in clinical trials... <span className="text-amber-400">[Citation: {selectedSuggestion ? selectedSuggestion.split(' - ')[0] : "Required"}]</span></>
+                      )}
+                      {moduleId === "tone-detection" && (
+                        <>{selectedSuggestion || "This undoubtedly proves that AI is the future of healthcare"}</>
+                      )}
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </div>
+        
+        <DialogFooter className="flex items-center justify-between sm:justify-between">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onClose}>
+              <X className="h-4 w-4 mr-1" />
+              Cancel
+            </Button>
+            <Button variant="outline" size="sm">
+              <Edit className="h-4 w-4 mr-1" />
+              Edit Manually
+            </Button>
+          </div>
+          
+          <Button 
+            disabled={!selectedSuggestion || isApplied} 
+            onClick={handleApplyChange}
+            className="bg-violet-600 hover:bg-violet-700"
+          >
+            {isApplied ? (
+              <>
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Applied
+              </>
+            ) : (
+              'Accept Revision'
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

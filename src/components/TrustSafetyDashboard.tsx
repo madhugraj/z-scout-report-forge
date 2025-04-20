@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { ArrowLeft, Download, Share, FileText, FileSearch, CheckCircle, AlertTriangle, XCircle, Shield } from 'lucide-react';
+import { ArrowLeft, Download, Share, FileText, FileSearch, CheckCircle, AlertTriangle, XCircle, Shield, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import AuditAgentDropdown from './AuditAgentDropdown';
 import ModuleActionDialog from './ModuleActionDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface AuditModule {
   id: string;
@@ -16,13 +18,13 @@ interface AuditModule {
   tags: string[];
   summary: string;
   lastChecked: string;
-  actions: { label: string; action: () => void }[];
+  primaryAction: string;
 }
 
 const TrustSafetyDashboard: React.FC = () => {
   const navigate = useNavigate();
   
-  const [selectedModule, setSelectedModule] = useState<string | null>(null);
+  const [selectedModule, setSelectedModule] = useState<string>('all');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("last-7-days");
   const [selectedAgent, setSelectedAgent] = useState<string>("gemini");
@@ -32,119 +34,93 @@ const TrustSafetyDashboard: React.FC = () => {
   const auditModules: AuditModule[] = [
     {
       id: "bias-detection",
-      title: "Bias & Stereotyping Protection",
+      title: "Bias & Stereotyping",
       status: "warning",
       tags: ["Bias", "Language Framing"],
-      summary: "1 biased phrase detected",
+      summary: "1 biased phrase",
       lastChecked: "Just now",
-      actions: [
-        { label: "Review", action: () => console.log("Review bias") },
-        { label: "Accept Revision", action: () => console.log("Accept revision") }
-      ]
+      primaryAction: "Review"
     },
     {
       id: "hallucination-detection",
       title: "Hallucination Detection",
       status: "warning",
       tags: ["No Citation", "Claim Risk"],
-      summary: "1 uncited statistical claim",
-      lastChecked: "10 minutes ago",
-      actions: [
-        { label: "Review", action: () => console.log("Review hallucination") },
-        { label: "Add Citation", action: () => console.log("Add citation") }
-      ]
+      summary: "1 uncited claim",
+      lastChecked: "10 mins ago",
+      primaryAction: "Review"
     },
     {
       id: "citation-integrity",
       title: "Citation Integrity",
       status: "passed",
       tags: ["APA Format", "Valid URLs"],
-      summary: "17 citations verified",
-      lastChecked: "1 hour ago",
-      actions: [
-        { label: "View Citation Tree", action: () => console.log("View citation tree") }
-      ]
+      summary: "17 citations valid",
+      lastChecked: "1 hr ago",
+      primaryAction: "View Tree"
     },
     {
       id: "factual-consistency",
       title: "Factual Consistency",
       status: "failed",
       tags: ["Conflicting Facts", "Mismatched Year"],
-      summary: "1 timeline conflict found",
-      lastChecked: "2 hours ago",
-      actions: [
-        { label: "Review", action: () => console.log("Review consistency") },
-        { label: "Resolve Conflict", action: () => console.log("Resolve conflict") }
-      ]
+      summary: "1 timeline conflict",
+      lastChecked: "2 hrs ago",
+      primaryAction: "Review"
     },
     {
       id: "toxicity-check",
-      title: "Toxicity & Hate Speech Detection",
+      title: "Toxicity Detection",
       status: "passed",
       tags: ["Safe Language", "Professional Tone"],
-      summary: "No issues detected",
-      lastChecked: "3 hours ago",
-      actions: [
-        { label: "Module Logs", action: () => console.log("Module logs") }
-      ]
+      summary: "No issues",
+      lastChecked: "3 hrs ago",
+      primaryAction: "View Log"
     },
     {
       id: "sensitive-data",
-      title: "Sensitive Data Leakage Prevention",
+      title: "Sensitive Data",
       status: "warning",
       tags: ["PII Risk", "Personal Name"],
-      summary: "1 PII instance found",
-      lastChecked: "4 hours ago",
-      actions: [
-        { label: "Review", action: () => console.log("Review PII") },
-        { label: "Mask Entity", action: () => console.log("Mask entity") }
-      ]
+      summary: "1 PII found",
+      lastChecked: "4 hrs ago",
+      primaryAction: "Review"
     },
     {
       id: "tone-detection",
-      title: "Inappropriate Tone Detection",
+      title: "Inappropriate Tone",
       status: "failed",
       tags: ["Overconfidence", "Aggressive Framing"],
-      summary: "2 tone mismatches found",
-      lastChecked: "5 hours ago",
-      actions: [
-        { label: "Review", action: () => console.log("Review tone") },
-        { label: "Suggest Softer Tone", action: () => console.log("Suggest tone") }
-      ]
+      summary: "2 tone issues",
+      lastChecked: "5 hrs ago",
+      primaryAction: "Review"
     },
     {
       id: "prompt-injection",
-      title: "Prompt Injection Defense",
+      title: "Prompt Injection",
       status: "passed",
       tags: ["Injection Prevention", "Sanitized Input"],
-      summary: "No vulnerabilities found",
-      lastChecked: "6 hours ago",
-      actions: [
-        { label: "View Logs", action: () => console.log("View logs") }
-      ]
+      summary: "No threats",
+      lastChecked: "6 hrs ago",
+      primaryAction: "View Logs"
     },
     {
       id: "external-source",
       title: "External Source Verification",
       status: "warning",
       tags: ["Low Credibility", "Unverified Blog"],
-      summary: "1 questionable source",
-      lastChecked: "7 hours ago",
-      actions: [
-        { label: "Review", action: () => console.log("Review source") },
-        { label: "Replace Source", action: () => console.log("Replace source") }
-      ]
+      summary: "1 unverified blog",
+      lastChecked: "7 hrs ago",
+      primaryAction: "Review"
     },
     {
       id: "safety-net",
       title: "SafetyNet Final Scan",
       status: "passed",
       tags: ["Safe Output", "No Critical Issues"],
-      summary: "Full validation complete. No Trust & Safety violations found.",
-      lastChecked: "8 hours ago",
-      actions: [
-        { label: "View Full Scan Log", action: () => console.log("View full scan log") }
-      ]
+      summary: "All checks clear",
+      lastChecked: "8 hrs ago",
+      primaryAction: "Full Log"
     }
   ];
 
@@ -155,21 +131,13 @@ const TrustSafetyDashboard: React.FC = () => {
   const getFilteredModules = () => {
     let filtered = [...auditModules];
     
-    if (selectedModule && selectedModule !== 'all') {
-      const statusMap: Record<string, 'passed' | 'warning' | 'failed'> = {
-        'passed': 'passed',
-        'warning': 'warning',
-        'failed': 'failed'
-      };
-      
-      if (statusMap[selectedModule]) {
-        filtered = filtered.filter(module => module.status === statusMap[selectedModule]);
-      }
+    if (selectedModule !== 'all') {
+      filtered = filtered.filter(module => module.status === selectedModule);
     }
     
-    if (selectedTag && selectedTag !== 'all') {
+    if (selectedTag) {
       filtered = filtered.filter(module => 
-        module.tags.some(tag => tag.toLowerCase() === selectedTag.toLowerCase())
+        module.tags.some(tag => tag.toLowerCase().includes(selectedTag.toLowerCase()))
       );
     }
     
@@ -202,24 +170,17 @@ const TrustSafetyDashboard: React.FC = () => {
     }
   };
 
-  const getTagColor = (tag: string) => {
-    const tagColors: Record<string, string> = {
-      'Bias': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      'No Citation': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      'Claim Risk': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-      'APA Format': 'bg-teal-500/20 text-teal-400 border-teal-500/30',
-      'Valid URLs': 'bg-green-500/20 text-green-400 border-green-500/30',
-      'Toxicity': 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-      'Safe Language': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-      'Untrusted Source': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      'Language Framing': 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-      'Privacy': 'bg-violet-500/20 text-violet-400 border-violet-500/30',
-      'GDPR': 'bg-sky-500/20 text-sky-400 border-sky-500/30',
-      'Policy Risk': 'bg-slate-500/20 text-slate-400 border-slate-500/30',
-      'SafetyNet': 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-    };
-    
-    return tagColors[tag] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  const getStatusEmoji = (status: 'passed' | 'warning' | 'failed') => {
+    switch (status) {
+      case 'passed':
+        return '✅';
+      case 'warning':
+        return '🟠';
+      case 'failed':
+        return '❌';
+      default:
+        return '⚪';
+    }
   };
 
   const handleActionClick = (actionType: string, moduleId: string) => {
@@ -246,96 +207,79 @@ const TrustSafetyDashboard: React.FC = () => {
 
       <div className="container mx-auto p-4 flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-64 space-y-6">
-          <div className="bg-[#2A2F3C] rounded-xl border border-gray-800/50 p-4 shadow-md">
-            <AuditAgentDropdown onAgentChange={setSelectedAgent} />
-          </div>
+          <Card className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
+            <CardContent className="p-4">
+              <AuditAgentDropdown onAgentChange={setSelectedAgent} />
+            </CardContent>
+          </Card>
 
-          <div className="bg-[#2A2F3C] rounded-xl border border-gray-800/50 p-4 shadow-md">
-            <h2 className="font-bold text-white mb-3">Trust & Safety Modules</h2>
-            <div className="space-y-2">
-              <Button 
-                variant="ghost" 
-                className={`w-full justify-start ${selectedModule === 'all' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
-                onClick={() => setSelectedModule('all')}
-              >
-                All Modules
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`w-full justify-start ${selectedModule === 'passed' ? 'bg-emerald-500/20 text-emerald-300' : 'text-gray-300'}`}
-                onClick={() => setSelectedModule('passed')}
-              >
-                <CheckCircle className="h-4 w-4 mr-2 text-emerald-400" />
-                Passed ({getStatusCount('passed')})
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`w-full justify-start ${selectedModule === 'warning' ? 'bg-amber-500/20 text-amber-300' : 'text-gray-300'}`}
-                onClick={() => setSelectedModule('warning')}
-              >
-                <AlertTriangle className="h-4 w-4 mr-2 text-amber-400" />
-                Warning ({getStatusCount('warning')})
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`w-full justify-start ${selectedModule === 'failed' ? 'bg-red-500/20 text-red-300' : 'text-gray-300'}`}
-                onClick={() => setSelectedModule('failed')}
-              >
-                <XCircle className="h-4 w-4 mr-2 text-red-400" />
-                Failed ({getStatusCount('failed')})
-              </Button>
-            </div>
-          </div>
-
-          <div className="bg-[#2A2F3C] rounded-xl border border-gray-800/50 p-4 shadow-md">
-            <h2 className="font-bold text-white mb-3">Audit Tags</h2>
-            <div className="space-y-2">
-              <Button 
-                variant="ghost" 
-                className={`w-full justify-start ${selectedTag === 'all' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
-                onClick={() => setSelectedTag('all')}
-              >
-                All Tags
-              </Button>
-              {['Bias', 'Hallucination', 'Toxicity', 'PII', 'Policy Risk', 'SafetyNet'].map(tag => (
+          <Card className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
+            <CardContent className="p-4">
+              <h2 className="font-bold text-white mb-3">Filter Status</h2>
+              <div className="space-y-2">
                 <Button 
-                  key={tag}
                   variant="ghost" 
-                  className={`w-full justify-start ${selectedTag === tag.toLowerCase() ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
-                  onClick={() => setSelectedTag(tag.toLowerCase())}
+                  className={`w-full justify-start ${selectedModule === 'all' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
+                  onClick={() => setSelectedModule('all')}
                 >
-                  {tag}
+                  All Modules ({auditModules.length})
                 </Button>
-              ))}
-            </div>
-          </div>
+                <Button 
+                  variant="ghost" 
+                  className={`w-full justify-start ${selectedModule === 'passed' ? 'bg-emerald-500/20 text-emerald-300' : 'text-gray-300'}`}
+                  onClick={() => setSelectedModule('passed')}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2 text-emerald-400" />
+                  Passed ({getStatusCount('passed')})
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className={`w-full justify-start ${selectedModule === 'warning' ? 'bg-amber-500/20 text-amber-300' : 'text-gray-300'}`}
+                  onClick={() => setSelectedModule('warning')}
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2 text-amber-400" />
+                  Warning ({getStatusCount('warning')})
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className={`w-full justify-start ${selectedModule === 'failed' ? 'bg-red-500/20 text-red-300' : 'text-gray-300'}`}
+                  onClick={() => setSelectedModule('failed')}
+                >
+                  <XCircle className="h-4 w-4 mr-2 text-red-400" />
+                  Failed ({getStatusCount('failed')})
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-[#2A2F3C] rounded-xl border border-gray-800/50 p-4 shadow-md">
-            <h2 className="font-bold text-white mb-3">Audit Time Ranges</h2>
-            <div className="space-y-2">
-              <Button 
-                variant="ghost" 
-                className={`w-full justify-start ${selectedTimeRange === 'last-7-days' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
-                onClick={() => setSelectedTimeRange('last-7-days')}
-              >
-                Last 7 Days
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`w-full justify-start ${selectedTimeRange === 'last-30-days' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
-                onClick={() => setSelectedTimeRange('last-30-days')}
-              >
-                Last 30 Days
-              </Button>
-              <Button 
-                variant="ghost" 
-                className={`w-full justify-start ${selectedTimeRange === 'archived' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
-                onClick={() => setSelectedTimeRange('archived')}
-              >
-                Archived
-              </Button>
-            </div>
-          </div>
+          <Card className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
+            <CardContent className="p-4">
+              <h2 className="font-bold text-white mb-3">Time Range</h2>
+              <div className="space-y-2">
+                <Button 
+                  variant="ghost" 
+                  className={`w-full justify-start ${selectedTimeRange === 'last-7-days' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
+                  onClick={() => setSelectedTimeRange('last-7-days')}
+                >
+                  Last 7 Days
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className={`w-full justify-start ${selectedTimeRange === 'last-30-days' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
+                  onClick={() => setSelectedTimeRange('last-30-days')}
+                >
+                  Last 30 Days
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className={`w-full justify-start ${selectedTimeRange === 'archived' ? 'bg-violet-500/20 text-violet-300' : 'text-gray-300'}`}
+                  onClick={() => setSelectedTimeRange('archived')}
+                >
+                  Archived
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="flex-1 space-y-6">
@@ -343,131 +287,119 @@ const TrustSafetyDashboard: React.FC = () => {
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-xl text-white">Research Content Audit</CardTitle>
-                  <div className="flex gap-2 mt-2">
-                    <Badge className={`${getTagColor('Research')}`}>Research</Badge>
-                    <Badge className={`${getTagColor('SafetyNet')}`}>SafetyNet</Badge>
-                    <Badge className={`${getTagColor('APA Format')}`}>Content</Badge>
+                  <CardTitle className="text-xl text-white">Trust & Safety Summary</CardTitle>
+                  <div className="text-sm text-gray-400 mt-1">
+                    <span className="text-emerald-400 font-medium">{getStatusCount('passed')} Passed</span> • 
+                    <span className="text-amber-400 font-medium ml-2">{getStatusCount('warning')} Warning</span> • 
+                    <span className="text-red-400 font-medium ml-2">{getStatusCount('failed')} Failed</span>
                   </div>
                 </div>
-                <div className="text-right text-sm text-gray-400">
-                  <div>Created: 2025-04-17</div>
-                  <div>Last Run: Apr 20, 2025 @ 08:12 AM</div>
-                  <div>Overall Score: <span className="text-emerald-400 font-semibold">B+</span></div>
+                <div>
+                  <Button variant="outline" size="sm" className="text-violet-300 hover:text-violet-200">
+                    <FileSearch className="h-4 w-4 mr-1" />
+                    Rerun Audit
+                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardFooter className="pt-2 flex justify-end gap-2">
-              <Button variant="secondary" size="sm">
-                <FileSearch className="h-4 w-4 mr-1" />
-                Re-run Audit
-              </Button>
-              <Button variant="secondary" size="sm">
+          </Card>
+
+          <Tabs defaultValue="grid" className="w-full">
+            <div className="flex justify-between items-center mb-4">
+              <TabsList className="bg-[#2A2F3C]">
+                <TabsTrigger value="grid">Grid View</TabsTrigger>
+                <TabsTrigger value="list">List View</TabsTrigger>
+              </TabsList>
+              
+              <Button variant="outline" size="sm" className="ml-auto">
                 <FileText className="h-4 w-4 mr-1" />
-                Export JSON
+                Export Report
               </Button>
-              <Button variant="secondary" size="sm">
-                <Download className="h-4 w-4 mr-1" />
-                Download PDF
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    <Shield className="h-5 w-5 inline-block mr-2 text-violet-400" />
-                    Safety Audit Summary
-                  </h3>
-                  <div className="space-y-1 text-gray-300">
-                    <div className="flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2 text-emerald-400" />
-                      <span className="text-white font-medium">{getStatusCount('passed')} / {auditModules.length} Modules Passed</span>
-                    </div>
-                    <div>Last Run: 2025-04-20 08:05:21</div>
-                    <div>Audit Duration: 3.2s</div>
-                    <div>Audit Agent: Gemini T&S</div>
-                  </div>
-                </div>
-                <div className="flex items-end gap-2">
-                  <Button variant="outline" size="sm">
-                    <FileSearch className="h-4 w-4 mr-1" />
-                    Audit History
-                  </Button>
-                  <Button variant="default" size="sm">
-                    <FileText className="h-4 w-4 mr-1" />
-                    Open Full Report
-                  </Button>
-                </div>
+            </div>
+            
+            <TabsContent value="grid" className="mt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getFilteredModules().map(module => (
+                  <Card key={module.id} className="border-gray-800/50 bg-[#2A2F3C] shadow-md hover:border-violet-500/20 transition-all">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2 mb-2">
+                          {getStatusIcon(module.status)}
+                          <h3 className="font-medium text-white">{module.title}</h3>
+                        </div>
+                        <Badge className={getStatusColor(module.status)}>
+                          {module.status.charAt(0).toUpperCase() + module.status.slice(1)}
+                        </Badge>
+                      </div>
+                      
+                      <div className="my-2 text-sm text-gray-400">
+                        {module.summary}
+                      </div>
+                      
+                      <div className="flex justify-between items-end mt-4">
+                        <div className="text-xs text-gray-500">
+                          {module.lastChecked}
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          onClick={() => handleActionClick(module.primaryAction, module.id)}
+                          className="text-violet-300 hover:text-violet-200"
+                        >
+                          🔍 {module.primaryAction}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 gap-4">
-            {getFilteredModules().map(module => (
-              <Card key={module.id} className="border-gray-800/50 bg-[#2A2F3C] shadow-md">
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                      {getStatusIcon(module.status)}
-                      {module.title}
-                    </h3>
-                    <Badge className={getStatusColor(module.status)}>
-                      {module.status.charAt(0).toUpperCase() + module.status.slice(1)}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2 mb-2">
-                    {module.tags.map((tag, idx) => (
-                      <span key={idx} className="text-sm text-gray-400">
-                        {idx > 0 ? ' | ' : ''}{tag}
-                      </span>
+            </TabsContent>
+            
+            <TabsContent value="list" className="mt-0">
+              <Card className="border-gray-800/50 bg-[#2A2F3C]">
+                <CardContent className="p-0">
+                  <div className="divide-y divide-gray-800/50">
+                    {getFilteredModules().map(module => (
+                      <div key={module.id} className="flex items-center justify-between p-4 hover:bg-[#3A3F4C]/30 transition-colors">
+                        <div className="flex items-start gap-2">
+                          <div className="mt-0.5">{getStatusIcon(module.status)}</div>
+                          <div>
+                            <h3 className="font-medium text-white">{module.title}</h3>
+                            <p className="text-xs text-gray-400">{module.summary}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-xs text-gray-500 hidden md:block">
+                            {module.lastChecked}
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="secondary"
+                            onClick={() => handleActionClick(module.primaryAction, module.id)}
+                            className="text-violet-300 hover:text-violet-200"
+                          >
+                            {module.primaryAction}
+                          </Button>
+                        </div>
+                      </div>
                     ))}
                   </div>
-                  <p className="text-gray-300 mb-2">{module.summary}</p>
-                  <div className="text-xs text-gray-500 mb-3">
-                    Last Checked: {module.lastChecked}
-                  </div>
-                  <div className="flex gap-2">
-                    {module.actions.map((action, idx) => (
-                      <Button
-                        key={idx}
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleActionClick(action.label, module.id)}
-                        className="text-violet-300 hover:text-violet-200"
-                      >
-                        {action.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
+                </CardContent>
               </Card>
-            ))}
-          </div>
+            </TabsContent>
+          </Tabs>
           
           <div className="sticky bottom-4 mt-auto">
             <Card className="border-gray-800/50 bg-[#2A2F3C]/90 backdrop-blur-sm shadow-md">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center">
                   <Shield className="h-5 w-5 mr-2 text-violet-400" />
-                  <span className="font-semibold">Final Actions:</span>
+                  <span>Resolve Next Issue</span>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-1" />
-                    Download Full Audit Report
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Share className="h-4 w-4 mr-1" />
-                    Share Safety Summary
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <FileSearch className="h-4 w-4 mr-1" />
-                    Trace Agent Logs
-                  </Button>
-                </div>
+                <Button variant="default" size="sm">
+                  <AlertTriangle className="h-4 w-4 mr-1" />
+                  Fix Warning Issues
+                </Button>
               </CardContent>
             </Card>
           </div>

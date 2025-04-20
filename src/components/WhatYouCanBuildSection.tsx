@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Card } from '@/components/ui/card';
 
 const WhatYouCanBuildSection = () => {
   const cards = [{
@@ -62,4 +63,3 @@ const WhatYouCanBuildSection = () => {
 };
 
 export default WhatYouCanBuildSection;
-
