@@ -17,7 +17,6 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
     setDropTargetIndex(null);
     try {
       const imageData = JSON.parse(e.dataTransfer.getData('application/json'));
-      
       // You would update the section content to include the image here
       // This would typically involve state updates or API calls
       console.log("Image dropped:", imageData, "to section:", sectionIndex);
@@ -25,12 +24,12 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
       console.error("Failed to process dropped image:", err);
     }
   };
-  
+
   const handleSectionDragOver = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
     e.preventDefault();
     setDropTargetIndex(sectionIndex);
   };
-  
+
   const handleSectionDragLeave = () => {
     setDropTargetIndex(null);
   };
@@ -38,8 +37,8 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
   return (
     <div className="research-content">
       {sections.map((section, index) => (
-        <div 
-          key={index} 
+        <div
+          key={index}
           className={`mb-8 ${dropTargetIndex === index ? 'border-2 border-dashed border-violet-400 rounded-lg p-4' : ''}`}
           onDragOver={(e) => handleSectionDragOver(e, index)}
           onDragLeave={handleSectionDragLeave}
@@ -47,26 +46,28 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
         >
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
           <div className="prose max-w-none">
-            {section.content.split('\n\n').map((paragraph, idx) => {
+            {(section.content as string).split('\n\n').map((paragraph: string, idx: number) => {
               if (paragraph.startsWith('<div class="my-4')) {
                 return (
                   <div key={idx} dangerouslySetInnerHTML={{ __html: paragraph }} />
                 );
               }
-              
+
+              // Citation regex matches [digit]
               const citationRegex = /\[(\d+)\]/g;
-              const parts: (string | JSX.Element)[] = []; // Explicitly define as an array of strings or JSX elements
+              const parts: (string | JSX.Element)[] = [];
               let lastIndex = 0;
-              let match;
-              
+              let match: RegExpExecArray | null;
+
               while ((match = citationRegex.exec(paragraph)) !== null) {
                 parts.push(paragraph.substring(lastIndex, match.index));
-                const citationNumber = parseInt(match[1]); // Parse string to number
-                const reference = references.find(ref => ref.id === citationNumber) || 
+                // parseInt returns number, safe here
+                const citationNumber: number = parseInt(match[1], 10);
+                const reference = references.find(ref => ref.id === citationNumber) ||
                   { id: citationNumber, title: "Reference", authors: "Unknown", journal: "Unknown", year: "Unknown", url: "#" };
-                
+
                 parts.push(
-                  <CitationPopover 
+                  <CitationPopover
                     key={`${idx}-${citationNumber}`}
                     reference={{
                       id: reference.id.toString(),
@@ -82,6 +83,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
                 );
                 lastIndex = match.index + match[0].length;
               }
+
               parts.push(paragraph.substring(lastIndex));
               return (
                 <p key={idx} className="text-gray-700 mb-4">
@@ -92,7 +94,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
           </div>
         </div>
       ))}
-      
+
       {references.length > 0 && (
         <div className="mt-12 border-t pt-8">
           <h2 className="text-2xl font-semibold text-gray-800 mb-6">References</h2>
@@ -115,3 +117,4 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
 };
 
 export default ResearchContent;
+
