@@ -1,16 +1,16 @@
 
 import React from "react";
-import { 
-  Users, FileText, MessageSquare, FolderTree, ArrowLeft, X 
-} from "lucide-react";
+import { Home, FileText, BookOpen, Image, Database, BarChart, Share2, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface DashboardSidebarProps {
   activeView: string;
   setActiveView: (view: string) => void;
   toggleSideView: (view: 'pdf-viewer' | 'images' | 'tables' | null) => void;
   activeSideView: 'pdf-viewer' | 'images' | 'tables' | null;
+  onToggleCollaborator?: () => void;
+  showCollaborator?: boolean;
 }
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
@@ -18,105 +18,158 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   setActiveView,
   toggleSideView,
   activeSideView,
+  onToggleCollaborator,
+  showCollaborator = false
 }) => {
-  const navigate = useNavigate();
   return (
-    <div className="w-64 flex flex-col border-r border-gray-800/50 backdrop-blur-sm">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-semibold bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">Research View</h1>
+    <div className="flex flex-col w-14 bg-[#0F151D] border-r border-[#2D3747] items-center py-4 space-y-6">
+      <TooltipProvider>
+        <div className="flex flex-col space-y-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-10 w-10 rounded-xl ${
+                  activeView === 'full-report' ? 'bg-violet-600 hover:bg-violet-700' : 'hover:bg-[#2D3747] text-gray-400'
+                }`}
+                onClick={() => setActiveView('full-report')}
+              >
+                <BookOpen className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Full Report</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-10 w-10 rounded-xl ${
+                  activeView === 'pdf-viewer' ? 'bg-violet-600 hover:bg-violet-700' : 'hover:bg-[#2D3747] text-gray-400'
+                }`}
+                onClick={() => setActiveView('pdf-viewer')}
+              >
+                <FileText className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>PDF Sources</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-10 w-10 rounded-xl ${
+                  activeView === 'images' ? 'bg-violet-600 hover:bg-violet-700' : 'hover:bg-[#2D3747] text-gray-400'
+                }`}
+                onClick={() => setActiveView('images')}
+              >
+                <Image className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Images</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-10 w-10 rounded-xl ${
+                  activeView === 'tables' ? 'bg-violet-600 hover:bg-violet-700' : 'hover:bg-[#2D3747] text-gray-400'
+                }`}
+                onClick={() => setActiveView('tables')}
+              >
+                <Database className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Data Tables</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-10 w-10 rounded-xl ${
+                  activeView === 'citations' ? 'bg-violet-600 hover:bg-violet-700' : 'hover:bg-[#2D3747] text-gray-400'
+                }`}
+                onClick={() => setActiveView('citations')}
+              >
+                <BarChart className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Citations</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/')}
-          className="w-full justify-start mb-4 hover:bg-white/5 text-gray-400 hover:text-white group transition-all py-3"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2 text-violet-400 group-hover:text-violet-300" />
-          Back to Home
-        </Button>
-        
-        <nav className="space-y-2">
-          <Button
-            variant={activeView === 'full-report' ? 'secondary' : 'ghost'}
-            className="w-full justify-start hover:bg-white/5 transition-colors"
-            onClick={() => setActiveView('full-report')}
-          >
-            <FileText className="h-5 w-5 mr-3 text-violet-400" />
-            Full Report
-          </Button>
-          <Button
-            variant={activeView === 'pdf-viewer' ? 'secondary' : 'ghost'}
-            className="w-full justify-start hover:bg-white/5 transition-colors"
-            onClick={() => {
-              setActiveView('pdf-viewer');
-              toggleSideView('pdf-viewer');
-            }}
-          >
-            <FileText className="h-5 w-5 mr-3 text-violet-400" />
-            Source PDFs
-          </Button>
-          <Button
-            variant={activeView === 'images' ? 'secondary' : 'ghost'}
-            className="w-full justify-start hover:bg-white/5 transition-colors"
-            onClick={() => {
-              setActiveView('images');
-              toggleSideView('images');
-            }}
-          >
-            <img src="/placeholder.svg" alt="Images" className="h-5 w-5 mr-3 text-violet-400" />
-            Research Images
-          </Button>
-          <Button
-            variant={activeView === 'citations' ? 'secondary' : 'ghost'}
-            className="w-full justify-start hover:bg-white/5 transition-colors"
-            onClick={() => setActiveView('citations')}
-          >
-            <FileText className="h-5 w-5 mr-3 text-violet-400" />
-            Citations
-          </Button>
-          <Button
-            variant={activeView === 'tables' ? 'secondary' : 'ghost'}
-            className="w-full justify-start hover:bg-white/5 transition-colors"
-            onClick={() => {
-              setActiveView('tables');
-              toggleSideView('tables');
-            }}
-          >
-            <img src="/placeholder.svg" alt="Tables" className="h-5 w-5 mr-3 text-violet-400" />
-            Data Tables
-          </Button>
-          <Button
-            variant={activeView === 'threads' ? 'secondary' : 'ghost'}
-            className="w-full justify-start hover:bg-white/5 transition-colors"
-            onClick={() => setActiveView('threads')}
-          >
-            <MessageSquare className="h-5 w-5 mr-3 text-violet-400" />
-            Discussions
-          </Button>
-        </nav>
-      </div>
-      <div className="mt-auto p-4 border-t border-gray-800/50">
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-gray-300 hover:text-white hover:bg-white/5 group transition-all py-4"
-          onClick={() => navigate('/workspace')}
-        >
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center">
-              <FolderTree className="h-5 w-5 text-violet-400 group-hover:text-violet-300 mr-3" />
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-medium">Research Workspace</span>
-                <span className="text-xs text-gray-500">View all research projects</span>
-              </div>
-            </div>
-            <div className="h-6">
-              <img src="/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png" alt="Yavar Logo" className="h-full" />
-            </div>
-          </div>
-        </Button>
-      </div>
+        <div className="mt-auto flex flex-col space-y-2">
+          {onToggleCollaborator && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-10 w-10 rounded-xl ${
+                    showCollaborator ? 'bg-violet-600 hover:bg-violet-700' : 'hover:bg-[#2D3747] text-gray-400'
+                  }`}
+                  onClick={onToggleCollaborator}
+                >
+                  <Users className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Collaborators</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-xl hover:bg-[#2D3747] text-gray-400"
+                onClick={() => toggleSideView('pdf-viewer')}
+              >
+                <Share2 className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Share</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-xl hover:bg-[#2D3747] text-gray-400"
+                onClick={() => window.location.href = '/'}
+              >
+                <Home className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Home</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
     </div>
   );
 };

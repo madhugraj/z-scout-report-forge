@@ -15,40 +15,80 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   
-  // Academic PDF URLs for citation-based PDFs
+  // Academic PDF URLs mapped by domain for better categorization
   const academicPdfUrls = {
-    // AI & Technology papers
-    'ai': ["https://arxiv.org/pdf/2203.15556.pdf", "https://arxiv.org/pdf/2311.10227.pdf", "https://arxiv.org/pdf/2304.03442.pdf"],
-    // Computer Science papers
-    'cs': ["https://www.cs.princeton.edu/sites/default/files/uploads/siddartha_sankrithi.pdf", "https://arxiv.org/pdf/2210.10048.pdf"],
-    // Medical/Health papers
-    'health': ["https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9025424/pdf/11606_2022_Article_7707.pdf", "https://www.mdpi.com/1424-8220/22/8/3003/pdf"],
-    // Business/Economics papers
-    'business': ["https://www.nber.org/system/files/working_papers/w30568/w30568.pdf", "https://pubs.aeaweb.org/doi/pdfplus/10.1257/jep.31.2.211"],
-    // General samples
-    'general': ["https://www.africau.edu/images/default/sample.pdf", "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"]
+    ai: [
+      "https://arxiv.org/pdf/2203.15556.pdf", 
+      "https://arxiv.org/pdf/2311.10227.pdf", 
+      "https://arxiv.org/pdf/2304.03442.pdf",
+      "https://proceedings.neurips.cc/paper_files/paper/2023/file/38ceebc48c19b5fe42c87e052c8a7275-Paper-Conference.pdf"
+    ],
+    cs: [
+      "https://www.cs.princeton.edu/sites/default/files/uploads/siddartha_sankrithi.pdf", 
+      "https://arxiv.org/pdf/2210.10048.pdf",
+      "https://dl.acm.org/doi/pdf/10.1145/3442188.3445922"
+    ],
+    health: [
+      "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9025424/pdf/11606_2022_Article_7707.pdf", 
+      "https://www.mdpi.com/1424-8220/22/8/3003/pdf",
+      "https://jamanetwork.com/journals/jama/fullarticle/2788483"
+    ],
+    business: [
+      "https://www.nber.org/system/files/working_papers/w30568/w30568.pdf", 
+      "https://pubs.aeaweb.org/doi/pdfplus/10.1257/jep.31.2.211",
+      "https://hbr.org/archive-toc/BR1801"
+    ],
+    science: [
+      "https://www.science.org/doi/pdf/10.1126/science.abq1841",
+      "https://www.nature.com/articles/s41586-021-03819-2.pdf",
+      "https://www.science.org/doi/pdf/10.1126/science.adf0553"
+    ],
+    technology: [
+      "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9810754",
+      "https://dl.acm.org/doi/pdf/10.1145/3491102.3517582",
+      "https://www.usenix.org/system/files/osdi20-li-pingchiang.pdf"
+    ]
   };
 
-  // Get an appropriate PDF URL based on the paper's topic
+  // Map referenceIds to consistent PDF URLs
+  const getPdfUrlById = (referenceId: number): string => {
+    // Get a consistent category based on the referenceId
+    const categories = Object.keys(academicPdfUrls);
+    const category = categories[referenceId % categories.length] as keyof typeof academicPdfUrls;
+    const urls = academicPdfUrls[category];
+    
+    // Get a consistent URL within the category based on the referenceId
+    return urls[referenceId % urls.length];
+  };
+
+  // Get a PDF URL based on the paper topic and reference ID
   const getPdfUrl = (pdf: SuggestedPdf): string => {
+    if (pdf.referenceId) {
+      return getPdfUrlById(pdf.referenceId);
+    }
+    
+    // If no referenceId, determine category by title keywords
     const title = pdf.title.toLowerCase();
     const keywords = {
       ai: ['ai', 'artificial intelligence', 'machine learning', 'neural', 'deep learning', 'nlp', 'computer vision'],
       cs: ['computer science', 'algorithm', 'computing', 'software', 'programming', 'database'],
       health: ['health', 'medical', 'medicine', 'clinical', 'patient', 'disease', 'therapy', 'treatment'],
-      business: ['business', 'economic', 'market', 'finance', 'management', 'industry', 'commerce']
+      business: ['business', 'economic', 'market', 'finance', 'management', 'industry', 'commerce'],
+      science: ['science', 'physics', 'chemistry', 'biology', 'climate', 'research', 'experiment'],
+      technology: ['technology', 'engineering', 'system', 'device', 'hardware', 'infrastructure', 'network']
     };
     
     for (const [category, terms] of Object.entries(keywords)) {
       if (terms.some(term => title.includes(term))) {
         const urls = academicPdfUrls[category as keyof typeof academicPdfUrls];
-        const index = (pdf.referenceId || 0) % urls.length;
-        return urls[index];
+        // Create a hash from the title to get a consistent index
+        const titleHash = [...title].reduce((hash, char) => hash + char.charCodeAt(0), 0);
+        return urls[titleHash % urls.length];
       }
     }
     
-    // If no category matches, use general
-    return academicPdfUrls.general[(pdf.referenceId || 0) % academicPdfUrls.general.length];
+    // Default to AI category if no match
+    return academicPdfUrls.ai[0];
   };
 
   if (pdfs.length === 0) {

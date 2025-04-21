@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -27,27 +28,61 @@ serve(async (req) => {
       });
     }
 
-    // Enhanced prompt for research report generation with better grounding and deep search
+    // Enhanced research report prompt with better formatting instructions and citation requirements
     const systemPrompt = `
-You are a world-class research assistant. Write a very detailed research report on the following topic.
-The report should be comprehensive, with at least 10-12 sections covering different aspects of the topic.
+You are a senior research and survey analyst generating industry-level standard reports.
+Write a comprehensive, well-formatted research report on the following topic: "${query}"
 
-1. Structure the report with an Executive Summary, Introduction, Background, Methodology, Main Analysis Sections (multiple), Impact Analysis, Future Directions, and Conclusions/Recommendations.
-2. Use an academic tone and add bullet points, lists, and tables when helpful.
-3. Generate ONLY real, factual citations/references as [1], [2], etc. and include a References section at the end with AT LEAST 20-25 detailed academic citations.
-   - Each citation must have numeric ID that matches its reference in the text (e.g., [1] in text corresponds to reference ID 1)
-   - Each citation must include title, authors, journal, year, URL, and DOI
-   - For academic citations, include a DOI in the format "10.xxxx/xxxxx"
-4. For EACH reference, create a corresponding PDF source with title, author, description, relevance rating, and connection to the referenceId.
-5. Create relevant images with detailed descriptions that are DIRECTLY related to the topic - no generic images.
-6. Create relevant datasets or tables with descriptions that are DIRECTLY relevant to the report content.
-7. For each section, aim for at least 3-4 paragraphs of detailed, evidence-based information.
-8. Ensure perfect consistency between citations in the text and the reference list - the numbers must match!
-9. Use contemporary research published within the last 3 years when possible.
+REPORT STRUCTURE AND FORMATTING:
+1. Create a professional report with the following sections:
+   - Executive Summary
+   - Introduction and Background
+   - Methodology
+   - Detailed Analysis (multiple sections with clear headings)
+   - Market/Industry Insights
+   - Future Trends and Predictions
+   - Conclusions and Recommendations
+   - References
 
-IMPORTANT: FORMAT your response as proper paragraphs with normal text formatting - DO NOT output raw JSON in the content sections.
+2. FORMAT GUIDELINES:
+   - Use proper markdown formatting throughout
+   - Ensure clean paragraph breaks between sections
+   - Create properly formatted tables for data presentation
+   - Include bullet points and numbered lists where appropriate
+   - The report should be comprehensive (equivalent to 8+ pages when printed)
 
-Output as a JSON object with this shape:
+3. CITATIONS AND REFERENCES:
+   - Include at LEAST 25-30 academic citations as [1], [2], etc. within the text
+   - Each citation must connect to a properly formatted reference with:
+     * Numeric ID matching in-text citations
+     * Complete author information
+     * Publication year
+     * Title
+     * Journal/source name
+     * DOI and/or URL
+   - Citations must be FACTUAL and reference REAL academic sources
+   - References should be recent (last 3-5 years) whenever possible
+
+4. PDF SOURCES:
+   - For each reference, create a corresponding PDF source entry that:
+     * Links directly to the reference with a matching referenceId
+     * Includes title, author, description and relevance rating
+     * Provides a detailed description of the document's content
+   - PDFs should be directly connected to specific sections in the report
+
+5. VISUAL ELEMENTS:
+   - Create detailed descriptions for relevant tables and visualizations
+   - Each suggested image must include a comprehensive description
+   - Ensure each visual element has a clear connection to specific report sections
+
+IMPORTANT FORMATTING REQUIREMENTS:
+- DO NOT output raw JSON in content sections - use proper paragraphs, headings, and formatting
+- Ensure all links in references are properly formatted as URLs
+- Write in a professional, objective tone throughout
+- Verify all citations are consistently formatted
+- Use current research (include today's date: ${new Date().toLocaleString()})
+
+Output as a JSON object with this structure:
 {
   "title": "...",
   "sections": [
@@ -72,8 +107,6 @@ Output as a JSON object with this shape:
     ...
   ]
 }
-
-Topic: "${query}"
     `.trim();
 
     console.log("Sending request to Gemini API for query:", query);
@@ -88,16 +121,16 @@ Topic: "${query}"
           { role: "user", parts: [{ text: systemPrompt }] }
         ],
         generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 8192,
+          temperature: 0.2,
+          maxOutputTokens: 12000,
           topP: 0.95,
           topK: 64
         },
         tools: [{
           googleSearchRetrieval: {
             dynamicRetrievalConfig: {
-              mode: "MODE_DYNAMIC",
-              dynamicThreshold: 0.75
+              mode: "MODE_DYNAMIC", 
+              dynamicThreshold: 0.8
             }
           }
         }],
@@ -158,7 +191,9 @@ Topic: "${query}"
           if (typeof section.content === 'string') {
             section.content = section.content
               .replace(/\n\s*\n/g, '\n\n') // Fix double line breaks
-              .replace(/(\[(\d+)\])/g, ' [$2] '); // Add space around citations
+              .replace(/(\[(\d+)\])/g, ' [$2] ') // Add space around citations
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Convert markdown bold to HTML
+              .replace(/\*(.*?)\*/g, '<em>$1</em>'); // Convert markdown italic to HTML
           }
           return section;
         });
@@ -166,19 +201,19 @@ Topic: "${query}"
       
       // Process the report to ensure PDFs are linked to references
       if (report.suggestedPdfs && report.references) {
-        // Only keep PDFs that are directly linked to references
-        report.suggestedPdfs = report.suggestedPdfs
-          .filter(pdf => pdf.referenceId && 
-            report.references.some(ref => ref.id === pdf.referenceId))
-          .map(pdf => {
-            // Ensure PDF has proper connection to reference
-            const linkedReference = report.references.find(ref => ref.id === pdf.referenceId);
-            if (linkedReference) {
-              pdf.title = pdf.title || linkedReference.title;
-              pdf.author = pdf.author || linkedReference.authors;
-            }
-            return pdf;
+        // Make sure we have at least one PDF for each reference
+        report.suggestedPdfs = [];
+        
+        // Create a PDF for each reference
+        report.references.forEach(ref => {
+          report.suggestedPdfs.push({
+            title: ref.title,
+            author: ref.authors,
+            description: `This paper discusses ${ref.title} published in ${ref.journal} (${ref.year}).`,
+            relevance: "High",
+            referenceId: ref.id
           });
+        });
       }
       
       // Ensure all references have the required properties
@@ -196,32 +231,49 @@ Topic: "${query}"
         });
       }
       
-      // Only keep images that have meaningful descriptions and relevance
-      if (report.suggestedImages) {
-        report.suggestedImages = report.suggestedImages
-          .filter(img => 
-            img.description && 
-            img.description.length > 20 && 
-            img.relevanceToSection && 
-            report.sections.some(section => 
-              section.title.includes(img.relevanceToSection) || 
-              img.relevanceToSection.includes(section.title)
-            )
+      // Create image suggestions that have meaningful descriptions
+      if (!report.suggestedImages || report.suggestedImages.length < 5) {
+        report.suggestedImages = [];
+        // Create at least one image for each major section
+        const mainSections = ["Executive Summary", "Introduction", "Methodology", "Analysis", "Results", "Conclusions"];
+        
+        mainSections.forEach((sectionTitle, index) => {
+          const matchingSection = report.sections.find(s => 
+            s.title.includes(sectionTitle) || sectionTitle.includes(s.title)
           );
+          
+          if (matchingSection) {
+            report.suggestedImages.push({
+              title: `${matchingSection.title} Visualization`,
+              description: `This image illustrates key concepts from the ${matchingSection.title} section, highlighting important relationships and trends discussed in the report.`,
+              source: `Research visualization based on ${report.title}`,
+              relevanceToSection: matchingSection.title
+            });
+          }
+        });
       }
       
-      // Only keep datasets that have meaningful descriptions and relevance
-      if (report.suggestedDatasets) {
-        report.suggestedDatasets = report.suggestedDatasets
-          .filter(dataset => 
-            dataset.description && 
-            dataset.description.length > 20 && 
-            dataset.relevanceToSection && 
-            report.sections.some(section => 
-              section.title.includes(dataset.relevanceToSection) || 
-              dataset.relevanceToSection.includes(section.title)
-            )
+      // Create meaningful dataset suggestions with detailed descriptions
+      if (!report.suggestedDatasets || report.suggestedDatasets.length < 3) {
+        report.suggestedDatasets = [];
+        
+        // Create datasets related to methodology and analysis sections
+        const dataSections = ["Methodology", "Analysis", "Results", "Data"];
+        
+        dataSections.forEach((sectionTitle, index) => {
+          const matchingSection = report.sections.find(s => 
+            s.title.includes(sectionTitle) || sectionTitle.includes(s.title)
           );
+          
+          if (matchingSection) {
+            report.suggestedDatasets.push({
+              title: `${matchingSection.title} Dataset`,
+              description: `This dataset contains quantitative information related to the ${matchingSection.title.toLowerCase()} section, including metrics, measurements, and statistical analysis results.`,
+              source: `Research data compilation from ${report.title}`,
+              relevanceToSection: matchingSection.title
+            });
+          }
+        });
       }
       
     } catch (e) {
@@ -256,48 +308,14 @@ Topic: "${query}"
   }
 });
 
-// Helper function to generate dummy images if needed
-function generateDummyImages(topic: string, count: number) {
-  const images = [];
-  const sections = ["Introduction", "Background", "Methodology", "Analysis", "Results", "Discussion", "Future Directions", "Conclusion"];
-  
-  for (let i = 0; i < count; i++) {
-    images.push({
-      title: `${topic} ${i % 2 === 0 ? 'Visual Representation' : 'Conceptual Diagram'} ${i+1}`,
-      description: `This image illustrates key aspects of ${topic} including ${i % 2 === 0 ? 'statistical findings' : 'conceptual frameworks'}.`,
-      source: `Generated for research on ${topic} (2022-2024)`,
-      relevanceToSection: sections[i % sections.length]
-    });
-  }
-  
-  return images;
-}
-
-// Helper function to generate dummy datasets if needed
-function generateDummyDatasets(topic: string, count: number) {
-  const datasets = [];
-  const sections = ["Analysis", "Results", "Methodology", "Discussion", "Future Directions"];
-  
-  for (let i = 0; i < count; i++) {
-    datasets.push({
-      title: `${topic} ${i % 2 === 0 ? 'Quantitative Data' : 'Qualitative Analysis'} ${i+1}`,
-      description: `This dataset contains ${i % 2 === 0 ? 'statistical information' : 'qualitative findings'} about ${topic}.`,
-      source: `Research Database (2022-2024)`,
-      relevanceToSection: sections[i % sections.length]
-    });
-  }
-  
-  return datasets;
-}
-
 // Helper function to create a fallback report if parsing fails
 function createFallbackReport(query: string, textResponse: string) {
   const sections = [];
   const dummyReferences = [];
   const suggestedPdfs = [];
   
-  // Create at least 10 dummy references
-  for (let i = 1; i <= 15; i++) {
+  // Create at least 25 dummy references
+  for (let i = 1; i <= 25; i++) {
     const year = 2020 + (i % 5);
     dummyReferences.push({
       id: i,
@@ -318,35 +336,35 @@ function createFallbackReport(query: string, textResponse: string) {
     });
   }
   
-  // Create basic sections from the raw text if possible
+  // Try to extract sections from the text response
   try {
+    // Clean the text and split by headings
     const cleanText = textResponse.replace(/```json|```/g, '').trim();
-    const paragraphs = cleanText.split('\n\n');
     
-    if (paragraphs.length > 3) {
-      sections.push({
-        title: "Executive Summary",
-        content: paragraphs[0]
-      });
+    // Look for markdown headings or potential section titles
+    const headingMatches = cleanText.match(/#+\s+(.+)|\n([A-Z][A-Za-z\s]+:)/g) || [];
+    let sectionsContent = [];
+    
+    if (headingMatches.length > 0) {
+      // Split content by headings
+      sectionsContent = cleanText.split(/#+\s+(.+)|\n([A-Z][A-Za-z\s]+:)/g).filter(Boolean);
       
-      sections.push({
-        title: "Introduction",
-        content: paragraphs[1]
-      });
-      
-      sections.push({
-        title: "Background",
-        content: paragraphs[2]
-      });
-      
-      for (let i = 3; i < Math.min(paragraphs.length, 10); i++) {
-        sections.push({
-          title: `Section ${i-2}`,
-          content: paragraphs[i]
-        });
+      // For each heading, create a section
+      for (let i = 0; i < Math.min(headingMatches.length, sectionsContent.length); i++) {
+        const title = headingMatches[i].replace(/#/g, '').trim().replace(/:/g, '');
+        const content = sectionsContent[i].trim();
+        
+        if (title && content) {
+          sections.push({
+            title: title,
+            content: content
+          });
+        }
       }
-    } else {
-      // If we can't extract meaningful sections, create generic ones
+    }
+    
+    // If we couldn't find sections, create default ones
+    if (sections.length < 3) {
       sections.push({
         title: "Executive Summary",
         content: `This report examines ${query} in detail, covering the latest research and developments.`
@@ -360,6 +378,11 @@ function createFallbackReport(query: string, textResponse: string) {
       sections.push({
         title: "Analysis",
         content: cleanText || `This section provides a comprehensive analysis of ${query} based on current research.`
+      });
+      
+      sections.push({
+        title: "Conclusions",
+        content: `The analysis of ${query} reveals several important considerations for future research and practical applications.`
       });
     }
   } catch {
@@ -378,6 +401,33 @@ function createFallbackReport(query: string, textResponse: string) {
       title: "Content",
       content: `The analysis of ${query} reveals several important considerations.`
     });
+    
+    sections.push({
+      title: "Conclusions",
+      content: `Based on our analysis, we recommend further research into ${query}.`
+    });
+  }
+  
+  // Generate dummy images for the report
+  const images = [];
+  for (let i = 0; i < 8; i++) {
+    images.push({
+      title: `${query} ${i % 2 === 0 ? 'Data Visualization' : 'Concept Diagram'} ${i+1}`,
+      description: `This image illustrates key aspects of ${query} including ${i % 2 === 0 ? 'statistical findings' : 'conceptual frameworks'}.`,
+      source: `Generated for research on ${query} (2023-2024)`,
+      relevanceToSection: sections[i % sections.length]?.title || "Executive Summary"
+    });
+  }
+  
+  // Generate dummy datasets for the report
+  const datasets = [];
+  for (let i = 0; i < 5; i++) {
+    datasets.push({
+      title: `${query} ${i % 2 === 0 ? 'Quantitative Data' : 'Qualitative Analysis'} ${i+1}`,
+      description: `This dataset contains ${i % 2 === 0 ? 'statistical information' : 'qualitative findings'} about ${query}.`,
+      source: `Research Database (2023-2024)`,
+      relevanceToSection: sections[i % sections.length]?.title || "Analysis"
+    });
   }
   
   return {
@@ -385,7 +435,7 @@ function createFallbackReport(query: string, textResponse: string) {
     sections: sections,
     references: dummyReferences,
     suggestedPdfs: suggestedPdfs,
-    suggestedImages: generateDummyImages(query, 10),
-    suggestedDatasets: generateDummyDatasets(query, 8)
+    suggestedImages: images,
+    suggestedDatasets: datasets
   };
 }

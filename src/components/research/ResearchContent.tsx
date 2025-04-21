@@ -51,13 +51,12 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
     setDropTargetIndex(null);
   };
 
-  // Create a custom formatter for content that may contain JSON or raw content
+  // Format section content with proper HTML and markdown handling
   const formatSectionContent = (content: string) => {
-    // Check if content is possibly JSON (starts with { or [)
+    // Handle potential JSON content
     if ((content.trim().startsWith('{') || content.trim().startsWith('[')) && 
         (content.trim().endsWith('}') || content.trim().endsWith(']'))) {
       try {
-        // Try to parse and pretty print the JSON
         const parsed = JSON.parse(content);
         return JSON.stringify(parsed, null, 2);
       } catch (e) {
@@ -65,61 +64,152 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
       }
     }
     
-    // Normal paragraph formatting
-    return content.split('\n\n').map((paragraph: string, idx: number) => {
-      if (paragraph.startsWith('<div class="my-4')) {
+    // Process markdown-like formats
+    const formattedContent = content
+      .replace(/#{3}\s+(.*?)(?=\n|$)/g, '<h3 class="text-xl font-semibold text-gray-800 mt-5 mb-3">$1</h3>')
+      .replace(/#{2}\s+(.*?)(?=\n|$)/g, '<h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-3">$1</h2>')
+      .replace(/#{1}\s+(.*?)(?=\n|$)/g, '<h1 class="text-3xl font-bold text-gray-800 mt-8 mb-4">$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 bg-gray-100 rounded text-gray-800">$1</code>')
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-violet-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
+    
+    // Split by paragraphs and handle each one
+    return formattedContent.split('\n\n').map((paragraph: string, idx: number) => {
+      // If paragraph has HTML, render it directly
+      if (paragraph.startsWith('<h') || paragraph.startsWith('<div') || paragraph.includes('<table')) {
         return (
           <div key={idx} dangerouslySetInnerHTML={{ __html: paragraph }} />
         );
       }
 
-      // Citation regex matches [digit]
-      const citationRegex = /\[(\d+)\]/g;
-      const parts: React.ReactNode[] = [];
-      let lastIndex = 0;
-      let match: RegExpExecArray | null;
-
-      while ((match = citationRegex.exec(paragraph)) !== null) {
-        parts.push(<React.Fragment key={`text-${match.index}`}>{paragraph.substring(lastIndex, match.index)}</React.Fragment>);
-        
-        const citationNumber = parseInt(match[1], 10);
-        // Find reference by ID or use a fallback
-        const reference = references.find(ref => ref.id === citationNumber) || {
-          title: "Reference",
-          authors: "Unknown",
-          journal: "Unknown",
-          year: "Unknown",
-          url: "",
-          doi: "" // Added the doi property to the fallback object
-        };
-
-        parts.push(
-          <CitationPopover
-            key={`citation-${idx}-${citationNumber}`}
-            reference={{
-              id: citationNumber,
-              title: reference.title,
-              authors: reference.authors,
-              year: reference.year,
-              journal: reference.journal,
-              url: reference.url,
-              doi: reference.doi
-            }}
-            index={citationNumber - 1} // Index for display purposes
-            inline={true}
-          />
+      // Handle bullet points and numbered lists
+      if (paragraph.trim().startsWith('- ') || paragraph.trim().startsWith('* ')) {
+        const listItems = paragraph.split(/[\r\n]+/).map(item => 
+          item.trim().replace(/^[-*]\s+/, '')
         );
-        lastIndex = match.index + match[0].length;
+        return (
+          <ul key={idx} className="list-disc pl-6 mb-4 text-gray-700">
+            {listItems.map((item, i) => (
+              <li key={i} className="mb-1">{processCitations(item, references)}</li>
+            ))}
+          </ul>
+        );
       }
 
-      parts.push(<React.Fragment key={`text-end-${idx}`}>{paragraph.substring(lastIndex)}</React.Fragment>);
+      if (paragraph.trim().match(/^\d+\.\s+/)) {
+        const listItems = paragraph.split(/[\r\n]+/).map(item => 
+          item.trim().replace(/^\d+\.\s+/, '')
+        );
+        return (
+          <ol key={idx} className="list-decimal pl-6 mb-4 text-gray-700">
+            {listItems.map((item, i) => (
+              <li key={i} className="mb-1">{processCitations(item, references)}</li>
+            ))}
+          </ol>
+        );
+      }
+
+      // Handle tables
+      if (paragraph.includes('|') && paragraph.includes('\n') && paragraph.split('\n').every(line => line.includes('|'))) {
+        try {
+          const tableRows = paragraph.trim().split('\n');
+          const headers = tableRows[0].split('|').map(col => col.trim()).filter(Boolean);
+          
+          let startIndex = 1;
+          // Skip separator row if it exists (contains --- or ===)
+          if (tableRows[1] && (tableRows[1].includes('---') || tableRows[1].includes('==='))) {
+            startIndex = 2;
+          }
+          
+          const rows = tableRows.slice(startIndex).map(row => 
+            row.split('|').map(col => col.trim()).filter(Boolean)
+          );
+          
+          return (
+            <div key={idx} className="overflow-x-auto mb-6">
+              <table className="min-w-full border-collapse border border-gray-200 rounded-lg mb-4">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {headers.map((header, i) => (
+                      <th key={i} className="py-3 px-4 text-left text-sm font-medium text-gray-700 border-b">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, rowIdx) => (
+                    <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      {row.map((cell, cellIdx) => (
+                        <td key={cellIdx} className="py-3 px-4 text-sm text-gray-700 border-b">
+                          {processCitations(cell, references)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        } catch (e) {
+          // If table parsing fails, render as normal paragraph
+        }
+      }
       
+      // Regular paragraph with citation processing
       return (
         <p key={idx} className="text-gray-700 mb-4">
-          {parts}
+          {processCitations(paragraph, references)}
         </p>
       );
     });
+  };
+
+  // Process citations in text
+  const processCitations = (text: string, references: Reference[]) => {
+    // Citation regex matches [digit]
+    const citationRegex = /\[(\d+)\]/g;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    // Split text by citation references
+    while ((match = citationRegex.exec(text)) !== null) {
+      parts.push(<React.Fragment key={`text-${match.index}`}>{text.substring(lastIndex, match.index)}</React.Fragment>);
+      
+      const citationNumber = parseInt(match[1], 10);
+      // Find reference by ID or use a fallback
+      const reference = references.find(ref => ref.id === citationNumber) || {
+        title: "Reference",
+        authors: "Unknown",
+        journal: "Unknown",
+        year: "Unknown",
+        url: "",
+        doi: ""
+      };
+
+      parts.push(
+        <CitationPopover
+          key={`citation-${citationNumber}`}
+          reference={{
+            id: citationNumber,
+            title: reference.title,
+            authors: reference.authors,
+            year: reference.year,
+            journal: reference.journal,
+            url: reference.url,
+            doi: reference.doi
+          }}
+          index={citationNumber - 1} // Index for display purposes
+          inline={true}
+        />
+      );
+      lastIndex = match.index + match[0].length;
+    }
+
+    parts.push(<React.Fragment key={`text-end`}>{text.substring(lastIndex)}</React.Fragment>);
+    return parts;
   };
 
   if (sections.length === 0) {

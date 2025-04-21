@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { useGeminiReport, GeminiReport } from "@/hooks/useGeminiReport";
 import DashboardSidebar from "./DashboardSidebar";
 import ReportGenerationProgress from "./ReportGenerationProgress";
 import DashboardContentSwitcher from "./DashboardContentSwitcher";
+import CollaborationWindow from "../../CollaborationWindow";
 
 const ResearchDashboardShell: React.FC = () => {
   const location = useLocation();
@@ -19,6 +21,7 @@ const ResearchDashboardShell: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeSideView, setActiveSideView] = useState<'pdf-viewer' | 'images' | 'tables' | null>(null);
+  const [showCollaborator, setShowCollaborator] = useState<boolean>(false);
   const [selectedPdfForView, setSelectedPdfForView] = useState<{title: string; url: string} | null>(null);
   const [showEncryptionDialog, setShowEncryptionDialog] = useState(false);
   const [generationSteps, setGenerationSteps] = useState<string[]>([]);
@@ -55,22 +58,23 @@ const ResearchDashboardShell: React.FC = () => {
     setProgress(0);
     setGenerationSteps(["Sending request to Gemini..."]);
 
-    // Enhanced mock progress with unique steps
+    // Enhanced progress tracking with unique steps and no repetition
     const mockProgress = () => {
       let currentProgress = 0;
       const progressSteps = [
-        { threshold: 20, message: "Analyzing research query..." },
-        { threshold: 35, message: "Gathering scientific literature..." },
-        { threshold: 50, message: "Processing research data..." },
-        { threshold: 65, message: "Synthesizing findings..." },
-        { threshold: 80, message: "Creating visualizations and references..." },
+        { threshold: 15, message: "Analyzing research query..." },
+        { threshold: 30, message: "Gathering scientific literature..." },
+        { threshold: 45, message: "Processing research data..." },
+        { threshold: 60, message: "Synthesizing findings..." },
+        { threshold: 75, message: "Creating visualizations and references..." },
         { threshold: 90, message: "Finalizing research report..." }
       ];
       
       let currentStepIndex = 0;
+      let completedSteps = new Set();
       
       const interval = setInterval(() => {
-        currentProgress += Math.random() * 10;
+        currentProgress += Math.random() * 8 + 2; // More predictable progress
         if (currentProgress > 95) {
           clearInterval(interval);
           return;
@@ -78,20 +82,19 @@ const ResearchDashboardShell: React.FC = () => {
         
         setProgress(Math.min(Math.round(currentProgress), 95));
         
-        // Add next step message when threshold is crossed
+        // Add next step message when threshold is crossed, preventing duplicates
         while (currentStepIndex < progressSteps.length && 
                currentProgress > progressSteps[currentStepIndex].threshold) {
           const step = progressSteps[currentStepIndex];
-          setGenerationSteps(prev => {
-            // Only add the step if it's not already in the list
-            if (!prev.includes(step.message)) {
-              return [...prev, step.message];
-            }
-            return prev;
-          });
+          
+          if (!completedSteps.has(step.message)) {
+            setGenerationSteps(prev => [...prev, step.message]);
+            completedSteps.add(step.message);
+          }
+          
           currentStepIndex++;
         }
-      }, 800);
+      }, 1000);
       
       // Store interval ID for cleanup
       return interval;
@@ -125,6 +128,10 @@ const ResearchDashboardShell: React.FC = () => {
     setActiveSideView(prev => prev === view ? null : view);
   };
 
+  const toggleCollaborator = () => {
+    setShowCollaborator(prev => !prev);
+  };
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white overflow-hidden">
       <DashboardSidebar
@@ -132,11 +139,13 @@ const ResearchDashboardShell: React.FC = () => {
         setActiveView={setActiveView}
         toggleSideView={toggleSideView}
         activeSideView={activeSideView}
+        onToggleCollaborator={toggleCollaborator}
+        showCollaborator={showCollaborator}
       />
 
       <div className="flex flex-1 relative flex-col">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={100} minSize={50}>
+          <ResizablePanel defaultSize={showCollaborator ? 60 : 100} minSize={40}>
             <div className="bg-white overflow-auto h-full">
               <ReportGenerationProgress
                 isGenerating={isGenerating}
@@ -157,7 +166,19 @@ const ResearchDashboardShell: React.FC = () => {
             </div>
           </ResizablePanel>
 
-          {activeSideView && (
+          {showCollaborator && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={40} minSize={30}>
+                <CollaborationWindow 
+                  reportSections={report.sections} 
+                  isFloating={false}
+                />
+              </ResizablePanel>
+            </>
+          )}
+
+          {activeSideView && !showCollaborator && (
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={35} minSize={25}>
