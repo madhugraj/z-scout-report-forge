@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   ArrowLeft, 
@@ -202,6 +203,7 @@ const TrustSafetyDashboard: React.FC<TrustSafetyDashboardProps> = ({ projectTitl
     setActionDialogOpen(true);
   };
 
+  // Get project title from various sources with fallbacks
   const effectiveTitle =
     projectTitle ||
     (typeof window !== 'undefined' && window.history.state?.usr?.query) ||
