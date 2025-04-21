@@ -161,6 +161,11 @@ const ResearchDashboard: React.FC = () => {
     }
     
     let _query = state?.query || "Impact of AI on Mental Health Research";
+    
+    setTopicPDFList([]);
+    setTopicImageList([]);
+    setTopicCitationList([]);
+    
     if (topicPDFs[_query]) {
       setTopicPDFList(topicPDFs[_query] || []);
       setTopicImageList(topicImages[_query] || []);
