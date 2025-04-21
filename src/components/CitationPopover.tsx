@@ -11,8 +11,8 @@ import { toast } from '@/components/ui/sonner';
 
 interface Reference {
   title: string;
-  authors: string[];
-  year: number;
+  authors: string | string[];
+  year: number | string;
   journal?: string;
   url?: string;
   doi?: string;
@@ -31,7 +31,11 @@ const CitationPopover: React.FC<CitationPopoverProps> = ({
   inline = false,
 }) => {
   const handleCopy = () => {
-    const citation = `${reference.authors.join(', ')}. (${reference.year}). ${reference.title}. ${reference.journal || ''}. ${reference.doi ? `DOI: ${reference.doi}` : ''}`;
+    const authorText = Array.isArray(reference.authors) 
+      ? reference.authors.join(', ')
+      : reference.authors;
+    
+    const citation = `${authorText}. (${reference.year}). ${reference.title}. ${reference.journal || ''}. ${reference.doi ? `DOI: ${reference.doi}` : ''}`;
     navigator.clipboard.writeText(citation);
     toast.success('Citation copied to clipboard');
   };
@@ -45,6 +49,10 @@ const CitationPopover: React.FC<CitationPopoverProps> = ({
       toast.error('No URL available for this reference');
     }
   };
+
+  const authorText = Array.isArray(reference.authors) 
+    ? reference.authors.join(', ')
+    : reference.authors;
 
   return (
     <Popover>
@@ -64,7 +72,7 @@ const CitationPopover: React.FC<CitationPopoverProps> = ({
             <div className="flex-1">
               <h4 className="text-sm font-medium line-clamp-1">{reference.title}</h4>
               <p className="text-xs text-muted-foreground line-clamp-1">
-                {reference.authors.join(', ')} ({reference.year})
+                {authorText} ({reference.year})
               </p>
             </div>
           </div>
@@ -75,7 +83,7 @@ const CitationPopover: React.FC<CitationPopoverProps> = ({
           <div>
             <h4 className="font-medium">{reference.title}</h4>
             <p className="text-sm text-muted-foreground">
-              {reference.authors.join(', ')} ({reference.year})
+              {authorText} ({reference.year})
             </p>
             {reference.journal && (
               <p className="text-sm italic">{reference.journal}</p>
