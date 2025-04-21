@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -293,6 +294,13 @@ const ResearchDashboard: React.FC = () => {
     const body = encodeURIComponent("Access the full research report here: " + window.location.href);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
     toast.success("Email client opened with report link!");
+  };
+
+  const handleEditSection = (sectionIndex: number) => {
+    if (sections && sections[sectionIndex]) {
+      setShowCollaborator(true);
+      toast.success(`Editing section: ${sections[sectionIndex].title}`);
+    }
   };
 
   const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
@@ -614,4 +622,356 @@ const ResearchDashboard: React.FC = () => {
                     <h3 className="font-medium">Generating comprehensive research report...</h3>
                   </div>
                   
-                  <div className="w-full bg-violet-200 rounded-full h-2
+                  <div className="w-full bg-violet-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="h-full bg-violet-600 transition-all duration-500 ease-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  
+                  <div className="mt-3 max-h-32 overflow-y-auto text-sm">
+                    {generationSteps.map((step, i) => (
+                      <div key={i} className="py-0.5 flex items-center gap-2">
+                        {i === generationSteps.length - 1 ? (
+                          <div className="h-2 w-2 rounded-full bg-violet-600 animate-pulse" />
+                        ) : (
+                          <div className="h-2 w-2 rounded-full bg-violet-600" />
+                        )}
+                        <span>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {activeView === 'full-report' && (
+                <div className="p-8 bg-white text-gray-900">
+                  <div className="max-w-4xl mx-auto">
+                    <div className="mb-6 flex justify-between items-center">
+                      <h1 className="text-3xl font-bold">{state.query || "Impact of AI on Mental Health Research"}</h1>
+                      
+                      <div className="flex gap-2">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setShowCollaborator(true)}
+                              >
+                                <Users className="h-4 w-4 mr-2" />
+                                Collaborate
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Collaborate on this research report</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex gap-2 items-center"
+                            >
+                              <FileDown className="h-4 w-4" />
+                              Export
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-56">
+                            <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuGroup>
+                              <DropdownMenuItem onClick={handleExportReport}>
+                                <FileDown className="h-4 w-4 mr-2" />
+                                <span>Download as Text</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={handleEmailReport}>
+                                <Mail className="h-4 w-4 mr-2" />
+                                <span>Email Report</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={handleShareReport}>
+                                <Lock className="h-4 w-4 mr-2" />
+                                <span>Secure Export</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={handleShareReport}
+                              >
+                                <Share2 className="h-4 w-4 mr-2" />
+                                Share
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Share this research report</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                    
+                    {sections.length === 0 && !isGenerating ? (
+                      <div className="text-center py-12 text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                        <h3 className="text-lg font-medium mb-2">No Report Generated Yet</h3>
+                        <p>Start by searching for a research topic or uploading documents.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-8">
+                        {sections.map((section, index) => (
+                          <div 
+                            key={index}
+                            className={`p-6 border rounded-lg ${dropTargetIndex === index ? 'border-violet-400 bg-violet-50' : 'border-gray-200'}`}
+                            onDragOver={(e) => handleSectionDragOver(e, index)}
+                            onDragLeave={handleSectionDragLeave}
+                            onDrop={(e) => handleImageDrop(e, index)}
+                          >
+                            <div className="flex justify-between items-center mb-3">
+                              <h2 className="text-xl font-semibold text-gray-800">{section.title}</h2>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditSection(index)}
+                                className="text-violet-600"
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                            </div>
+                            <div 
+                              className="prose max-w-none text-gray-700" 
+                              dangerouslySetInnerHTML={{ __html: section.content }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {activeView === 'pdf-viewer' && (
+                <div className="p-8 bg-white text-gray-900">
+                  <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold mb-6">Source Documents</h1>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {topicSpecificData.pdfs && topicSpecificData.pdfs.map((pdf, index) => (
+                        <div key={index} className="border rounded-lg overflow-hidden">
+                          <div className="p-4 border-b flex justify-between items-center">
+                            <div>
+                              <h3 className="font-medium">{pdf.title}</h3>
+                              <p className="text-sm text-gray-500">{pdf.author} • {pdf.pages} pages</p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setSelectedPdfForView({title: pdf.title, url: pdf.url})}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              Open
+                            </Button>
+                          </div>
+                          <div className="h-40 bg-gray-100 relative">
+                            <iframe src={pdf.url} title={pdf.title} className="w-full h-full opacity-50" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Button
+                                onClick={() => setSelectedPdfForView({title: pdf.title, url: pdf.url})}
+                              >
+                                View Document
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {activeView === 'images' && (
+                <div className="p-8 bg-white text-gray-900">
+                  <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold mb-6">Research Images</h1>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                      {topicSpecificData.images && topicSpecificData.images.map((image, index) => (
+                        <div 
+                          key={index} 
+                          className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('application/json', JSON.stringify(image));
+                          }}
+                        >
+                          <div className="aspect-square bg-gray-100 overflow-hidden">
+                            <img 
+                              src={image.url} 
+                              alt={image.title} 
+                              className="w-full h-full object-cover" 
+                            />
+                          </div>
+                          <div className="p-3">
+                            <h3 className="font-medium text-sm">{image.title}</h3>
+                            <p className="text-xs text-gray-500">{image.source}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {activeView === 'citations' && (
+                <div className="p-8 bg-white text-gray-900">
+                  <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold mb-6">Citations & References</h1>
+                    <div className="space-y-4">
+                      {mockReferences && mockReferences.map((reference, index) => (
+                        <div key={index} className="p-4 border rounded-lg">
+                          <div className="flex justify-between">
+                            <h3 className="font-medium">{reference.title}</h3>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>View source</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <p className="text-sm text-gray-500">{reference.authors}</p>
+                          <p className="text-sm text-gray-500">{reference.journal}, {reference.year}</p>
+                          <p className="text-sm mt-2">{reference.abstract}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {activeView === 'tables' && (
+                <div className="p-8 bg-white text-gray-900">
+                  <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold mb-6">Data Tables</h1>
+                    <div className="space-y-6">
+                      {topicSpecificData.tables && topicSpecificData.tables.map((table, index) => (
+                        <div key={index} className="border rounded-lg overflow-hidden">
+                          <div className="p-4 border-b bg-gray-50">
+                            <h3 className="font-medium">{table.title}</h3>
+                            <p className="text-sm text-gray-500">{table.rows} rows × {table.columns} columns</p>
+                          </div>
+                          <div className="p-4">
+                            <div className="flex justify-end mb-2">
+                              <Button variant="outline" size="sm">
+                                <FileDown className="h-4 w-4 mr-1" />
+                                Export
+                              </Button>
+                            </div>
+                            <div className="bg-gray-100 p-6 rounded-lg text-center text-gray-500">
+                              <Table className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                              <p>Table preview not available</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {activeView === 'threads' && (
+                <div className="p-8 bg-white text-gray-900">
+                  <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold mb-6">Discussion Threads</h1>
+                    <div className="space-y-4">
+                      {topicSpecificData.threads && topicSpecificData.threads.map((thread, index) => (
+                        <div key={index} className="p-4 border rounded-lg">
+                          <h3 className="font-medium">{thread.title}</h3>
+                          <div className="flex justify-between items-center mt-1">
+                            <p className="text-sm text-gray-500">{thread.replies} replies</p>
+                            <p className="text-sm text-gray-500">Last updated: {thread.lastUpdated}</p>
+                          </div>
+                          <div className="mt-3">
+                            <Button variant="outline" size="sm">
+                              <MessageSquare className="h-4 w-4 mr-1" />
+                              View Thread
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="flex justify-center mt-6">
+                        <Button>
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Start New Discussion
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ResizablePanel>
+          
+          {collaborationMode === 'panel' && showCollaborator && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={35} minSize={30}>
+                <CollaborationWindow 
+                  reportSections={sections}
+                  onClose={() => setShowCollaborator(false)}
+                  isFloating={false}
+                  title={state.query || "Research Report"}
+                />
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+        
+        {collaborationMode === 'drawer' && (
+          <Drawer open={showCollaborator} onOpenChange={setShowCollaborator}>
+            <DrawerContent className="h-[85vh]">
+              <CollaborationWindow 
+                reportSections={sections}
+                title={state.query || "Research Report"}
+              />
+            </DrawerContent>
+          </Drawer>
+        )}
+      </div>
+      
+      {selectedPdfForView && (
+        <PDFViewerDialog
+          isOpen={selectedPdfForView !== null}
+          onClose={() => setSelectedPdfForView(null)}
+          title={selectedPdfForView.title}
+          pdfUrl={selectedPdfForView.url}
+        />
+      )}
+      
+      {showEncryptionDialog && (
+        <EncryptionDialog 
+          isOpen={showEncryptionDialog}
+          onClose={() => setShowEncryptionDialog(false)}
+          title={state.query || "Research Report"}
+        />
+      )}
+      
+      {activeSideView && (
+        <Sheet open={!!activeSideView} onOpenChange={() => setActiveSideView(null)}>
+          <SheetContent side="right" className="w-[450px] p-0 bg-transparent border-0">
+            {renderSidePanel()}
+          </SheetContent>
+        </Sheet>
+      )}
+    </div>
+  );
+};
+
+export default ResearchDashboard;

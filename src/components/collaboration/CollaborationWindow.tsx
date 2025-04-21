@@ -31,7 +31,7 @@ interface CollaborationWindowProps {
   reportSections?: {title: string; content: string}[];
   onClose?: () => void;
   isFloating?: boolean;
-  title?: string; // Add title prop to the interface
+  title?: string;
 }
 
 const CollaborationWindow: React.FC<CollaborationWindowProps> = ({ 
@@ -40,7 +40,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   reportSections = [],
   onClose,
   isFloating = false,
-  title
+  title = 'Research Report'
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -158,6 +158,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         setShowInviteDialog={setShowInviteDialog}
         editorMode={editorMode}
         setEditorMode={setEditorMode}
+        title={title}
       />
 
       <div className="flex flex-row flex-1 overflow-hidden">
