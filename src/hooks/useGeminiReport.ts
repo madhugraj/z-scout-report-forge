@@ -1,27 +1,32 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function generateGeminiReport(query: string) {
-  const response = await fetch(
-    "https://jtdwgpqfratkepiwtmud.functions.supabase.co/generate-report-gemini",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
+  try {
+    // First approach: Use Supabase's function.invoke method (preferred with auth)
+    const { data, error } = await supabase.functions.invoke('generate-report-gemini', {
+      body: { query }
+    });
+    
+    if (error) {
+      console.error("Supabase function error:", error);
+      throw new Error(error.message || "Failed to generate report");
     }
-  );
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || "Failed to generate report.");
+    
+    return data.report;
+  } catch (error: any) {
+    console.error("Error generating report:", error);
+    throw new Error(error.message || "Failed to generate report from Gemini.");
   }
-  return data.report;
 }
 
 export function useGeminiReport() {
   return useMutation({
     mutationFn: (query: string) => generateGeminiReport(query),
     onError: (error: any) => {
+      console.error("Mutation error:", error);
       toast.error(error.message || "Failed to generate report from Gemini.");
     }
   });

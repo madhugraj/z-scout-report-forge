@@ -20,6 +20,14 @@ serve(async (req) => {
   try {
     const { query } = await req.json();
 
+    if (!GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY is not set in environment variables");
+      return new Response(JSON.stringify({ error: "API key configuration error" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     // Compose a precise prompt for research report generation
     const systemPrompt = `
 You are a world-class research assistant. Write a detailed research report on the following topic.
@@ -37,6 +45,8 @@ You are a world-class research assistant. Write a detailed research report on th
 Topic: "${query}"
     `.trim();
 
+    console.log("Sending request to Gemini API for query:", query);
+    
     // Prepare and send request to Gemini
     const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
     const response = await fetch(requestUrl, {
@@ -55,21 +65,29 @@ Topic: "${query}"
 
     if (!response.ok) {
       const errText = await response.text();
-      return new Response(JSON.stringify({ error: errText }), {
+      console.error("Gemini API error:", errText);
+      return new Response(JSON.stringify({ error: `Gemini API error: ${errText}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
     const data = await response.json();
+    console.log("Received response from Gemini API");
 
     // Expecting a structured JSON object in the text response
     const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     let report;
     try {
       report = JSON.parse(textResponse);
-    } catch {
-      return new Response(JSON.stringify({ error: "Could not parse Gemini output as JSON.", raw: textResponse }), {
+      console.log("Successfully parsed report JSON");
+    } catch (e) {
+      console.error("Failed to parse Gemini output as JSON:", e);
+      console.log("Raw response:", textResponse);
+      return new Response(JSON.stringify({ 
+        error: "Could not parse Gemini output as JSON.", 
+        raw: textResponse 
+      }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
@@ -79,6 +97,7 @@ Topic: "${query}"
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   } catch (error) {
+    console.error("Unexpected error in generate-report-gemini:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
