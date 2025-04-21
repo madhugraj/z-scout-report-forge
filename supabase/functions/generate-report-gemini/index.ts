@@ -78,19 +78,45 @@ Topic: "${query}"
     // Expecting a structured JSON object in the text response
     const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     let report;
+    
     try {
-      report = JSON.parse(textResponse);
+      // Extract JSON from code block if present
+      let jsonString = textResponse;
+      // Check if the response is wrapped in code blocks
+      const jsonMatch = textResponse.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        jsonString = jsonMatch[1];
+        console.log("Extracted JSON from code block");
+      }
+      
+      report = JSON.parse(jsonString);
       console.log("Successfully parsed report JSON");
     } catch (e) {
       console.error("Failed to parse Gemini output as JSON:", e);
       console.log("Raw response:", textResponse);
-      return new Response(JSON.stringify({ 
-        error: "Could not parse Gemini output as JSON.", 
-        raw: textResponse 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      
+      // Attempt to create a basic report structure if parsing fails
+      try {
+        // Create a fallback report with at least some content
+        report = {
+          title: query,
+          sections: [
+            {
+              title: "Generated Content",
+              content: textResponse.replace(/```json|```/g, '').trim()
+            }
+          ]
+        };
+        console.log("Created fallback report structure");
+      } catch (fallbackError) {
+        return new Response(JSON.stringify({ 
+          error: "Could not parse or create report from Gemini output.", 
+          raw: textResponse 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
     }
 
     return new Response(JSON.stringify({ report }), {

@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export async function generateGeminiReport(query: string) {
   try {
-    // First approach: Use Supabase's function.invoke method (preferred with auth)
+    console.log("Generating report for query:", query);
+    
+    // Use Supabase's function.invoke method
     const { data, error } = await supabase.functions.invoke('generate-report-gemini', {
       body: { query }
     });
@@ -15,6 +17,12 @@ export async function generateGeminiReport(query: string) {
       throw new Error(error.message || "Failed to generate report");
     }
     
+    if (!data || !data.report) {
+      console.error("Invalid response format:", data);
+      throw new Error("Invalid response from Gemini API");
+    }
+    
+    console.log("Report generated successfully");
     return data.report;
   } catch (error: any) {
     console.error("Error generating report:", error);

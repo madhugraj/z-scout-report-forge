@@ -90,6 +90,7 @@ const ResearchDashboard: React.FC = () => {
       onError: (err: any) => {
         setGenerationSteps((steps) => [...steps, "Error: Unable to generate report"]);
         setIsGenerating(false);
+        toast.error(err.message || "Failed to generate report from Gemini.");
       }
     });
   };
