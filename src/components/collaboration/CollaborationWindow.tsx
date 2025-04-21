@@ -31,6 +31,7 @@ interface CollaborationWindowProps {
   reportSections?: {title: string; content: string}[];
   onClose?: () => void;
   isFloating?: boolean;
+  title?: string; // Add title prop to the interface
 }
 
 const CollaborationWindow: React.FC<CollaborationWindowProps> = ({ 
@@ -38,7 +39,8 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   currentUser = 'You',
   reportSections = [],
   onClose,
-  isFloating = false
+  isFloating = false,
+  title
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
