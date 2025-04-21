@@ -56,26 +56,41 @@ const ResearchDashboardShell: React.FC = () => {
     setProgress(0);
     setGenerationSteps(["Sending request to Gemini..."]);
 
+    // Enhanced mock progress to show more varied steps
     const mockProgress = () => {
       let currentProgress = 0;
+      const progressSteps = [
+        { threshold: 20, message: "Analyzing research query..." },
+        { threshold: 35, message: "Gathering scientific literature..." },
+        { threshold: 50, message: "Processing research data..." },
+        { threshold: 65, message: "Synthesizing findings..." },
+        { threshold: 80, message: "Creating visualizations and references..." },
+        { threshold: 90, message: "Finalizing research report..." }
+      ];
+      
+      let currentStepIndex = 0;
+      
       const interval = setInterval(() => {
-        currentProgress += Math.random() * 15;
+        currentProgress += Math.random() * 10;
         if (currentProgress > 95) {
           clearInterval(interval);
           return;
         }
+        
         setProgress(Math.min(Math.round(currentProgress), 95));
-        if (currentProgress > 20 && generationSteps.length < 2) {
-          setGenerationSteps(prev => [...prev, "Analyzing research query..."]);
-        }
-        if (currentProgress > 40 && generationSteps.length < 3) {
-          setGenerationSteps(prev => [...prev, "Gathering scientific literature..."]);
-        }
-        if (currentProgress > 65 && generationSteps.length < 4) {
-          setGenerationSteps(prev => [...prev, "Synthesizing findings..."]);
-        }
-        if (currentProgress > 85 && generationSteps.length < 5) {
-          setGenerationSteps(prev => [...prev, "Finalizing research report..."]);
+        
+        // Add next step message when threshold is crossed
+        while (currentStepIndex < progressSteps.length && 
+               currentProgress > progressSteps[currentStepIndex].threshold) {
+          const step = progressSteps[currentStepIndex];
+          setGenerationSteps(prev => {
+            // Only add the step if it's not already in the list
+            if (!prev.includes(step.message)) {
+              return [...prev, step.message];
+            }
+            return prev;
+          });
+          currentStepIndex++;
         }
       }, 800);
     };
@@ -86,8 +101,9 @@ const ResearchDashboardShell: React.FC = () => {
       onSuccess: (result: GeminiReport) => {
         setReport(result);
         setProgress(100);
-        setGenerationSteps((steps) => [...steps, "Report generation complete!"]);
+        setGenerationSteps((steps) => [...steps.filter(step => step !== "Finalizing research report..."), "Report generation complete!"]);
         setIsGenerating(false);
+        toast.success("Research report generated successfully!");
       },
       onError: (err: any) => {
         setGenerationSteps((steps) => [...steps, "Error: Unable to generate report"]);

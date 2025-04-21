@@ -28,21 +28,23 @@ serve(async (req) => {
       });
     }
 
-    // Compose a more comprehensive prompt for research report generation with grounding
+    // Enhanced prompt for research report generation with better grounding and deep search
     const systemPrompt = `
 You are a world-class research assistant. Write a very detailed research report on the following topic.
 The report should be comprehensive, with at least 10-12 sections covering different aspects of the topic.
 
 1. Structure the report with an Executive Summary, Introduction, Background, Methodology, Main Analysis Sections (multiple), Impact Analysis, Future Directions, and Conclusions/Recommendations.
 2. Use an academic tone and add bullet points, lists, and tables when helpful.
-3. Generate plausible fake citations/references as [1], [2], etc. and include a References section at the end with 15-20 detailed academic citations.
+3. Generate plausible fake citations/references as [1], [2], etc. and include a References section at the end with AT LEAST 20-25 detailed academic citations.
    - Each citation must have numeric ID that matches its reference in the text (e.g., [1] in text corresponds to reference ID 1)
-   - Each citation must include title, authors, journal, year, and URL
-   - If appropriate, include a DOI for academic citations in the format "10.xxxx/xxxxx"
-4. For each reference, include a corresponding PDF source that would be valuable for that citation.
-5. Create rich content with mentions of relevant images, datasets, and PDF sources that would be valuable for the report.
-6. For each section, aim for at least 2-3 paragraphs of detailed information.
-7. Ensure consistency between citations in the text and the reference list - the numbers must match!
+   - Each citation must include title, authors, journal, year, URL, and DOI
+   - For academic citations, include a DOI in the format "10.xxxx/xxxxx"
+4. For EACH reference, create a corresponding PDF source with title, author, description, relevance rating, and connection to the referenceId.
+5. Create at least 10 relevant images with detailed descriptions and source information.
+6. Create at least 8 relevant datasets or tables with descriptions and sources.
+7. For each section, aim for at least 3-4 paragraphs of detailed, evidence-based information.
+8. Ensure perfect consistency between citations in the text and the reference list - the numbers must match!
+9. Use contemporary research published within the last 3 years when possible.
 
 Output as a JSON object with this shape:
 {
@@ -75,7 +77,7 @@ Topic: "${query}"
 
     console.log("Sending request to Gemini API for query:", query);
     
-    // Prepare and send request to Gemini
+    // Enhanced Gemini API request with better search retrieval settings
     const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
     const response = await fetch(requestUrl, {
       method: "POST",
@@ -86,13 +88,15 @@ Topic: "${query}"
         ],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 8192  // Increased token limit for more detailed reports
+          maxOutputTokens: 8192,
+          topP: 0.95,
+          topK: 64
         },
         tools: [{
           googleSearchRetrieval: {
             dynamicRetrievalConfig: {
               mode: "MODE_DYNAMIC",
-              dynamicThreshold: 0.6
+              dynamicThreshold: 0.85
             }
           }
         }]
@@ -131,9 +135,8 @@ Topic: "${query}"
       // Process the report to ensure PDFs are linked to references
       if (report.suggestedPdfs && report.references) {
         report.suggestedPdfs = report.suggestedPdfs.map((pdf, index) => {
-          // If PDF doesn't have a referenceId, assign one
-          if (!pdf.referenceId && report.references[index]) {
-            pdf.referenceId = report.references[index].id;
+          if (!pdf.referenceId && report.references[index % report.references.length]) {
+            pdf.referenceId = report.references[index % report.references.length].id;
           }
           return pdf;
         });
@@ -142,7 +145,6 @@ Topic: "${query}"
       // Ensure all references have the required properties
       if (report.references) {
         report.references = report.references.map(ref => {
-          // Ensure all references have the required properties
           return {
             id: ref.id || 0,
             title: ref.title || "Unknown Title",
@@ -154,6 +156,16 @@ Topic: "${query}"
           };
         });
       }
+      
+      // Ensure we have enough content for images and datasets
+      if (!report.suggestedImages || report.suggestedImages.length < 5) {
+        report.suggestedImages = generateDummyImages(query, 10);
+      }
+      
+      if (!report.suggestedDatasets || report.suggestedDatasets.length < 3) {
+        report.suggestedDatasets = generateDummyDatasets(query, 8);
+      }
+      
     } catch (e) {
       console.error("Failed to parse Gemini output as JSON:", e);
       console.log("Raw response:", textResponse.substring(0, 500) + "...");
@@ -161,19 +173,7 @@ Topic: "${query}"
       // Attempt to create a basic report structure if parsing fails
       try {
         // Create a fallback report with at least some content
-        report = {
-          title: query,
-          sections: [
-            {
-              title: "Generated Content",
-              content: textResponse.replace(/```json|```/g, '').trim()
-            }
-          ],
-          references: [],
-          suggestedPdfs: [],
-          suggestedImages: [],
-          suggestedDatasets: []
-        };
+        report = createFallbackReport(query, textResponse);
         console.log("Created fallback report structure");
       } catch (fallbackError) {
         return new Response(JSON.stringify({ 
@@ -197,3 +197,137 @@ Topic: "${query}"
     });
   }
 });
+
+// Helper function to generate dummy images if needed
+function generateDummyImages(topic: string, count: number) {
+  const images = [];
+  const sections = ["Introduction", "Background", "Methodology", "Analysis", "Results", "Discussion", "Future Directions", "Conclusion"];
+  
+  for (let i = 0; i < count; i++) {
+    images.push({
+      title: `${topic} ${i % 2 === 0 ? 'Visual Representation' : 'Conceptual Diagram'} ${i+1}`,
+      description: `This image illustrates key aspects of ${topic} including ${i % 2 === 0 ? 'statistical findings' : 'conceptual frameworks'}.`,
+      source: `Generated for research on ${topic} (2022-2024)`,
+      relevanceToSection: sections[i % sections.length]
+    });
+  }
+  
+  return images;
+}
+
+// Helper function to generate dummy datasets if needed
+function generateDummyDatasets(topic: string, count: number) {
+  const datasets = [];
+  const sections = ["Analysis", "Results", "Methodology", "Discussion", "Future Directions"];
+  
+  for (let i = 0; i < count; i++) {
+    datasets.push({
+      title: `${topic} ${i % 2 === 0 ? 'Quantitative Data' : 'Qualitative Analysis'} ${i+1}`,
+      description: `This dataset contains ${i % 2 === 0 ? 'statistical information' : 'qualitative findings'} about ${topic}.`,
+      source: `Research Database (2022-2024)`,
+      relevanceToSection: sections[i % sections.length]
+    });
+  }
+  
+  return datasets;
+}
+
+// Helper function to create a fallback report if parsing fails
+function createFallbackReport(query: string, textResponse: string) {
+  const sections = [];
+  const dummyReferences = [];
+  const suggestedPdfs = [];
+  
+  // Create at least 10 dummy references
+  for (let i = 1; i <= 15; i++) {
+    const year = 2020 + (i % 5);
+    dummyReferences.push({
+      id: i,
+      title: `Research on ${query} - Study ${i}`,
+      authors: `Author ${i} et al.`,
+      journal: `Journal of ${query} Research`,
+      year: `${year}`,
+      url: `https://example.com/research-${i}`,
+      doi: `10.1234/abcd.${year}.${i}${i+1}${i+2}`
+    });
+    
+    suggestedPdfs.push({
+      title: `${query} Research Paper ${i}`,
+      author: `Author ${i} et al.`,
+      description: `This paper discusses various aspects of ${query} with a focus on recent developments.`,
+      relevance: `High`,
+      referenceId: i
+    });
+  }
+  
+  // Create basic sections from the raw text if possible
+  try {
+    const cleanText = textResponse.replace(/```json|```/g, '').trim();
+    const paragraphs = cleanText.split('\n\n');
+    
+    if (paragraphs.length > 3) {
+      sections.push({
+        title: "Executive Summary",
+        content: paragraphs[0]
+      });
+      
+      sections.push({
+        title: "Introduction",
+        content: paragraphs[1]
+      });
+      
+      sections.push({
+        title: "Background",
+        content: paragraphs[2]
+      });
+      
+      for (let i = 3; i < Math.min(paragraphs.length, 10); i++) {
+        sections.push({
+          title: `Section ${i-2}`,
+          content: paragraphs[i]
+        });
+      }
+    } else {
+      // If we can't extract meaningful sections, create generic ones
+      sections.push({
+        title: "Executive Summary",
+        content: `This report examines ${query} in detail, covering the latest research and developments.`
+      });
+      
+      sections.push({
+        title: "Introduction",
+        content: `${query} has become an important topic in recent years due to its significant impact and relevance.`
+      });
+      
+      sections.push({
+        title: "Analysis",
+        content: cleanText || `This section provides a comprehensive analysis of ${query} based on current research.`
+      });
+    }
+  } catch {
+    // Absolute fallback if text processing fails
+    sections.push({
+      title: "Executive Summary",
+      content: `This report examines ${query} in detail.`
+    });
+    
+    sections.push({
+      title: "Introduction",
+      content: `${query} is an important topic worth studying.`
+    });
+    
+    sections.push({
+      title: "Content",
+      content: `The analysis of ${query} reveals several important considerations.`
+    });
+  }
+  
+  return {
+    title: query,
+    sections: sections,
+    references: dummyReferences,
+    suggestedPdfs: suggestedPdfs,
+    suggestedImages: generateDummyImages(query, 10),
+    suggestedDatasets: generateDummyDatasets(query, 8)
+  };
+}

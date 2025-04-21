@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import CitationPopover from '../CitationPopover';
 import { ReportSection, Reference, SuggestedImage } from '@/hooks/useGeminiReport';
 import ImagePopover from '../ImagePopover';
+import { toast } from '@/components/ui/sonner';
 
 interface ResearchContentProps {
   sections: ReportSection[];
@@ -33,8 +34,11 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
           }]
         };
       });
+      
+      toast.success(`Added image "${imageData.title}" to section`);
     } catch (err) {
       console.error("Failed to process dropped image:", err);
+      toast.error("Failed to add image to section");
     }
   };
 
@@ -52,7 +56,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
       {sections.map((section, index) => (
         <div
           key={index}
-          className={`mb-8 ${dropTargetIndex === index ? 'border-2 border-dashed border-violet-400 rounded-lg p-4' : ''}`}
+          className={`mb-8 ${dropTargetIndex === index ? 'border-2 border-dashed border-violet-400 bg-violet-50/20 rounded-lg p-4' : ''}`}
           onDragOver={(e) => handleSectionDragOver(e, index)}
           onDragLeave={handleSectionDragLeave}
           onDrop={(e) => handleImageDrop(e, index)}
@@ -89,7 +93,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
 
                 parts.push(
                   <CitationPopover
-                    key={`${idx}-${citationNumber}`}
+                    key={`citation-${idx}-${citationNumber}`}
                     reference={{
                       id: citationNumber,
                       title: reference.title,
@@ -118,12 +122,16 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
           
           {/* Display images dropped into this section */}
           {sectionImages[index] && sectionImages[index].length > 0 && (
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {sectionImages[index].map((image, imageIdx) => (
                 <ImagePopover
                   key={`${index}-${imageIdx}`}
                   image={{
-                    src: image.title.includes('AI') ? 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b' : 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5',
+                    src: image.title.includes('AI') 
+                      ? 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b' 
+                      : image.title.includes('Data') 
+                        ? 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5'
+                        : 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e',
                     caption: image.title,
                     source: image.source,
                     description: image.description
