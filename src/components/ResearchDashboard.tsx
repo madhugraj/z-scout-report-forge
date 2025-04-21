@@ -140,8 +140,7 @@ const ResearchDashboard: React.FC = () => {
   };
 
   const handleShareReport = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Report link copied to clipboard!");
+    setShowEncryptionDialog(true);
   };
 
   const handleExportReport = () => {
@@ -605,7 +604,7 @@ const ResearchDashboard: React.FC = () => {
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent side="bottom">
-                              <p>Share Report</p>
+                              <p>Share & Encrypt Report</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

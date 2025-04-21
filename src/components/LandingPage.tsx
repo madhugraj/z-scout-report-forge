@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive, FileText, ArrowRight, ChevronRight, ShieldCheck, FolderTree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,10 +17,17 @@ const LandingPage: React.FC = () => {
   const [showFeatureTooltip, setShowFeatureTooltip] = useState(false);
   const navigate = useNavigate();
 
-  // Show feature tooltips after 2 seconds
+  // Show feature tooltips only once for 5 seconds after 2 seconds delay
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowFeatureTooltip(true);
+      
+      // Auto-hide the tooltip after 5 seconds
+      const hideTimer = setTimeout(() => {
+        setShowFeatureTooltip(false);
+      }, 5000);
+      
+      return () => clearTimeout(hideTimer);
     }, 2000);
     
     return () => clearTimeout(timer);
@@ -249,43 +255,6 @@ const LandingPage: React.FC = () => {
               >
                 <span>Quantum Computing</span>
                 <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          {/* Quick Navigation Buttons */}
-          <div className="pt-6 pb-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto">
-              <Button 
-                className="flex items-center justify-between p-4 h-auto bg-indigo-900/40 hover:bg-indigo-900/60 border border-indigo-700/30"
-                onClick={handleTrustSafetyClick}
-              >
-                <div className="flex items-center">
-                  <div className="bg-indigo-900/70 p-2 rounded-full mr-3">
-                    <ShieldCheck className="h-5 w-5 text-indigo-300" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium">Z-Grid Dashboard</p>
-                    <p className="text-xs text-gray-400">Trust & Safety Controls</p>
-                  </div>
-                </div>
-                <ArrowRight className="h-5 w-5 text-indigo-300" />
-              </Button>
-              
-              <Button 
-                className="flex items-center justify-between p-4 h-auto bg-violet-900/40 hover:bg-violet-900/60 border border-violet-700/30"
-                onClick={handleWorkspaceClick}
-              >
-                <div className="flex items-center">
-                  <div className="bg-violet-900/70 p-2 rounded-full mr-3">
-                    <FolderTree className="h-5 w-5 text-violet-300" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium">Research Workspace</p>
-                    <p className="text-xs text-gray-400">All Your Projects</p>
-                  </div>
-                </div>
-                <ArrowRight className="h-5 w-5 text-violet-300" />
               </Button>
             </div>
           </div>
