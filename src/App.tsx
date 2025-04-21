@@ -26,7 +26,7 @@ const App = () => {
             <Route path="/upload" element={<UploadPanel />} />
             <Route path="/dashboard" element={<ResearchDashboard />} />
             <Route path="/workspace" element={<WorkspaceHistory />} />
-            <Route path="/trust-safety" element={<TrustSafetyDashboard projectTitle={window.document.title || undefined} />} />
+            <Route path="/trust-safety" element={<TrustSafetyDashboard />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/pro" element={<ProPage />} />
             <Route path="*" element={<NotFound />} />

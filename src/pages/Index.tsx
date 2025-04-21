@@ -7,7 +7,7 @@ const Index = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Ensure we stay on the landing page without unnecessary redirects
+    // Redirect to landing page component
     navigate('/', { replace: true });
   }, [navigate]);
   

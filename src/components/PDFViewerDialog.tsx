@@ -15,15 +15,10 @@ interface PDFViewerDialogProps {
   pdf: {
     title: string;
     url: string;
-  } | null;
+  };
 }
 
 const PDFViewerDialog = ({ isOpen, onClose, pdf }: PDFViewerDialogProps) => {
-  // Early return if pdf is undefined or missing required properties
-  if (!pdf || !pdf.title || !pdf.url) {
-    return null;
-  }
-  
   const [isFullScreen, setIsFullScreen] = React.useState(false);
 
   return (

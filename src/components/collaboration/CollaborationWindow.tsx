@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import CollaborationHeader from './CollaborationHeader';
@@ -88,7 +87,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       const sectionNumber = parseInt(message.split(' ')[2]) - 1;
       if (sectionNumber >= 0 && sectionNumber < reportSections.length) {
         setEditSection(sectionNumber);
-        setEditText(reportSections[sectionNumber]?.content || '');
+        setEditText(reportSections[sectionNumber].content);
         return;
       } else {
         toast.error('Invalid section number');
@@ -167,7 +166,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden border-l border-gray-800/50">
           {editSection !== null ? (
             <EditPanel
-              sectionTitle={reportSections[editSection]?.title || "Section"}
+              sectionTitle={reportSections[editSection]?.title}
               editTitle={editTitle}
               editText={editText}
               setEditText={setEditText}
