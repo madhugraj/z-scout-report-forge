@@ -184,7 +184,7 @@ const EncryptionDialog: React.FC<EncryptionDialogProps> = ({ isOpen, onClose, do
           <span className="text-gray-400">Encryption Progress</span>
           <span className="text-violet-300">{progress}%</span>
         </div>
-        <Progress value={progress} className="h-2 bg-gray-800" indicatorClassName="bg-violet-500" />
+        <Progress value={progress} className="h-2 bg-gray-800" />
       </div>
 
       <div className="space-y-3 mt-8">

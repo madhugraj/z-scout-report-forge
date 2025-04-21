@@ -18,9 +18,9 @@ const queryClient = new QueryClient();
 const App = () => {
   return (
     <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <BrowserRouter>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/upload" element={<UploadPanel />} />
@@ -29,11 +29,11 @@ const App = () => {
               <Route path="/trust-safety" element={<TrustSafetyDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-          <Toaster />
-          <Sonner />
-        </TooltipProvider>
-      </QueryClientProvider>
+            <Toaster />
+            <Sonner />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </BrowserRouter>
     </React.StrictMode>
   );
 };
