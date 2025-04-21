@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import CitationPopover from '../CitationPopover';
 import { ReportSection, Reference, SuggestedImage } from '@/hooks/useGeminiReport';
@@ -51,100 +50,66 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
     setDropTargetIndex(null);
   };
 
-  // Format section content with proper HTML and markdown handling
   const formatSectionContent = (content: string) => {
-    // Handle potential JSON content
-    if ((content.trim().startsWith('{') || content.trim().startsWith('[')) && 
-        (content.trim().endsWith('}') || content.trim().endsWith(']'))) {
-      try {
-        const parsed = JSON.parse(content);
-        return JSON.stringify(parsed, null, 2);
-      } catch (e) {
-        // If it's not valid JSON, continue with normal formatting
-      }
-    }
-    
-    // Process markdown-like formats
-    const formattedContent = content
-      .replace(/#{3}\s+(.*?)(?=\n|$)/g, '<h3 class="text-xl font-semibold text-gray-800 mt-5 mb-3">$1</h3>')
-      .replace(/#{2}\s+(.*?)(?=\n|$)/g, '<h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-3">$1</h2>')
-      .replace(/#{1}\s+(.*?)(?=\n|$)/g, '<h1 class="text-3xl font-bold text-gray-800 mt-8 mb-4">$1</h1>')
+    let formattedContent = content;
+    formattedContent = formattedContent
+      .replace(/^#{3} (.*)$/gm, '<h3 class="text-xl font-semibold text-gray-800 mt-5 mb-3">$1</h3>')
+      .replace(/^#{2} (.*)$/gm, '<h2 class="text-2xl font-semibold text-gray-800 mt-6 mb-3">$1</h2>')
+      .replace(/^#{1} (.*)$/gm, '<h1 class="text-3xl font-bold text-gray-800 mt-8 mb-4">$1</h1>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 bg-gray-100 rounded text-gray-800">$1</code>')
       .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-violet-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
-    
-    // Split by paragraphs and handle each one
-    return formattedContent.split('\n\n').map((paragraph: string, idx: number) => {
-      // If paragraph has HTML, render it directly
-      if (paragraph.startsWith('<h') || paragraph.startsWith('<div') || paragraph.includes('<table')) {
-        return (
-          <div key={idx} dangerouslySetInnerHTML={{ __html: paragraph }} />
-        );
+
+    const blocks = formattedContent.split(/\n{2,}/g);
+
+    return blocks.map((block, idx) => {
+      if (block.match(/^<h[1-3]/)) {
+        return <div key={idx} dangerouslySetInnerHTML={{ __html: block }} />;
       }
 
-      // Handle bullet points and numbered lists
-      if (paragraph.trim().startsWith('- ') || paragraph.trim().startsWith('* ')) {
-        const listItems = paragraph.split(/[\r\n]+/).map(item => 
-          item.trim().replace(/^[-*]\s+/, '')
-        );
+      if (block.trim().startsWith('- ') || block.trim().startsWith('* ')) {
+        const items = block.split(/[\n\r]+/).map(i => i.replace(/^[-*]\s+/, ''));
         return (
           <ul key={idx} className="list-disc pl-6 mb-4 text-gray-700">
-            {listItems.map((item, i) => (
-              <li key={i} className="mb-1">{processCitations(item, references)}</li>
+            {items.map((item, i) => (
+              <li key={i}>{processCitations(item, references)}</li>
             ))}
           </ul>
         );
       }
 
-      if (paragraph.trim().match(/^\d+\.\s+/)) {
-        const listItems = paragraph.split(/[\r\n]+/).map(item => 
-          item.trim().replace(/^\d+\.\s+/, '')
-        );
+      if (block.trim().match(/^\d+\.\s+/)) {
+        const items = block.split(/[\n\r]+/).map(i => i.replace(/^\d+\.\s+/, ''));
         return (
           <ol key={idx} className="list-decimal pl-6 mb-4 text-gray-700">
-            {listItems.map((item, i) => (
-              <li key={i} className="mb-1">{processCitations(item, references)}</li>
+            {items.map((item, i) => (
+              <li key={i}>{processCitations(item, references)}</li>
             ))}
           </ol>
         );
       }
 
-      // Handle tables
-      if (paragraph.includes('|') && paragraph.includes('\n') && paragraph.split('\n').every(line => line.includes('|'))) {
+      if (block.includes('|') && block.split('\n').length > 1 && block.indexOf('\n') !== -1) {
         try {
-          const tableRows = paragraph.trim().split('\n');
-          const headers = tableRows[0].split('|').map(col => col.trim()).filter(Boolean);
-          
-          let startIndex = 1;
-          // Skip separator row if it exists (contains --- or ===)
-          if (tableRows[1] && (tableRows[1].includes('---') || tableRows[1].includes('==='))) {
-            startIndex = 2;
-          }
-          
-          const rows = tableRows.slice(startIndex).map(row => 
-            row.split('|').map(col => col.trim()).filter(Boolean)
-          );
-          
+          const rows = block.split('\n').filter(Boolean);
+          const headers = rows[0].split('|').map(s => s.trim()).filter(Boolean);
+          let startIdx = 1;
+          if (rows[1] && rows[1].includes('--')) startIdx = 2;
+          const dataRows = rows.slice(startIdx).map(r => r.split('|').map(s => s.trim()).filter(Boolean));
           return (
             <div key={idx} className="overflow-x-auto mb-6">
               <table className="min-w-full border-collapse border border-gray-200 rounded-lg mb-4">
                 <thead className="bg-gray-50">
-                  <tr>
-                    {headers.map((header, i) => (
-                      <th key={i} className="py-3 px-4 text-left text-sm font-medium text-gray-700 border-b">
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
+                  <tr>{headers.map((h, i) => (
+                    <th key={i} className="py-3 px-4 text-left text-sm font-medium text-gray-700 border-b">{h}</th>
+                  ))}</tr>
                 </thead>
                 <tbody>
-                  {rows.map((row, rowIdx) => (
-                    <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      {row.map((cell, cellIdx) => (
-                        <td key={cellIdx} className="py-3 px-4 text-sm text-gray-700 border-b">
-                          {processCitations(cell, references)}
-                        </td>
+                  {dataRows.map((row, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      {row.map((cell, ci) => (
+                        <td key={ci} className="py-3 px-4 text-sm text-gray-700 border-b">{processCitations(cell, references)}</td>
                       ))}
                     </tr>
                   ))}
@@ -153,33 +118,25 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
             </div>
           );
         } catch (e) {
-          // If table parsing fails, render as normal paragraph
         }
       }
-      
-      // Regular paragraph with citation processing
+
       return (
-        <p key={idx} className="text-gray-700 mb-4">
-          {processCitations(paragraph, references)}
-        </p>
+        <p key={idx} className="text-gray-700 mb-4">{processCitations(block, references)}</p>
       );
     });
   };
 
-  // Process citations in text
   const processCitations = (text: string, references: Reference[]) => {
-    // Citation regex matches [digit]
     const citationRegex = /\[(\d+)\]/g;
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
     let match: RegExpExecArray | null;
 
-    // Split text by citation references
     while ((match = citationRegex.exec(text)) !== null) {
       parts.push(<React.Fragment key={`text-${match.index}`}>{text.substring(lastIndex, match.index)}</React.Fragment>);
       
       const citationNumber = parseInt(match[1], 10);
-      // Find reference by ID or use a fallback
       const reference = references.find(ref => ref.id === citationNumber) || {
         title: "Reference",
         authors: "Unknown",
@@ -201,7 +158,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
             url: reference.url,
             doi: reference.doi
           }}
-          index={citationNumber - 1} // Index for display purposes
+          index={citationNumber - 1}
           inline={true}
         />
       );
@@ -231,23 +188,16 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
           onDrop={(e) => handleImageDrop(e, index)}
         >
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
-          
           <div className="prose max-w-none">
             {typeof section.content === 'string' && formatSectionContent(section.content)}
           </div>
-          
-          {/* Display images dropped into this section */}
           {sectionImages[index] && sectionImages[index].length > 0 && (
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {sectionImages[index].map((image, imageIdx) => (
                 <ImagePopover
                   key={`${index}-${imageIdx}`}
                   image={{
-                    src: image.title.includes('AI') 
-                      ? 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b' 
-                      : image.title.includes('Data') 
-                        ? 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5'
-                        : 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e',
+                    src: image.source,
                     caption: image.title,
                     source: image.source,
                     description: image.description
