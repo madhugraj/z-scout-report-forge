@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowLeft, Clock, Zap, Lock, Database, Users, CreditCard, CheckCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,25 +6,16 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
-
 const ProPage: React.FC = () => {
   const navigate = useNavigate();
-
   const handleSubscribe = () => {
     toast.info("Pro subscriptions coming soon! We'll notify you when available.");
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white">
+  return <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white">
       <header className="w-full border-b border-gray-800/50 bg-black/10 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate('/')}
-              className="text-gray-400 hover:text-white"
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="text-gray-400 hover:text-white">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Button>
@@ -203,8 +193,8 @@ const ProPage: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-4">
               <p className="text-lg font-bold text-white mb-4">
-                <span className="opacity-75 line-through mr-2">$49.99</span>
-                <span>$39.99</span>
+                <span className="opacity-75 line-through mr-2">$xxxx</span>
+                <span>$yy</span>
                 <span className="text-sm text-gray-400 ml-1">/month</span>
               </p>
               <p className="text-sm text-gray-300 mb-4">
@@ -226,10 +216,7 @@ const ProPage: React.FC = () => {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button 
-                className="w-full bg-white text-violet-900 hover:bg-gray-200" 
-                onClick={handleSubscribe}
-              >
+              <Button className="w-full bg-white text-violet-900 hover:bg-gray-200" onClick={handleSubscribe}>
                 Subscribe Now
                 <Badge className="bg-violet-500 text-white ml-2 text-xs">20% OFF</Badge>
               </Button>
@@ -261,17 +248,10 @@ const ProPage: React.FC = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-white mb-6">Ready to transform your research?</h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={() => navigate('/')} 
-              className="bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-700 hover:to-violet-900 px-8"
-            >
+            <Button onClick={() => navigate('/')} className="bg-gradient-to-r from-violet-600 to-violet-800 hover:from-violet-700 hover:to-violet-900 px-8">
               Try Free Version
             </Button>
-            <Button 
-              onClick={handleSubscribe} 
-              variant="outline"
-              className="border-violet-500 text-violet-300 hover:bg-violet-500/10"
-            >
+            <Button onClick={handleSubscribe} variant="outline" className="border-violet-500 text-violet-300 hover:bg-violet-500/10">
               Join Pro Waitlist
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -295,8 +275,6 @@ const ProPage: React.FC = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default ProPage;
