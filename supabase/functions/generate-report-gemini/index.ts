@@ -7,7 +7,8 @@ const corsHeaders = {
 };
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+// Use the latest Gemini 2.0 Flash alias
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -38,7 +39,7 @@ ${chatHistory || "N/A"}
 1. 📌 *Requirement Agent*: Collects high-level user needs and goals.
    - User requirement: ${JSON.stringify(topic || query)}.
 
-2. 🔍 *Planning & Research Agent*: Breaks down the requirement into subtopics and questions, and retrieves relevant web content using grounded search.
+2. 🔍 *Planning & Research Agent*: Breaks down the requirement into subtopics and questions, and retrieves relevant web content using grounded search. If gaps exist in the provided data, you must perform real-time Google Search to fill them.
 
 <Collected Web-Based Research>
 ${formattedInfo || "N/A"}
@@ -47,33 +48,17 @@ ${formattedInfo || "N/A"}
 ---
 
 ### 🔖 Important Guidelines:
-- The collected research includes citations with source URLs. Use these citations exactly as they appear in the provided content.
-  - Format inline citations in Markdown, like: [⁴](https://example.com).
-  - Do **not create new citations** or modify URLs.
-
-- If any **PDFs** are referenced in the collected content:
-  - Identify them clearly and list them under `suggestedPdfs`.
-  - Include: title, author(s), description, and a `referenceId` linking to the corresponding entry in `references`.
-
-- If any **images, charts, or tables** appear and are sourced **from within those PDFs**, list them under `suggestedImages` and:
-  - Include: title, description, the original source URL (usually a link to the PDF or DOI), and which section of the report it is relevant to.
-  - Use the `referenceId` field to link each image to the PDF it originated from.
-
-- Do not fabricate any PDFs or visuals. Only include them if they are explicitly mentioned in the collected data or answers.
-
-- If any gaps are found in the collected data, **initiate real-time grounded Google search** to fill them.
+- Use citations exactly as provided, formatted inline in Markdown (e.g., [⁴](https://example.com)).
+- Identify referenced PDFs under `suggestedPdfs` (title, author(s), description, `referenceId`).
+- Extract any tables or images from those PDFs into `suggestedImages` (title, description, source URL, `relevanceToSection`, `referenceId`).
+- Do not fabricate any content; only use data explicitly provided or retrieved.
 
 ### 🏗️ Report Structure Requirements:
-- Start with a clear **Title** and a **Table of Contents**.
-- Use proper **Markdown formatting**: include headings, subheadings, bullet points, and tables where needed.
-- Address all relevant dimensions explicitly mentioned in the user requirement, such as:
-  - Infrastructure
-  - Demographics
-  - Economic indicators
-  - Sector-specific insights
-- Provide an **executive summary**, followed by detailed sections with actionable insights.
-- Conclude with a well-thought-out **Conclusion** summarizing findings and implications.
-- The final report should have the **professional tone and depth** of a formal market or policy report, targeting **8+ pages** in printed form.
+- Title and Table of Contents.
+- Proper Markdown: headings, subheadings, bullet points, tables.
+- Cover dimensions from user requirement (infrastructure, demographics, economics, etc.).
+- Executive summary, detailed sections, conclusion.
+- Professional tone and depth equivalent to an 8+ page printed report.
 
 ### 📌 Output Format (JSON):
 {
@@ -85,7 +70,7 @@ ${formattedInfo || "N/A"}
   "suggestedDatasets": [...]
 }
 
-If no relevant PDFs, images, or datasets were found in the provided content, **leave those fields empty**. Do not fabricate any entries.
+If no relevant PDFs, images, or datasets are found, leave those arrays empty.
 `.trim();
 
     console.log("Sending request to Gemini API for query:", query);
@@ -99,19 +84,21 @@ If no relevant PDFs, images, or datasets were found in the provided content, **l
           { role: "user", parts: [{ text: systemPrompt }] }
         ],
         generationConfig: {
-          temperature: 0.2,
+          temperature: 0.0,      // enforce factual grounding
           maxOutputTokens: 12000,
-          topP: 0.95,
-          topK: 64
+          topP: 0.0,             // strict model pruning
+          topK: 1
         },
-        tools: [{
-          googleSearchRetrieval: {
-            dynamicRetrievalConfig: {
-              mode: "MODE_DYNAMIC",
-              dynamicThreshold: 0.8
+        tools: [
+          {
+            // Always perform grounded Google Search
+            google_search: {
+              dynamicRetrievalConfig: {
+                mode: "MODE_ALWAYS"
+              }
             }
           }
-        }],
+        ],
         safetySettings: [
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
           { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
@@ -134,6 +121,7 @@ If no relevant PDFs, images, or datasets were found in the provided content, **l
 
       report = JSON.parse(jsonString);
 
+      // Validate arrays
       report.suggestedPdfs = Array.isArray(report.suggestedPdfs) ? report.suggestedPdfs : [];
       report.suggestedImages = Array.isArray(report.suggestedImages) ? report.suggestedImages : [];
       report.suggestedDatasets = Array.isArray(report.suggestedDatasets) ? report.suggestedDatasets : [];
