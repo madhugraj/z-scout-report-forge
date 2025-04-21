@@ -6,13 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Google Gemini API endpoint
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
-// --- UPDATED PROMPT AND FUNCTION ---
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -28,58 +25,95 @@ serve(async (req) => {
       });
     }
 
-    // INDUSTRY STANDARD PROMPT from user
     const systemPrompt = `
-You are a senior research and survey analyst for generate industry level standard report/survey. Based on the following collected information by the sub-agent in the workflow, create a detailed survey report for the research.
-current date : ${new Date().toLocaleDateString()}
+You are a senior research and survey analyst responsible for generating professional, industry-grade research reports. Based on the collected information below—gathered by agents in a modular workflow—produce a comprehensive, data-grounded survey report.
 
-<User and AI Agent conversation history>:
+Current date: ${new Date().toLocaleDateString()}
+
+<User and AI Agent Conversation History>
 ${chatHistory || "N/A"}
-</User and AI Agent conversation history>
+</User and AI Agent Conversation History>
 
-current workflow agents:
-1. Requierment_agent that gather requierment from the user
-user requierment: '${JSON.stringify(topic ? topic : query)}'.
+<Current Workflow Agents>
+1. 📌 *Requirement Agent*: Collects high-level user needs and goals.
+   - User requirement: ${JSON.stringify(topic || query)}.
 
-2. Planning and Research agent that break down the requierment into sub-topics and questions and research through internet for all the question under the topic.
+2. 🔍 *Planning & Research Agent*: Breaks down the requirement into subtopics and questions, and retrieves relevant web content using grounded search.
 
-Collected Information from internet by the research agent:
-<Collected Information from internet>:
+<Collected Web-Based Research>
 ${formattedInfo || "N/A"}
-</Collected Information from internet>
+</Collected Web-Based Research>
 
-Note: The collected information have a citation in every question and answer, so please make sure to include the citation whenever using the context. In the report, reuse the citation as per the same context in a markdown format. Example: [⁴](https://www.example.com/) in between the content.
-- Consider key aspects like infrastructure, demographics, economics, based on requirements.
-- The report should be industry level, engaging, detailed, and actionable. Use only collected data from the web to support even images/figures and tables.
-- All images/tables in your report must have explicitly corresponding citations and origins from the collected data. DO NOT include random images or tables.
-- The report must be well-structured with a clear Table of Contents, headings, subheadings (use Markdown), and includes a conclusion. DO NOT output any raw JSON/JS structures in content.
-- The tone should be professional, and depth equivalent to 8+ printed pages.
+---
 
-You must output a single valid JSON using this structure:
+### 🔖 Important Guidelines:
+- The collected research includes citations with source URLs. Use these citations exactly as they appear in the provided content.
+  - Format inline citations in Markdown, like: [⁴](https://example.com).
+  - Do **not create new citations** or modify URLs.
+
+- If any **PDFs** are referenced in the collected content:
+  - Identify them clearly and list them under `suggestedPdfs`.
+  - Include: title, author(s), description, and a `referenceId` linking to the corresponding entry in `references`.
+
+- If any **images, charts, or tables** appear and are sourced **from within those PDFs**, list them under `suggestedImages` and:
+  - Include: title, description, the original source URL (usually a link to the PDF or DOI), and which section of the report it is relevant to.
+  - Use the `referenceId` field to link each image to the PDF it originated from.
+
+- Do not fabricate any PDFs or visuals. Only include them if they are explicitly mentioned in the collected data or answers.
+
+### 🏗️ Report Structure Requirements:
+- Start with a clear **Title** and a **Table of Contents**.
+- Use proper **Markdown formatting**: include headings, subheadings, bullet points, and tables where needed.
+- Address all relevant dimensions explicitly mentioned in the user requirement, such as:
+  - Infrastructure
+  - Demographics
+  - Economic indicators
+  - Sector-specific insights
+- Provide an **executive summary**, followed by detailed sections with actionable insights.
+- Conclude with a well-thought-out **Conclusion** summarizing findings and implications.
+- The final report should have the **professional tone and depth** of a formal market or policy report, targeting **8+ pages** in printed form.
+
+### 📌 Output Format (JSON):
 {
   "title": "...",
-  "sections": [
-    {"title": "...", "content": "..."}
-  ],
+  "sections": [...],
   "references": [
-    {"id": 1, "title": "...", "authors": "...", "journal": "...", "year": "...", "url": "...", "doi": "..."}
+    {
+      "id": 1,
+      "title": "...",
+      "authors": "...",
+      "journal": "...",
+      "year": "...",
+      "url": "...",
+      "doi": "..."
+    }
   ],
   "suggestedPdfs": [
-    {"title": "...", "author": "...", "description": "...", "relevance": "...", "referenceId": 1}
+    {
+      "title": "...",
+      "author": "...",
+      "description": "...",
+      "relevance": "...",
+      "referenceId": 1
+    }
   ],
   "suggestedImages": [
-    {"title": "...", "description": "...", "source": "...", "relevanceToSection": "..."}
+    {
+      "title": "...",
+      "description": "...",
+      "source": "https://link-to-pdf-or-original",
+      "relevanceToSection": "Section Name",
+      "referenceId": 1
+    }
   ],
-  "suggestedDatasets": [
-    {"title": "...", "description": "...", "source": "...", "relevanceToSection": "..."}
-  ]
+  "suggestedDatasets": [...]
 }
-If you cannot find a PDF or image grounded in the collected data, do not invent one.
-    `.trim();
+
+If no relevant PDFs, images, or datasets were found in the provided content, **leave those fields empty**. Do not fabricate any entries.
+`.trim();
 
     console.log("Sending request to Gemini API for query:", query);
-    
-    // Enhanced Gemini API request with better search retrieval settings
+
     const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
     const response = await fetch(requestUrl, {
       method: "POST",
@@ -97,39 +131,25 @@ If you cannot find a PDF or image grounded in the collected data, do not invent 
         tools: [{
           googleSearchRetrieval: {
             dynamicRetrievalConfig: {
-              mode: "MODE_DYNAMIC", 
+              mode: "MODE_DYNAMIC",
               dynamicThreshold: 0.8
             }
           }
         }],
         safetySettings: [
-          {
-            category: "HARM_CATEGORY_HARASSMENT",
-            threshold: "BLOCK_ONLY_HIGH"
-          },
-          {
-            category: "HARM_CATEGORY_HATE_SPEECH",
-            threshold: "BLOCK_ONLY_HIGH"
-          },
-          {
-            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            threshold: "BLOCK_ONLY_HIGH"
-          },
-          {
-            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-            threshold: "BLOCK_ONLY_HIGH"
-          }
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
         ]
       }),
     });
 
-    // --- ENFORCE NO FALLBACK, NO RANDOM DATA ---
     const data = await response.json();
     const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     let report;
 
     try {
-      // Extract JSON from code block (if present)
       let jsonString = textResponse;
       const jsonMatch = textResponse.match(/```json\s*([\s\S]*?)\s*```/);
       if (jsonMatch && jsonMatch[1]) {
@@ -138,17 +158,13 @@ If you cannot find a PDF or image grounded in the collected data, do not invent 
 
       report = JSON.parse(jsonString);
 
-      // No random/fallback PDFs, images: only use what Gemini gave. No auto-generated PDFs/images/datasets!
       report.suggestedPdfs = Array.isArray(report.suggestedPdfs) ? report.suggestedPdfs : [];
       report.suggestedImages = Array.isArray(report.suggestedImages) ? report.suggestedImages : [];
       report.suggestedDatasets = Array.isArray(report.suggestedDatasets) ? report.suggestedDatasets : [];
-
-      // Basic fields validation (ensure arrays)
       report.sections = Array.isArray(report.sections) ? report.sections : [];
       report.references = Array.isArray(report.references) ? report.references : [];
 
     } catch (e) {
-      // Failed to parse JSON from Gemini: do not create a dummy report anymore!
       console.error("Failed to parse Gemini output as JSON:", e);
       return new Response(JSON.stringify({
         error: "Could not parse or create report from Gemini output.",
@@ -170,5 +186,3 @@ If you cannot find a PDF or image grounded in the collected data, do not invent 
     });
   }
 });
-
-// --- End file ---
