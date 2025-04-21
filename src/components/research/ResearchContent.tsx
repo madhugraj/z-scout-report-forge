@@ -61,8 +61,8 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
 
               while ((match = citationRegex.exec(paragraph)) !== null) {
                 parts.push(paragraph.substring(lastIndex, match.index));
-                // parseInt returns number, safe here
-                const citationNumber: number = parseInt(match[1], 10);
+                // Convert string to number
+                const citationNumber = parseInt(match[1], 10);
                 const reference = references.find(ref => ref.id === citationNumber) ||
                   { id: citationNumber, title: "Reference", authors: "Unknown", journal: "Unknown", year: "Unknown", url: "#" };
 
@@ -117,4 +117,3 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
 };
 
 export default ResearchContent;
-
