@@ -69,7 +69,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
 
               // Citation regex matches [digit]
               const citationRegex = /\[(\d+)\]/g;
-              const parts: (string | JSX.Element)[] = [];
+              const parts: React.ReactNode[] = [];
               let lastIndex = 0;
               let match: RegExpExecArray | null;
 
@@ -91,7 +91,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
                       year: reference.year,
                       doi: reference.url
                     }}
-                    index={citationNumber - 1}
+                    index={citationNumber}
                     inline
                   />
                 );

@@ -6,7 +6,7 @@ import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
 import UploadPanel from "./components/UploadPanel";
-import ResearchDashboard from "./components/ResearchDashboard";
+import ResearchDashboardShell from "./components/research/dashboard/ResearchDashboardShell";
 import WorkspaceHistory from "./components/WorkspaceHistory";
 import TrustSafetyDashboard from "./components/TrustSafetyDashboard";
 import AboutPage from "./components/AboutPage";
@@ -24,7 +24,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/upload" element={<UploadPanel />} />
-            <Route path="/dashboard" element={<ResearchDashboard />} />
+            <Route path="/dashboard" element={<ResearchDashboardShell />} />
             <Route path="/workspace" element={<WorkspaceHistory />} />
             <Route path="/trust-safety" element={<TrustSafetyDashboard />} />
             <Route path="/about" element={<AboutPage />} />
