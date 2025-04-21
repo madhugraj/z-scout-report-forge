@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -101,7 +100,7 @@ const ResearchDashboard: React.FC = () => {
           />
         );
       case 'images':
-        return <ResearchImagePanel onClose={() => toggleSideView(null)} />;
+        return <ResearchImagePanel images={report.suggestedImages} onClose={() => toggleSideView(null)} />;
       case 'tables':
         return (
           <DataTablesPanel 
@@ -272,7 +271,12 @@ const ResearchDashboard: React.FC = () => {
                   />
                 )}
                 
-                {activeView === 'images' && <ResearchImagePanel />}
+                {activeView === 'images' && (
+                  <ResearchImagePanel 
+                    images={report.suggestedImages}
+                    onClose={() => setActiveView('full-report')} 
+                  />
+                )}
                 
                 {activeView === 'tables' && (
                   <DataTablesPanel 
