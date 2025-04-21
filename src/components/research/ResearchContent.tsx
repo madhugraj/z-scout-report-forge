@@ -83,7 +83,8 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
                   authors: "Unknown",
                   journal: "Unknown",
                   year: "Unknown",
-                  url: ""
+                  url: "",
+                  doi: "" // Added the doi property to the fallback object
                 };
 
                 parts.push(
