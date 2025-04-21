@@ -38,7 +38,8 @@ Topic: "${query}"
     `.trim();
 
     // Prepare and send request to Gemini
-    const response = await fetch(\`\${GEMINI_URL}?key=\${GEMINI_API_KEY}\`, {
+    const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
+    const response = await fetch(requestUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

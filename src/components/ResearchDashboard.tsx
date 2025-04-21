@@ -60,7 +60,8 @@ const ResearchDashboard: React.FC = () => {
   const [selectedPdfForView, setSelectedPdfForView] = useState<{title: string; url: string} | null>(null);
   const [showEncryptionDialog, setShowEncryptionDialog] = useState(false);
   const [generationSteps, setGenerationSteps] = useState<string[]>([]);
-  const { mutate: requestGeminiReport, isLoading: isGeneratingGemini } = useGeminiReport();
+  const geminiReport = useGeminiReport();
+  const isGeneratingGemini = geminiReport.isPending;
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -78,7 +79,7 @@ const ResearchDashboard: React.FC = () => {
     setProgress(0);
     setGenerationSteps(["Sending request to Gemini..."]);
 
-    requestGeminiReport(query, {
+    geminiReport.mutate(query, {
       onSuccess: (result: { title: string, sections: { title: string, content: string}[] }) => {
         setReport(result.title);
         setSections(result.sections);
