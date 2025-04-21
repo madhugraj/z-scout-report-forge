@@ -39,6 +39,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const topicReports: Record<string, string> = {
+  "How is AI transforming mental health research and interventions? Provide an overview and significant trends.": 
+`AI in Mental Health Research
+
+Artificial Intelligence is revolutionizing diagnosis, personalized treatment, and trend analysis in mental health:
+- Diagnostics & Screening: AI chatbots and language models help screen mental health conditions.
+- Personalized Treatment: Machine learning tailors interventions.
+- Big Data: AI uncovers population-level trends and intervention outcomes.
+Trends: Teletherapy, crisis response, and stigma reduction through AI.`,
+  "Summarize the latest findings on climate change impact analysis, focusing on risk factors and adaptation.":
+`Climate Change Impact
+
+Latest findings indicate:
+- Risk Factors: Increasing severe weather, sea-level rise, and biodiversity loss.
+- Socio-Economic: Food, health, and displacement risks mounting.
+- Adaptation: Strong policy, resilient infrastructure, and green energy are key.
+Global cooperation and innovation are critical for climate adaptation.`,
+  "Explain key applications and advancements in quantum computing and their industry adoption.":
+`Quantum Computing Applications
+
+Quantum computing breakthroughs:
+- Applications: Quantum cryptography, chemistry simulation, financial models.
+- Industry: IBM, Google, and cloud-accessible quantum platforms.
+- Advances: Error correction, hybrid workflows, and cloud quantum.
+Next-gen computing will transform industries dependent on high-performance data and analytics.`,
+};
+
 interface DashboardState {
   query?: string;
   files?: string[];
@@ -52,8 +79,8 @@ interface DashboardState {
 const ResearchDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as DashboardState || {};
-  
+  const state = location.state as { query?: string; files?: string[]; urls?: string[]; source?: string } || {};
+
   const [activeView, setActiveView] = useState('full-report');
   const [progress, setProgress] = useState(0);
   const [sections, setSections] = useState<{title: string; content: string}[]>([]);
@@ -74,7 +101,15 @@ const ResearchDashboard: React.FC = () => {
       navigate('/');
       return;
     }
-    
+    if (state.query && topicReports[state.query]) {
+      setSections([{
+        title: state.query,
+        content: topicReports[state.query]
+      }]);
+      setIsGenerating(false);
+      setProgress(100);
+      return;
+    }
     startGeneratingReport(state.query || "Impact of AI on Mental Health Research");
   }, [state, navigate]);
 
