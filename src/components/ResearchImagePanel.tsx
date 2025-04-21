@@ -4,6 +4,12 @@ import { Maximize2, Download, Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/sonner';
+import { SuggestedImage } from '@/hooks/useGeminiReport';
+
+interface ResearchImagePanelProps {
+  images: SuggestedImage[];
+  onClose: () => void;
+}
 
 interface ResearchImage {
   id: string;
@@ -37,21 +43,24 @@ const dummyImages: ResearchImage[] = [
   }
 ];
 
-export const ResearchImagePanel: React.FC = () => {
+export const ResearchImagePanel: React.FC<ResearchImagePanelProps> = ({ images, onClose }) => {
   const [selectedImage, setSelectedImage] = useState<ResearchImage | null>(null);
   const [draggingImage, setDraggingImage] = useState<string | null>(null);
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, image: ResearchImage) => {
+  // Use images from props if available, otherwise fallback to dummy images
+  const displayImages = images && images.length > 0 ? images : dummyImages;
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, image: any) => {
     e.dataTransfer.setData('application/json', JSON.stringify(image));
     e.dataTransfer.effectAllowed = 'copy';
-    setDraggingImage(image.id);
+    setDraggingImage(image.id || image.title);
     
     // Create a custom drag image showing what's being dragged
     const dragPreview = document.createElement('div');
     dragPreview.className = 'p-2 bg-violet-100 rounded-lg shadow-md';
     dragPreview.innerHTML = `
       <div class="flex items-center gap-2">
-        <img src="${image.url}" alt="${image.title}" class="h-8 w-8 object-cover rounded" />
+        <img src="${image.url || 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b'}" alt="${image.title}" class="h-8 w-8 object-cover rounded" />
         <span class="text-xs font-medium">${image.title}</span>
       </div>
     `;
@@ -78,16 +87,26 @@ export const ResearchImagePanel: React.FC = () => {
     <div className="p-6 bg-[#1A1F2C] text-white rounded-lg">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Research Images</h3>
-        <div className="text-sm text-gray-400">
-          Drag images to your report sections
+        <div className="flex items-center">
+          <div className="text-sm text-gray-400 mr-2">
+            Drag images to your report sections
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onClose}
+            className="text-gray-400 hover:text-white"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
       
       <div className="grid grid-cols-2 gap-4">
-        {dummyImages.map((image) => (
+        {displayImages.map((image, index) => (
           <div
-            key={image.id}
-            className={`group relative ${draggingImage === image.id ? 'opacity-50' : ''}`}
+            key={image.id || index}
+            className={`group relative ${draggingImage === (image.id || image.title) ? 'opacity-50' : ''}`}
             draggable
             onDragStart={(e) => handleDragStart(e, image)}
             onDragEnd={handleDragEnd}
@@ -97,7 +116,7 @@ export const ResearchImagePanel: React.FC = () => {
                 <div className="cursor-pointer">
                   <div className="aspect-square bg-[#2A2F3C] rounded-lg overflow-hidden border border-gray-800 relative">
                     <img
-                      src={image.url}
+                      src={image.url || 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b'}
                       alt={image.title}
                       className="w-full h-full object-cover"
                     />
@@ -114,7 +133,7 @@ export const ResearchImagePanel: React.FC = () => {
                   </div>
                   <div className="mt-2">
                     <p className="text-sm font-medium">{image.title}</p>
-                    <p className="text-xs text-gray-400">{image.type} • {image.source}</p>
+                    <p className="text-xs text-gray-400">{image.type || 'Image'} • {image.source}</p>
                   </div>
                 </div>
               </DialogTrigger>
@@ -122,7 +141,7 @@ export const ResearchImagePanel: React.FC = () => {
                 <div className="space-y-4">
                   <div className="rounded-lg overflow-hidden">
                     <img
-                      src={image.url}
+                      src={image.url || 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b'}
                       alt={image.title}
                       className="w-full h-auto max-h-[70vh] object-contain"
                     />
@@ -136,7 +155,7 @@ export const ResearchImagePanel: React.FC = () => {
                         className="text-violet-400 border-violet-400/30"
                         onClick={() => {
                           const a = document.createElement('a');
-                          a.href = image.url;
+                          a.href = image.url || 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b';
                           a.download = image.title.replace(/\s+/g, '_') + '.jpg';
                           a.click();
                           toast.success("Image downloaded successfully");
