@@ -77,22 +77,27 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
                 parts.push(<React.Fragment key={`text-${match.index}`}>{paragraph.substring(lastIndex, match.index)}</React.Fragment>);
                 
                 const citationNumber = parseInt(match[1], 10);
-                const reference = references.find(ref => ref.id === citationNumber) ||
-                  { id: citationNumber, title: "Reference", authors: "Unknown", journal: "Unknown", year: "Unknown", url: "#" };
+                // Find reference by ID or use a fallback
+                const reference = references.find(ref => ref.id === citationNumber) || {
+                  title: "Reference",
+                  authors: "Unknown",
+                  journal: "Unknown",
+                  year: "Unknown",
+                  url: "#"
+                };
 
                 parts.push(
                   <CitationPopover
                     key={`${idx}-${citationNumber}`}
                     reference={{
-                      id: reference.id.toString(),
+                      id: citationNumber,
                       title: reference.title,
                       authors: reference.authors,
-                      publication: reference.journal,
                       year: reference.year,
-                      doi: reference.url
+                      journal: reference.journal,
+                      url: reference.url || reference.doi
                     }}
-                    index={citationNumber}
-                    inline
+                    index={citationNumber - 1} // Index for display purposes
                   />
                 );
                 lastIndex = match.index + match[0].length;

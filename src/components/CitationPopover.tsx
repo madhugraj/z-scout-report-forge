@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 
 interface Reference {
+  id?: number;
   title: string;
   authors: string | string[];
   year: number | string;

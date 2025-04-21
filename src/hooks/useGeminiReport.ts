@@ -17,6 +17,7 @@ export interface SuggestedPdf {
   author: string;
   description: string;
   relevance: string;
+  referenceId?: number;
 }
 
 export interface SuggestedImage {

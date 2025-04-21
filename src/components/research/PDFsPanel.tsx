@@ -46,7 +46,10 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
               </div>
               <div className="flex-1">
                 <h4 className="font-medium text-white text-sm">{pdf.title}</h4>
-                <p className="text-xs text-gray-400">{pdf.author} • Relevance: {pdf.relevance}</p>
+                <p className="text-xs text-gray-400">
+                  {pdf.author} • Relevance: {pdf.relevance}
+                  {pdf.referenceId && <span> • Citation [{pdf.referenceId}]</span>}
+                </p>
                 <p className="text-xs text-gray-300 mt-1">{pdf.description}</p>
                 <div className="flex mt-2 gap-1">
                   <Button 

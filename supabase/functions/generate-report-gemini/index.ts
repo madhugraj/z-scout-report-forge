@@ -36,8 +36,12 @@ The report should be comprehensive, with at least 10-12 sections covering differ
 1. Structure the report with an Executive Summary, Introduction, Background, Methodology, Main Analysis Sections (multiple), Impact Analysis, Future Directions, and Conclusions/Recommendations.
 2. Use an academic tone and add bullet points, lists, and tables when helpful.
 3. Generate plausible fake citations/references as [1], [2], etc. and include a References section at the end with 15-20 detailed academic citations.
-4. Create rich content with mentions of relevant images, datasets, and PDF sources that would be valuable for the report.
-5. For each section, aim for at least 2-3 paragraphs of detailed information.
+   - Each citation must have numeric ID that matches its reference in the text (e.g., [1] in text corresponds to reference ID 1)
+   - Each citation must include title, authors, journal, year, and URL
+4. For each reference, include a corresponding PDF source that would be valuable for that citation.
+5. Create rich content with mentions of relevant images, datasets, and PDF sources that would be valuable for the report.
+6. For each section, aim for at least 2-3 paragraphs of detailed information.
+7. Ensure consistency between citations in the text and the reference list - the numbers must match!
 
 Output as a JSON object with this shape:
 {
@@ -52,7 +56,7 @@ Output as a JSON object with this shape:
     ...
   ],
   "suggestedPdfs": [
-    {"title": "...", "author": "...", "description": "...", "relevance": "..."},
+    {"title": "...", "author": "...", "description": "...", "relevance": "...", "referenceId": 1},
     ...
   ],
   "suggestedImages": [
@@ -82,7 +86,15 @@ Topic: "${query}"
         generationConfig: {
           temperature: 0.2,
           maxOutputTokens: 8192  // Increased token limit for more detailed reports
-        }
+        },
+        tools: [{
+          googleSearchRetrieval: {
+            dynamicRetrievalConfig: {
+              mode: "MODE_DYNAMIC",
+              dynamicThreshold: 0.6
+            }
+          }
+        }]
       }),
     });
 
@@ -114,6 +126,17 @@ Topic: "${query}"
       
       report = JSON.parse(jsonString);
       console.log("Successfully parsed report JSON");
+      
+      // Process the report to ensure PDFs are linked to references
+      if (report.suggestedPdfs && report.references) {
+        report.suggestedPdfs = report.suggestedPdfs.map((pdf, index) => {
+          // If PDF doesn't have a referenceId, assign one
+          if (!pdf.referenceId && report.references[index]) {
+            pdf.referenceId = report.references[index].id;
+          }
+          return pdf;
+        });
+      }
     } catch (e) {
       console.error("Failed to parse Gemini output as JSON:", e);
       console.log("Raw response:", textResponse.substring(0, 500) + "...");
