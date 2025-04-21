@@ -73,29 +73,25 @@ ${formattedInfo || "N/A"}
 If no relevant PDFs, images, or datasets are found, leave those arrays empty.
 `.trim();
 
-    console.log("Sending request to Gemini API for query:", query);
+    console.log("Initiating Gemini request for query:", query);
 
     const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
     const response = await fetch(requestUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [
-          { role: "user", parts: [{ text: systemPrompt }] }
-        ],
+        contents: [ { role: "user", parts: [{ text: systemPrompt }] } ],
         generationConfig: {
-          temperature: 0.0,      // enforce factual grounding
+          temperature: 0.0,
           maxOutputTokens: 12000,
-          topP: 0.0,             // strict model pruning
+          topP: 0.0,
           topK: 1
         },
         tools: [
           {
-            // Always perform grounded Google Search
+            // Force grounded Google Search every time
             google_search: {
-              dynamicRetrievalConfig: {
-                mode: "MODE_ALWAYS"
-              }
+              dynamicRetrievalConfig: { mode: "MODE_ALWAYS" }
             }
           }
         ],
@@ -105,23 +101,22 @@ If no relevant PDFs, images, or datasets are found, leave those arrays empty.
           { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
           { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
         ]
-      }),
+      })
     });
 
     const data = await response.json();
+    // Log full response to inspect grounding/tool usage
+    console.log("Full Gemini response:", JSON.stringify(data, null, 2));
+
     const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     let report;
 
     try {
       let jsonString = textResponse;
       const jsonMatch = textResponse.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch && jsonMatch[1]) {
-        jsonString = jsonMatch[1];
-      }
+      if (jsonMatch && jsonMatch[1]) jsonString = jsonMatch[1];
 
       report = JSON.parse(jsonString);
-
-      // Validate arrays
       report.suggestedPdfs = Array.isArray(report.suggestedPdfs) ? report.suggestedPdfs : [];
       report.suggestedImages = Array.isArray(report.suggestedImages) ? report.suggestedImages : [];
       report.suggestedDatasets = Array.isArray(report.suggestedDatasets) ? report.suggestedDatasets : [];
@@ -129,21 +124,16 @@ If no relevant PDFs, images, or datasets are found, leave those arrays empty.
       report.references = Array.isArray(report.references) ? report.references : [];
 
     } catch (e) {
-      console.error("Failed to parse Gemini output as JSON:", e);
-      return new Response(JSON.stringify({
-        error: "Could not parse or create report from Gemini output.",
-        raw: textResponse.substring(0, 500) + "..."
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      console.error("Failed to parse JSON from Gemini output:", e);
+      return new Response(JSON.stringify({ error: "Parsing error", raw: textResponse.substring(0, 500) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(JSON.stringify({ report }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
+
   } catch (error) {
-    console.error("Unexpected error in generate-report-gemini:", error);
+    console.error("Unexpected error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
