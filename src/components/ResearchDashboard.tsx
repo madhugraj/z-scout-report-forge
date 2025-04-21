@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -13,7 +12,7 @@ import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CitationPopover from './CitationPopover';
 import { ResearchImagePanel } from './ResearchImagePanel';
-import CollaborationWindow from './CollaborationWindow';
+import CollaborationWindow from './collaboration/CollaborationWindow';
 import { mockReport, mockReferences, mockImages, topicReports } from '@/data/mockData';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -73,13 +72,15 @@ const ResearchDashboard: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!state.query && !state.files?.length && !state.urls?.length) {
-      navigate('/');
-      return;
+    if (!state || (!state.query && !state?.files?.length && !state?.urls?.length)) {
+      // Initialize with a default topic if no state is provided
+      const defaultQuery = "Impact of AI on Mental Health Research";
+      startGeneratingReport(defaultQuery);
+      updateTopicSpecificData(defaultQuery);
+    } else {
+      startGeneratingReport(state.query || "Impact of AI on Mental Health Research");
+      updateTopicSpecificData(state.query || "Impact of AI on Mental Health Research");
     }
-    
-    startGeneratingReport(state.query || "Impact of AI on Mental Health Research");
-    updateTopicSpecificData(state.query || "Impact of AI on Mental Health Research");
   }, [state, navigate]);
 
   const updateTopicSpecificData = (query: string) => {
@@ -306,6 +307,11 @@ const ResearchDashboard: React.FC = () => {
       
       // Update the section content to include the image
       setSections(prevSections => {
+        if (!prevSections || prevSections.length === 0 || !prevSections[sectionIndex]) {
+          toast.error('Cannot add image: section not found');
+          return prevSections;
+        }
+
         const updatedSections = [...prevSections];
         const section = updatedSections[sectionIndex];
         const imageHtml = `<div class="my-4 w-full max-w-md mx-auto">
@@ -322,7 +328,9 @@ const ResearchDashboard: React.FC = () => {
         return updatedSections;
       });
       
-      toast.success(`Image "${imageData.title}" added to ${sections[sectionIndex].title}`);
+      if (sections && sections[sectionIndex]) {
+        toast.success(`Image "${imageData.title}" added to ${sections[sectionIndex].title}`);
+      }
     } catch (err) {
       toast.error('Failed to add image');
     }
@@ -610,327 +618,4 @@ const ResearchDashboard: React.FC = () => {
                     <h3 className="font-medium">Generating comprehensive research report...</h3>
                   </div>
                   
-                  <div className="w-full bg-violet-200 rounded-full h-2 mb-3">
-                    <div 
-                      className="bg-violet-600 h-2 rounded-full transition-all duration-300 ease-out"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                  
-                  <div className="text-sm font-medium space-y-1 max-h-24 overflow-y-auto">
-                    {generationSteps.map((step, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-violet-500"></div>
-                        <span>{step}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {activeView === 'full-report' && (
-                <div className="max-w-4xl mx-auto p-8 text-gray-800">
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <h1 className="text-3xl font-bold mb-2">{state.query || "Impact of AI on Mental Health Research"}</h1>
-                      <p className="text-gray-500">Generated on {new Date().toLocaleDateString()}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={handleShareReport}>
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Share
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleEmailReport}>
-                        <Mail className="h-4 w-4 mr-2" />
-                        Email
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleExportReport}>
-                        <FileDown className="h-4 w-4 mr-2" />
-                        Export
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleSecureExport}>
-                        <Lock className="h-4 w-4 mr-2" />
-                        Secure Export
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {sections.length === 0 && !isGenerating ? (
-                    <div className="text-center p-12 border border-dashed border-gray-300 rounded-lg">
-                      <FileText className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                      <h3 className="text-xl font-medium text-gray-500 mb-2">No report generated yet</h3>
-                      <p className="text-gray-400 mb-4">Enter a research question to generate a comprehensive report</p>
-                      
-                      <div className="flex gap-2 justify-center">
-                        <Input 
-                          placeholder="Enter research question..." 
-                          className="max-w-md"
-                          value={question}
-                          onChange={(e) => setQuestion(e.target.value)}
-                        />
-                        <Button onClick={() => startGeneratingReport(question)}>
-                          <Search className="h-4 w-4 mr-2" />
-                          Generate
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-8 space-y-8">
-                      {sections.map((section, index) => (
-                        <div 
-                          key={index}
-                          className={`p-6 rounded-lg ${dropTargetIndex === index ? 'bg-violet-50 border border-dashed border-violet-300' : 'bg-white shadow-md'}`}
-                          onDragOver={(e) => handleSectionDragOver(e, index)}
-                          onDragLeave={handleSectionDragLeave}
-                          onDrop={(e) => handleImageDrop(e, index)}
-                        >
-                          <h2 className="text-xl font-bold mb-3 flex items-center justify-between">
-                            {section.title}
-                            <Button variant="ghost" size="sm" className="text-gray-500">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </h2>
-                          <div 
-                            className="prose prose-gray max-w-none"
-                            dangerouslySetInnerHTML={{ __html: section.content }}
-                          ></div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {activeView === 'pdf-viewer' && (
-                <div className="p-8">
-                  <div className="max-w-4xl mx-auto">
-                    <h2 className="text-2xl font-bold mb-6 text-gray-800">Research Sources</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {topicSpecificData.pdfs.map((pdf, index) => (
-                        <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="flex items-start gap-3">
-                            <div className="bg-violet-100 p-2 rounded">
-                              <FileText className="h-6 w-6 text-violet-600" />
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-800">{pdf.title}</h4>
-                              <p className="text-sm text-gray-500">{pdf.author} • {pdf.pages} pages</p>
-                              <div className="flex mt-2 gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => setSelectedPdfForView({ title: pdf.title, url: pdf.url })}
-                                >
-                                  <ExternalLink className="h-4 w-4 mr-1" />
-                                  View
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => {
-                                    const a = document.createElement('a');
-                                    a.href = pdf.url;
-                                    a.download = pdf.title.replace(/\s+/g, '_') + '.pdf';
-                                    a.click();
-                                  }}
-                                >
-                                  <Download className="h-4 w-4 mr-1" />
-                                  Download
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {activeView === 'images' && (
-                <div className="p-8">
-                  <div className="max-w-4xl mx-auto">
-                    <h2 className="text-2xl font-bold mb-6 text-gray-800">Research Images</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {topicSpecificData.images.map((image, index) => (
-                        <div key={index} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                          <img src={image.url} alt={image.title} className="w-full h-48 object-cover" />
-                          <div className="p-4">
-                            <h4 className="font-medium text-gray-800">{image.title}</h4>
-                            <p className="text-sm text-gray-500">Source: {image.source}</p>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="mt-2 text-violet-600"
-                              onClick={() => {
-                                // Handle image drag to report
-                                const imageData = {
-                                  title: image.title,
-                                  url: image.url,
-                                  source: image.source
-                                };
-                                toast.info("Drag this image to a report section to add it");
-                              }}
-                            >
-                              <Share2 className="h-4 w-4 mr-1" />
-                              Use in Report
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {activeView === 'citations' && (
-                <div className="p-8">
-                  <div className="max-w-4xl mx-auto">
-                    <h2 className="text-2xl font-bold mb-6 text-gray-800">Citations</h2>
-                    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                      <div className="space-y-4">
-                        {mockReferences.map((reference, index) => (
-                          <div key={index} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                            <p className="text-gray-800">
-                              {reference.authors.join(', ')} ({reference.year}). <em>{reference.title}</em>. {reference.journal}, {reference.doi && `DOI: ${reference.doi}`}.
-                            </p>
-                            <div className="flex gap-2 mt-2">
-                              <Button variant="ghost" size="sm" className="text-violet-600">
-                                <FileDown className="h-4 w-4 mr-1" />
-                                Cite
-                              </Button>
-                              {reference.url && (
-                                <Button variant="ghost" size="sm" className="text-violet-600">
-                                  <ExternalLink className="h-4 w-4 mr-1" />
-                                  View Source
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {activeView === 'tables' && (
-                <div className="p-8">
-                  <div className="max-w-4xl mx-auto">
-                    <h2 className="text-2xl font-bold mb-6 text-gray-800">Data Tables</h2>
-                    <div className="space-y-6">
-                      {topicSpecificData.tables.map((table, index) => (
-                        <div key={index} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                          <div className="flex items-start gap-3">
-                            <div className="bg-violet-100 p-2 rounded">
-                              <Table className="h-6 w-6 text-violet-600" />
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-800 text-lg">{table.title}</h4>
-                              <p className="text-sm text-gray-500 mb-3">{table.rows} rows • {table.columns} columns</p>
-                              <div className="border rounded overflow-hidden">
-                                <div className="bg-gray-50 p-3 border-b text-sm font-medium text-gray-600">
-                                  Sample data preview
-                                </div>
-                                <div className="p-3 text-sm text-gray-500">
-                                  (Table visualization would appear here)
-                                </div>
-                              </div>
-                              <Button variant="outline" size="sm" className="mt-3">
-                                <FileDown className="h-4 w-4 mr-1" />
-                                Export Table
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {activeView === 'threads' && (
-                <div className="p-8">
-                  <div className="max-w-4xl mx-auto">
-                    <h2 className="text-2xl font-bold mb-6 text-gray-800">Discussion Threads</h2>
-                    <div className="space-y-4">
-                      {topicSpecificData.threads.map((thread, index) => (
-                        <div key={index} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                          <div className="flex items-start gap-3">
-                            <div className="bg-violet-100 p-2 rounded">
-                              <MessageSquare className="h-6 w-6 text-violet-600" />
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-800 text-lg">{thread.title}</h4>
-                              <p className="text-sm text-gray-500">{thread.replies} replies • Last updated {thread.lastUpdated}</p>
-                              <Button variant="outline" size="sm" className="mt-3">
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                Join Discussion
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      <Button variant="outline" className="w-full">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Start New Discussion
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </ResizablePanel>
-          
-          {activeSideView && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={35} minSize={25}>
-                {renderSidePanel()}
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
-      </div>
-      
-      {selectedPdfForView && (
-        <PDFViewerDialog 
-          isOpen={!!selectedPdfForView} 
-          onClose={() => setSelectedPdfForView(null)} 
-          pdf={selectedPdfForView} 
-        />
-      )}
-      
-      {showEncryptionDialog && (
-        <EncryptionDialog
-          isOpen={showEncryptionDialog}
-          onClose={() => setShowEncryptionDialog(false)}
-          documentTitle={state.query || "AI Research Report"}
-        />
-      )}
-      
-      {showCollaborator && collaborationMode === 'drawer' && (
-        <Drawer open={showCollaborator} onOpenChange={setShowCollaborator}>
-          <DrawerContent className="h-[80vh]">
-            <DrawerHeader>
-              <DrawerTitle>Collaboration</DrawerTitle>
-              <DrawerDescription>
-                Work with your team in real-time on this research report.
-              </DrawerDescription>
-            </DrawerHeader>
-            <div className="px-4 py-2 flex-1 overflow-auto">
-              <CollaborationWindow />
-            </div>
-            <DrawerFooter>
-              <DrawerClose asChild>
-                <Button variant="outline">Close</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-      )}
-    </div>
-  );
-};
-
-export default ResearchDashboard;
+                  <div className="w-full bg-violet-200 rounded-full h-2
