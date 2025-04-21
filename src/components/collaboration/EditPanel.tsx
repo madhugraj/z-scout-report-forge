@@ -16,7 +16,7 @@ interface EditPanelProps {
 }
 
 const EditPanel: React.FC<EditPanelProps> = ({
-  sectionTitle,
+  sectionTitle = "Section", // Provide default value
   editTitle,
   editText,
   setEditText,

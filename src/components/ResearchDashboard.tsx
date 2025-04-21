@@ -155,25 +155,25 @@ const ResearchDashboard: React.FC = () => {
   const [topicCitationList, setTopicCitationList] = useState<typeof mockReferences>([]);
 
   useEffect(() => {
-    if (!state.query && !state.files?.length && !state.urls?.length) {
+    if (!state || (!state.query && !state.files?.length && !state.urls?.length)) {
       navigate('/');
       return;
     }
     
-    let _query = state.query || "Impact of AI on Mental Health Research";
+    let _query = state?.query || "Impact of AI on Mental Health Research";
     if (topicPDFs[_query]) {
-      setTopicPDFList(topicPDFs[_query]);
-      setTopicImageList(topicImages[_query]);
-      setTopicCitationList(topicCitations[_query]);
+      setTopicPDFList(topicPDFs[_query] || []);
+      setTopicImageList(topicImages[_query] || []);
+      setTopicCitationList(topicCitations[_query] || []);
     } else {
       setTopicPDFList([
         { id: "pdf1", title: "Neural Networks in Mental Health", author: "J. Smith", pages: 28, url: "https://www.africau.edu/images/default/sample.pdf" }
       ]);
       setTopicImageList([]);
-      setTopicCitationList(mockReferences);
+      setTopicCitationList(mockReferences || []);
     }
     
-    startGeneratingReport(state.query || "Impact of AI on Mental Health Research");
+    startGeneratingReport(state?.query || "Impact of AI on Mental Health Research");
   }, [state, navigate]);
 
   const startGeneratingReport = (query: string) => {
@@ -296,13 +296,21 @@ const ResearchDashboard: React.FC = () => {
     setDropTargetIndex(null);
     try {
       const imageData = JSON.parse(e.dataTransfer.getData('application/json'));
+      if (!imageData || !imageData.url || !imageData.title) {
+        toast.error('Invalid image data');
+        return;
+      }
       
       setSections(prevSections => {
+        if (!prevSections || !prevSections[sectionIndex]) {
+          return prevSections;
+        }
+        
         const updatedSections = [...prevSections];
         const section = updatedSections[sectionIndex];
         const imageHtml = `<div class="my-4 w-full max-w-md mx-auto">
           <img src="${imageData.url}" alt="${imageData.title}" class="w-full rounded-lg shadow-md" />
-          <p class="text-sm text-gray-500 mt-1">${imageData.title} • ${imageData.source}</p>
+          <p class="text-sm text-gray-500 mt-1">${imageData.title} • ${imageData.source || 'Unknown source'}</p>
         </div>`;
         
         updatedSections[sectionIndex] = {
@@ -313,7 +321,9 @@ const ResearchDashboard: React.FC = () => {
         return updatedSections;
       });
       
-      toast.success(`Image "${imageData.title}" added to ${sections[sectionIndex].title}`);
+      if (sections && sections[sectionIndex]) {
+        toast.success(`Image "${imageData.title}" added to ${sections[sectionIndex].title}`);
+      }
     } catch (err) {
       toast.error('Failed to add image');
     }
@@ -338,7 +348,7 @@ const ResearchDashboard: React.FC = () => {
             setIsFullScreen={setIsFullScreen}
             setActiveSideView={setActiveSideView}
             setSelectedPdfForView={setSelectedPdfForView}
-            topicPDFList={topicPDFList}
+            topicPDFList={topicPDFList || []}
             setSelectedPdf={setSelectedPdf}
           />
         );
@@ -392,7 +402,7 @@ const ResearchDashboard: React.FC = () => {
                 {activeView === 'full-report' && (
                   <>
                     <ReportHeader
-                      title={state.query || "Impact of AI on Mental Health Research"}
+                      title={state?.query || "Impact of AI on Mental Health Research"}
                       activeSideView={activeSideView}
                       setActiveSideView={setActiveSideView}
                       handleExportReport={handleExportReport}
@@ -400,9 +410,8 @@ const ResearchDashboard: React.FC = () => {
                       handleSecureExport={handleSecureExport}
                     />
 
-                    {/* Render content sections */}
                     <div className="space-y-12 text-gray-700">
-                      {sections.map((section, index) => (
+                      {sections && sections.length > 0 ? sections.map((section, index) => (
                         <div 
                           key={index}
                           className={`p-6 rounded-lg ${dropTargetIndex === index ? 'bg-violet-50 border-2 border-dashed border-violet-300' : 'bg-white border border-gray-100 shadow-sm'}`}
@@ -416,12 +425,12 @@ const ResearchDashboard: React.FC = () => {
                             className="prose prose-slate max-w-none"
                           />
                         </div>
-                      ))}
-                      
-                      {sections.length === 0 && !isGenerating && (
-                        <div className="text-center py-12">
-                          <p className="text-gray-400">No report generated yet. Start by selecting a research topic.</p>
-                        </div>
+                      )) : (
+                        !isGenerating && (
+                          <div className="text-center py-12">
+                            <p className="text-gray-400">No report generated yet. Start by selecting a research topic.</p>
+                          </div>
+                        )
                       )}
                     </div>
                   </>
@@ -431,7 +440,7 @@ const ResearchDashboard: React.FC = () => {
                   <div className="space-y-4">
                     <h2 className="text-2xl font-bold text-gray-800">Source PDFs</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {topicPDFList.map((pdf, index) => (
+                      {topicPDFList && topicPDFList.length > 0 ? topicPDFList.map((pdf, index) => (
                         <div 
                           key={index} 
                           className="border rounded-lg p-4 cursor-pointer hover:border-violet-400 transition-colors"
@@ -447,13 +456,17 @@ const ResearchDashboard: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="col-span-2 text-center py-8 border rounded-lg">
+                          <p className="text-gray-400">No PDFs available for this topic</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
 
                 {activeView === 'citations' && (
-                  <CitationsContent topicCitationList={topicCitationList} />
+                  <CitationsContent topicCitationList={topicCitationList || []} />
                 )}
 
                 {activeView === 'tables' && <TablesContent />}
@@ -495,7 +508,7 @@ const ResearchDashboard: React.FC = () => {
         <EncryptionDialog
           isOpen={showEncryptionDialog}
           onClose={() => setShowEncryptionDialog(false)}
-          documentTitle={state.query || "Research Report"}
+          documentTitle={state?.query || "Research Report"}
         />
       )}
 

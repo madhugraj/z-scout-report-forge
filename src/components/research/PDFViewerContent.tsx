@@ -25,9 +25,30 @@ const PDFViewerContent: React.FC<PDFViewerContentProps> = ({
   setIsFullScreen,
   setActiveSideView,
   setSelectedPdfForView,
-  topicPDFList,
+  topicPDFList = [], // Provide default value
   setSelectedPdf
 }) => {
+  if (!topicPDFList || topicPDFList.length === 0) {
+    return (
+      <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-4 rounded-lg">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Source PDFs</h3>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setActiveSideView(null)}
+            className="text-gray-400 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex flex-col items-center justify-center h-full text-gray-400">
+          <p>No PDFs available</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-4 rounded-lg">
       <div className="flex justify-between items-center mb-4">

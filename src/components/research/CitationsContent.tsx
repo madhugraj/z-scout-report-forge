@@ -7,7 +7,20 @@ interface CitationsContentProps {
   topicCitationList: typeof mockReferences;
 }
 
-const CitationsContent: React.FC<CitationsContentProps> = ({ topicCitationList }) => {
+const CitationsContent: React.FC<CitationsContentProps> = ({ topicCitationList = [] }) => {
+  if (!topicCitationList || topicCitationList.length === 0) {
+    return (
+      <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-semibold">Citations</h3>
+        </div>
+        <div className="flex flex-col items-center justify-center h-full text-gray-400">
+          <p>No citations available</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
       <div className="flex justify-between items-center mb-6">
