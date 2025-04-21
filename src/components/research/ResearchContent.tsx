@@ -74,8 +74,10 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
               let match: RegExpExecArray | null;
 
               while ((match = citationRegex.exec(paragraph)) !== null) {
-                parts.push(paragraph.substring(lastIndex, match.index));
-                // Convert string to number
+                // Fix: Add the paragraph section as a React node, not a string array
+                parts.push(<React.Fragment key={`text-${match.index}`}>{paragraph.substring(lastIndex, match.index)}</React.Fragment>);
+                
+                // Fix: Convert string to number using parseInt
                 const citationNumber = parseInt(match[1], 10);
                 const reference = references.find(ref => ref.id === citationNumber) ||
                   { id: citationNumber, title: "Reference", authors: "Unknown", journal: "Unknown", year: "Unknown", url: "#" };
@@ -98,7 +100,9 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
                 lastIndex = match.index + match[0].length;
               }
 
-              parts.push(paragraph.substring(lastIndex));
+              // Fix: Add the remaining part of the paragraph as a React node, not a string array
+              parts.push(<React.Fragment key={`text-end-${idx}`}>{paragraph.substring(lastIndex)}</React.Fragment>);
+              
               return (
                 <p key={idx} className="text-gray-700 mb-4">
                   {parts}
