@@ -424,9 +424,9 @@ const ResearchDashboard: React.FC = () => {
                           onDragLeave={handleSectionDragLeave}
                           onDrop={(e) => handleImageDrop(e, index)}
                         >
-                          <h2 className="text-2xl font-semibold mb-4 text-gray-800">{section.title}</h2>
+                          <h2 className="text-2xl font-semibold mb-4 text-gray-800">{section?.title || "Untitled Section"}</h2>
                           <div 
-                            dangerouslySetInnerHTML={{ __html: section.content.replace(/\n/g, '<br/>') }} 
+                            dangerouslySetInnerHTML={{ __html: section?.content?.replace(/\n/g, '<br/>') || "" }} 
                             className="prose prose-slate max-w-none"
                           />
                         </div>
@@ -502,10 +502,7 @@ const ResearchDashboard: React.FC = () => {
         <PDFViewerDialog 
           isOpen={!!selectedPdfForView} 
           onClose={() => setSelectedPdfForView(null)}
-          pdf={{
-            title: selectedPdfForView.title,
-            url: selectedPdfForView.url
-          }}
+          pdf={selectedPdfForView}
         />
       )}
 

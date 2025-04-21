@@ -29,7 +29,7 @@ const EditPanel: React.FC<EditPanelProps> = ({
     <div className="flex-1 p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">
-          Editing: {editTitle ? "Title" : sectionTitle}
+          Editing: {editTitle ? "Title" : sectionTitle || "Section"}
         </h3>
         <div className="space-x-2">
           <Button variant="outline" size="sm" onClick={handleCancelEdit}>
@@ -43,7 +43,7 @@ const EditPanel: React.FC<EditPanelProps> = ({
 
       {editorMode === 'minimal' ? (
         <Textarea
-          value={editText}
+          value={editText || ""}
           onChange={(e) => setEditText(e.target.value)}
           placeholder="Enter your text..."
           className="min-h-[200px] bg-[#2A2F3C] border-gray-700 text-white"
@@ -57,7 +57,7 @@ const EditPanel: React.FC<EditPanelProps> = ({
             <Button variant="outline" size="sm">Link</Button>
           </div>
           <Textarea
-            value={editText}
+            value={editText || ""}
             onChange={(e) => setEditText(e.target.value)}
             placeholder="Enter your text..."
             className="min-h-[160px] bg-[#2A2F3C] border-gray-700 text-white"

@@ -15,7 +15,7 @@ interface PDFViewerDialogProps {
   pdf: {
     title: string;
     url: string;
-  };
+  } | null;
 }
 
 const PDFViewerDialog = ({ isOpen, onClose, pdf }: PDFViewerDialogProps) => {
