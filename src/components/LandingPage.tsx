@@ -17,12 +17,10 @@ const LandingPage: React.FC = () => {
   const [showFeatureTooltip, setShowFeatureTooltip] = useState(false);
   const navigate = useNavigate();
 
-  // Show feature tooltips only once for 5 seconds after 2 seconds delay
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowFeatureTooltip(true);
       
-      // Auto-hide the tooltip after 5 seconds
       const hideTimer = setTimeout(() => {
         setShowFeatureTooltip(false);
       }, 5000);
@@ -43,7 +41,6 @@ const LandingPage: React.FC = () => {
     
     toast.success('Starting research on "' + searchQuery + '"');
     
-    // Simulate generating research
     setTimeout(() => {
       setIsGenerating(false);
       navigate('/dashboard', {
@@ -77,6 +74,14 @@ const LandingPage: React.FC = () => {
     }, 500);
   };
 
+  const handleAboutClick = () => {
+    navigate('/about');
+  };
+
+  const handleProClick = () => {
+    navigate('/pro');
+  };
+
   const showFeaturedResearch = (topic: string) => {
     setSearchQuery(topic);
     setTimeout(() => {
@@ -94,11 +99,11 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" className="text-gray-400 hover:text-white">
-              Pro
-            </Button>
-            <Button variant="ghost" className="text-gray-400 hover:text-white">
+            <Button variant="ghost" className="text-gray-400 hover:text-white" onClick={handleAboutClick}>
               About
+            </Button>
+            <Button variant="ghost" className="text-gray-400 hover:text-white" onClick={handleProClick}>
+              Pro
             </Button>
             
             <TooltipProvider>
@@ -228,7 +233,6 @@ const LandingPage: React.FC = () => {
             </form>
           </div>
           
-          {/* Featured Research Topics */}
           <div className="pt-8">
             <h3 className="text-lg font-medium text-gray-300 mb-4">Popular Research Topics</h3>
             <div className="flex flex-wrap gap-3 justify-center">
