@@ -10,6 +10,7 @@ export interface Reference {
   journal: string;
   year: string;
   url: string;
+  doi?: string; // Adding optional doi property
 }
 
 export interface SuggestedPdf {

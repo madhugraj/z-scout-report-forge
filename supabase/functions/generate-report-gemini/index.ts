@@ -38,6 +38,7 @@ The report should be comprehensive, with at least 10-12 sections covering differ
 3. Generate plausible fake citations/references as [1], [2], etc. and include a References section at the end with 15-20 detailed academic citations.
    - Each citation must have numeric ID that matches its reference in the text (e.g., [1] in text corresponds to reference ID 1)
    - Each citation must include title, authors, journal, year, and URL
+   - If appropriate, include a DOI for academic citations in the format "10.xxxx/xxxxx"
 4. For each reference, include a corresponding PDF source that would be valuable for that citation.
 5. Create rich content with mentions of relevant images, datasets, and PDF sources that would be valuable for the report.
 6. For each section, aim for at least 2-3 paragraphs of detailed information.
@@ -52,7 +53,7 @@ Output as a JSON object with this shape:
     ...
   ],
   "references": [
-    {"id": 1, "title": "...", "authors": "...", "journal": "...", "year": "...", "url": "..."},
+    {"id": 1, "title": "...", "authors": "...", "journal": "...", "year": "...", "url": "...", "doi": "..."},
     ...
   ],
   "suggestedPdfs": [
@@ -135,6 +136,22 @@ Topic: "${query}"
             pdf.referenceId = report.references[index].id;
           }
           return pdf;
+        });
+      }
+      
+      // Ensure all references have the required properties
+      if (report.references) {
+        report.references = report.references.map(ref => {
+          // Ensure all references have the required properties
+          return {
+            id: ref.id || 0,
+            title: ref.title || "Unknown Title",
+            authors: ref.authors || "Unknown Authors",
+            journal: ref.journal || "Unknown Journal",
+            year: ref.year || "Unknown Year",
+            url: ref.url || "",
+            doi: ref.doi || ""
+          };
         });
       }
     } catch (e) {

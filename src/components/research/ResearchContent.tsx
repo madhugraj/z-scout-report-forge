@@ -83,7 +83,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
                   authors: "Unknown",
                   journal: "Unknown",
                   year: "Unknown",
-                  url: "#"
+                  url: ""
                 };
 
                 parts.push(
@@ -95,9 +95,11 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
                       authors: reference.authors,
                       year: reference.year,
                       journal: reference.journal,
-                      url: reference.url || reference.doi
+                      url: reference.url,
+                      doi: reference.doi
                     }}
                     index={citationNumber - 1} // Index for display purposes
+                    inline={true}
                   />
                 );
                 lastIndex = match.index + match[0].length;
@@ -142,6 +144,9 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
                   [{reference.id}] {reference.authors} ({reference.year}). <strong>{reference.title}</strong>. <em>{reference.journal}</em>.
                   {reference.url && (
                     <span> <a href={reference.url} className="text-violet-600 hover:underline" target="_blank" rel="noopener noreferrer">Link</a></span>
+                  )}
+                  {reference.doi && !reference.url && (
+                    <span> <a href={`https://doi.org/${reference.doi}`} className="text-violet-600 hover:underline" target="_blank" rel="noopener noreferrer">DOI: {reference.doi}</a></span>
                   )}
                 </p>
               </div>
