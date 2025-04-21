@@ -791,16 +791,20 @@ const ResearchDashboard: React.FC = () => {
                       <div className="space-y-4">
                         {mockReferences.map((reference, index) => (
                           <div key={index} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                            <p className="text-gray-800">{reference.authors} ({reference.year}). <em>{reference.title}</em>. {reference.journal}, {reference.volume}({reference.issue}), {reference.pages}.</p>
+                            <p className="text-gray-800">
+                              {reference.authors.join(', ')} ({reference.year}). <em>{reference.title}</em>. {reference.journal}, {reference.doi && `DOI: ${reference.doi}`}.
+                            </p>
                             <div className="flex gap-2 mt-2">
                               <Button variant="ghost" size="sm" className="text-violet-600">
                                 <FileDown className="h-4 w-4 mr-1" />
                                 Cite
                               </Button>
-                              <Button variant="ghost" size="sm" className="text-violet-600">
-                                <ExternalLink className="h-4 w-4 mr-1" />
-                                View Source
-                              </Button>
+                              {reference.url && (
+                                <Button variant="ghost" size="sm" className="text-violet-600">
+                                  <ExternalLink className="h-4 w-4 mr-1" />
+                                  View Source
+                                </Button>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -901,7 +905,7 @@ const ResearchDashboard: React.FC = () => {
         <EncryptionDialog
           isOpen={showEncryptionDialog}
           onClose={() => setShowEncryptionDialog(false)}
-          title={state.query || "AI Research Report"}
+          documentTitle={state.query || "AI Research Report"}
         />
       )}
       
