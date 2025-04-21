@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -35,16 +34,18 @@ The report should be comprehensive, with at least 10-12 sections covering differ
 
 1. Structure the report with an Executive Summary, Introduction, Background, Methodology, Main Analysis Sections (multiple), Impact Analysis, Future Directions, and Conclusions/Recommendations.
 2. Use an academic tone and add bullet points, lists, and tables when helpful.
-3. Generate plausible fake citations/references as [1], [2], etc. and include a References section at the end with AT LEAST 20-25 detailed academic citations.
+3. Generate ONLY real, factual citations/references as [1], [2], etc. and include a References section at the end with AT LEAST 20-25 detailed academic citations.
    - Each citation must have numeric ID that matches its reference in the text (e.g., [1] in text corresponds to reference ID 1)
    - Each citation must include title, authors, journal, year, URL, and DOI
    - For academic citations, include a DOI in the format "10.xxxx/xxxxx"
 4. For EACH reference, create a corresponding PDF source with title, author, description, relevance rating, and connection to the referenceId.
-5. Create at least 10 relevant images with detailed descriptions and source information.
-6. Create at least 8 relevant datasets or tables with descriptions and sources.
+5. Create relevant images with detailed descriptions that are DIRECTLY related to the topic - no generic images.
+6. Create relevant datasets or tables with descriptions that are DIRECTLY relevant to the report content.
 7. For each section, aim for at least 3-4 paragraphs of detailed, evidence-based information.
 8. Ensure perfect consistency between citations in the text and the reference list - the numbers must match!
 9. Use contemporary research published within the last 3 years when possible.
+
+IMPORTANT: FORMAT your response as proper paragraphs with normal text formatting - DO NOT output raw JSON in the content sections.
 
 Output as a JSON object with this shape:
 {
@@ -87,7 +88,7 @@ Topic: "${query}"
           { role: "user", parts: [{ text: systemPrompt }] }
         ],
         generationConfig: {
-          temperature: 0.2,
+          temperature: 0.1,
           maxOutputTokens: 8192,
           topP: 0.95,
           topK: 64
@@ -96,10 +97,28 @@ Topic: "${query}"
           googleSearchRetrieval: {
             dynamicRetrievalConfig: {
               mode: "MODE_DYNAMIC",
-              dynamicThreshold: 0.85
+              dynamicThreshold: 0.75
             }
           }
-        }]
+        }],
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_ONLY_HIGH"
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_ONLY_HIGH"
+          },
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_ONLY_HIGH"
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_ONLY_HIGH"
+          }
+        ]
       }),
     });
 
@@ -132,14 +151,34 @@ Topic: "${query}"
       report = JSON.parse(jsonString);
       console.log("Successfully parsed report JSON");
       
+      // Process the report content to ensure proper formatting
+      if (report.sections) {
+        report.sections = report.sections.map(section => {
+          // Make sure content is properly formatted with paragraphs
+          if (typeof section.content === 'string') {
+            section.content = section.content
+              .replace(/\n\s*\n/g, '\n\n') // Fix double line breaks
+              .replace(/(\[(\d+)\])/g, ' [$2] '); // Add space around citations
+          }
+          return section;
+        });
+      }
+      
       // Process the report to ensure PDFs are linked to references
       if (report.suggestedPdfs && report.references) {
-        report.suggestedPdfs = report.suggestedPdfs.map((pdf, index) => {
-          if (!pdf.referenceId && report.references[index % report.references.length]) {
-            pdf.referenceId = report.references[index % report.references.length].id;
-          }
-          return pdf;
-        });
+        // Only keep PDFs that are directly linked to references
+        report.suggestedPdfs = report.suggestedPdfs
+          .filter(pdf => pdf.referenceId && 
+            report.references.some(ref => ref.id === pdf.referenceId))
+          .map(pdf => {
+            // Ensure PDF has proper connection to reference
+            const linkedReference = report.references.find(ref => ref.id === pdf.referenceId);
+            if (linkedReference) {
+              pdf.title = pdf.title || linkedReference.title;
+              pdf.author = pdf.author || linkedReference.authors;
+            }
+            return pdf;
+          });
       }
       
       // Ensure all references have the required properties
@@ -157,13 +196,32 @@ Topic: "${query}"
         });
       }
       
-      // Ensure we have enough content for images and datasets
-      if (!report.suggestedImages || report.suggestedImages.length < 5) {
-        report.suggestedImages = generateDummyImages(query, 10);
+      // Only keep images that have meaningful descriptions and relevance
+      if (report.suggestedImages) {
+        report.suggestedImages = report.suggestedImages
+          .filter(img => 
+            img.description && 
+            img.description.length > 20 && 
+            img.relevanceToSection && 
+            report.sections.some(section => 
+              section.title.includes(img.relevanceToSection) || 
+              img.relevanceToSection.includes(section.title)
+            )
+          );
       }
       
-      if (!report.suggestedDatasets || report.suggestedDatasets.length < 3) {
-        report.suggestedDatasets = generateDummyDatasets(query, 8);
+      // Only keep datasets that have meaningful descriptions and relevance
+      if (report.suggestedDatasets) {
+        report.suggestedDatasets = report.suggestedDatasets
+          .filter(dataset => 
+            dataset.description && 
+            dataset.description.length > 20 && 
+            dataset.relevanceToSection && 
+            report.sections.some(section => 
+              section.title.includes(dataset.relevanceToSection) || 
+              dataset.relevanceToSection.includes(section.title)
+            )
+          );
       }
       
     } catch (e) {

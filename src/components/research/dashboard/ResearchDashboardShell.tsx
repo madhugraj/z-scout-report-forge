@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -56,7 +55,7 @@ const ResearchDashboardShell: React.FC = () => {
     setProgress(0);
     setGenerationSteps(["Sending request to Gemini..."]);
 
-    // Enhanced mock progress to show more varied steps
+    // Enhanced mock progress with unique steps
     const mockProgress = () => {
       let currentProgress = 0;
       const progressSteps = [
@@ -93,12 +92,16 @@ const ResearchDashboardShell: React.FC = () => {
           currentStepIndex++;
         }
       }, 800);
+      
+      // Store interval ID for cleanup
+      return interval;
     };
 
-    mockProgress();
+    const progressInterval = mockProgress();
 
     geminiReport.mutate(query, {
       onSuccess: (result: GeminiReport) => {
+        clearInterval(progressInterval);
         setReport(result);
         setProgress(100);
         setGenerationSteps((steps) => [...steps.filter(step => step !== "Finalizing research report..."), "Report generation complete!"]);
@@ -106,6 +109,7 @@ const ResearchDashboardShell: React.FC = () => {
         toast.success("Research report generated successfully!");
       },
       onError: (err: any) => {
+        clearInterval(progressInterval);
         setGenerationSteps((steps) => [...steps, "Error: Unable to generate report"]);
         setIsGenerating(false);
         toast.error(err.message || "Failed to generate report from Gemini.");

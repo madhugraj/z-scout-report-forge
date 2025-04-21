@@ -51,6 +51,85 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
     setDropTargetIndex(null);
   };
 
+  // Create a custom formatter for content that may contain JSON or raw content
+  const formatSectionContent = (content: string) => {
+    // Check if content is possibly JSON (starts with { or [)
+    if ((content.trim().startsWith('{') || content.trim().startsWith('[')) && 
+        (content.trim().endsWith('}') || content.trim().endsWith(']'))) {
+      try {
+        // Try to parse and pretty print the JSON
+        const parsed = JSON.parse(content);
+        return JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        // If it's not valid JSON, continue with normal formatting
+      }
+    }
+    
+    // Normal paragraph formatting
+    return content.split('\n\n').map((paragraph: string, idx: number) => {
+      if (paragraph.startsWith('<div class="my-4')) {
+        return (
+          <div key={idx} dangerouslySetInnerHTML={{ __html: paragraph }} />
+        );
+      }
+
+      // Citation regex matches [digit]
+      const citationRegex = /\[(\d+)\]/g;
+      const parts: React.ReactNode[] = [];
+      let lastIndex = 0;
+      let match: RegExpExecArray | null;
+
+      while ((match = citationRegex.exec(paragraph)) !== null) {
+        parts.push(<React.Fragment key={`text-${match.index}`}>{paragraph.substring(lastIndex, match.index)}</React.Fragment>);
+        
+        const citationNumber = parseInt(match[1], 10);
+        // Find reference by ID or use a fallback
+        const reference = references.find(ref => ref.id === citationNumber) || {
+          title: "Reference",
+          authors: "Unknown",
+          journal: "Unknown",
+          year: "Unknown",
+          url: "",
+          doi: "" // Added the doi property to the fallback object
+        };
+
+        parts.push(
+          <CitationPopover
+            key={`citation-${idx}-${citationNumber}`}
+            reference={{
+              id: citationNumber,
+              title: reference.title,
+              authors: reference.authors,
+              year: reference.year,
+              journal: reference.journal,
+              url: reference.url,
+              doi: reference.doi
+            }}
+            index={citationNumber - 1} // Index for display purposes
+            inline={true}
+          />
+        );
+        lastIndex = match.index + match[0].length;
+      }
+
+      parts.push(<React.Fragment key={`text-end-${idx}`}>{paragraph.substring(lastIndex)}</React.Fragment>);
+      
+      return (
+        <p key={idx} className="text-gray-700 mb-4">
+          {parts}
+        </p>
+      );
+    });
+  };
+
+  if (sections.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px] bg-gray-50 p-6 rounded-lg text-gray-500">
+        <p>No report content available. Please generate a report first.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="research-content">
       {sections.map((section, index) => (
@@ -64,60 +143,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
           
           <div className="prose max-w-none">
-            {typeof section.content === 'string' && section.content.split('\n\n').map((paragraph: string, idx: number) => {
-              if (paragraph.startsWith('<div class="my-4')) {
-                return (
-                  <div key={idx} dangerouslySetInnerHTML={{ __html: paragraph }} />
-                );
-              }
-
-              // Citation regex matches [digit]
-              const citationRegex = /\[(\d+)\]/g;
-              const parts: React.ReactNode[] = [];
-              let lastIndex = 0;
-              let match: RegExpExecArray | null;
-
-              while ((match = citationRegex.exec(paragraph)) !== null) {
-                parts.push(<React.Fragment key={`text-${match.index}`}>{paragraph.substring(lastIndex, match.index)}</React.Fragment>);
-                
-                const citationNumber = parseInt(match[1], 10);
-                // Find reference by ID or use a fallback
-                const reference = references.find(ref => ref.id === citationNumber) || {
-                  title: "Reference",
-                  authors: "Unknown",
-                  journal: "Unknown",
-                  year: "Unknown",
-                  url: "",
-                  doi: "" // Added the doi property to the fallback object
-                };
-
-                parts.push(
-                  <CitationPopover
-                    key={`citation-${idx}-${citationNumber}`}
-                    reference={{
-                      id: citationNumber,
-                      title: reference.title,
-                      authors: reference.authors,
-                      year: reference.year,
-                      journal: reference.journal,
-                      url: reference.url,
-                      doi: reference.doi
-                    }}
-                    index={citationNumber - 1} // Index for display purposes
-                    inline={true}
-                  />
-                );
-                lastIndex = match.index + match[0].length;
-              }
-
-              parts.push(<React.Fragment key={`text-end-${idx}`}>{paragraph.substring(lastIndex)}</React.Fragment>);
-              
-              return (
-                <p key={idx} className="text-gray-700 mb-4">
-                  {parts}
-                </p>
-              );
-            })}
+            {typeof section.content === 'string' && formatSectionContent(section.content)}
           </div>
           
           {/* Display images dropped into this section */}
