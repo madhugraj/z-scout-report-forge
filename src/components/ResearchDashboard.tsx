@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -746,4 +747,146 @@ const ResearchDashboard: React.FC = () => {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator className="bg-gray-800" />
                               <DropdownMenuItem onClick={handleSecureExport} className="hover:bg-white/10 focus:bg-white/10">
-                                <Lock className
+                                <Lock className="mr-2 h-4 w-4" />
+                                <span>Secure Export</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    {/* Render content sections */}
+                    <div className="space-y-12 text-gray-700">
+                      {sections.map((section, index) => (
+                        <div 
+                          key={index}
+                          className={`p-6 rounded-lg ${dropTargetIndex === index ? 'bg-violet-50 border-2 border-dashed border-violet-300' : 'bg-white border border-gray-100 shadow-sm'}`}
+                          onDragOver={(e) => handleSectionDragOver(e, index)}
+                          onDragLeave={handleSectionDragLeave}
+                          onDrop={(e) => handleImageDrop(e, index)}
+                        >
+                          <h2 className="text-2xl font-semibold mb-4 text-gray-800">{section.title}</h2>
+                          <div 
+                            dangerouslySetInnerHTML={{ __html: section.content.replace(/\n/g, '<br/>') }} 
+                            className="prose prose-slate max-w-none"
+                          />
+                        </div>
+                      ))}
+                      
+                      {sections.length === 0 && !isGenerating && (
+                        <div className="text-center py-12">
+                          <p className="text-gray-400">No report generated yet. Start by selecting a research topic.</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {activeView === 'pdf-viewer' && (
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold text-gray-800">Source PDFs</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {topicPDFList.map((pdf, index) => (
+                        <div 
+                          key={index} 
+                          className="border rounded-lg p-4 cursor-pointer hover:border-violet-400 transition-colors"
+                          onClick={() => setSelectedPdfForView({ title: pdf.title, url: pdf.url })}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="bg-violet-100 p-2 rounded-lg">
+                              <FileText className="h-6 w-6 text-violet-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{pdf.title}</h3>
+                              <p className="text-sm text-gray-500">{pdf.author} • {pdf.pages} pages</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeView === 'citations' && (
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold text-gray-800">Citations</h2>
+                    <div className="space-y-4">
+                      {topicCitationList.map((reference, index) => (
+                        <div key={index} className="border rounded-lg p-4">
+                          <h3 className="font-medium">{reference.title}</h3>
+                          <p className="text-sm text-gray-500">{reference.authors.join(', ')} ({reference.year})</p>
+                          <p className="text-sm italic mt-1">{reference.journal}</p>
+                          {reference.abstract && (
+                            <p className="text-sm text-gray-600 mt-2">{reference.abstract}</p>
+                          )}
+                          <div className="flex mt-2 gap-2">
+                            <Button variant="outline" size="sm">
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              View Source
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <FileDown className="h-4 w-4 mr-1" />
+                              Cite
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeView === 'tables' && tablesContent}
+
+                {activeView === 'threads' && threadsContent}
+              </div>
+            </div>
+          </ResizablePanel>
+
+          {collaborationMode === 'panel' && showCollaborator && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={35} minSize={25}>
+                <CollaborationWindow reportSections={sections} onClose={() => setShowCollaborator(false)} />
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+
+        {activeSideView && (
+          <div className="absolute top-4 right-4 w-80 h-[calc(100vh-8rem)] z-10 shadow-xl rounded-lg overflow-hidden">
+            {renderSidePanel()}
+          </div>
+        )}
+      </div>
+
+      {selectedPdfForView && (
+        <PDFViewerDialog 
+          open={!!selectedPdfForView} 
+          onOpenChange={() => setSelectedPdfForView(null)}
+          title={selectedPdfForView.title}
+          pdfUrl={selectedPdfForView.url}
+        />
+      )}
+
+      {showEncryptionDialog && (
+        <EncryptionDialog
+          open={showEncryptionDialog}
+          onOpenChange={() => setShowEncryptionDialog(false)}
+        />
+      )}
+
+      {collaborationMode === 'drawer' && (
+        <Drawer open={showCollaborator} onOpenChange={setShowCollaborator}>
+          <DrawerContent className="h-[90%]">
+            <div className="mt-4 px-4">
+              <CollaborationWindow reportSections={sections} />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
+    </div>
+  );
+};
+
+export default ResearchDashboard;
