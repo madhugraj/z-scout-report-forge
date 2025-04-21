@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -60,6 +59,17 @@ const ResearchDashboard: React.FC = () => {
   const [selectedPdfForView, setSelectedPdfForView] = useState<{title: string; url: string} | null>(null);
   const [showEncryptionDialog, setShowEncryptionDialog] = useState(false);
   const [generationSteps, setGenerationSteps] = useState<string[]>([]);
+  const [topicSpecificData, setTopicSpecificData] = useState<{
+    pdfs: {id: string; title: string; author: string; pages: number; url: string}[];
+    tables: {title: string; rows: number; columns: number}[];
+    images: {id: string; title: string; url: string; source: string}[];
+    threads: {title: string; replies: number; lastUpdated: string}[];
+  }>({
+    pdfs: [],
+    tables: [],
+    images: [],
+    threads: []
+  });
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -68,7 +78,104 @@ const ResearchDashboard: React.FC = () => {
     }
     
     startGeneratingReport(state.query || "Impact of AI on Mental Health Research");
+    updateTopicSpecificData(state.query || "Impact of AI on Mental Health Research");
   }, [state, navigate]);
+
+  const updateTopicSpecificData = (query: string) => {
+    // Set default data
+    let topicData = {
+      pdfs: [],
+      tables: [],
+      images: [],
+      threads: []
+    };
+
+    // Define data for each topic
+    if (query.includes("AI") && query.includes("mental health")) {
+      topicData = {
+        pdfs: [
+          { id: "pdf1", title: "Neural Networks in Mental Health Treatment", author: "J. Smith et al.", pages: 28, url: "https://www.africau.edu/images/default/sample.pdf" },
+          { id: "pdf2", title: "AI Applications in Therapeutic Interventions", author: "K. Johnson & L. Chen", pages: 42, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+          { id: "pdf3", title: "Ethics of AI in Psychological Care", author: "M. Williams", pages: 36, url: "https://www.africau.edu/images/default/sample.pdf" },
+          { id: "pdf4", title: "Machine Learning for Mental Health Diagnosis", author: "T. Roberts & P. Singh", pages: 54, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
+        ],
+        tables: [
+          { title: "AI Adoption Rates in Mental Health Clinics (2023-2025)", rows: 15, columns: 5 },
+          { title: "Therapeutic Outcomes Comparison: AI vs. Traditional Methods", rows: 20, columns: 8 },
+          { title: "Patient Satisfaction Metrics for AI-Assisted Therapy", rows: 18, columns: 6 },
+          { title: "Cost-Efficiency Analysis of AI Mental Health Interventions", rows: 32, columns: 7 }
+        ],
+        images: [
+          { id: "img1", title: "Neural Network Architecture for Mood Prediction", url: "/lovable-uploads/9e72d009-982d-437d-9caa-9403a11018b8.png", source: "Journal of AI in Healthcare" },
+          { id: "img2", title: "AI Chatbot Interface for Mental Health Support", url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b", source: "Digital Psychology Review" },
+          { id: "img3", title: "Brain Activity Patterns During AI-Assisted Therapy", url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5", source: "Neuropsychology Today" },
+          { id: "img4", title: "Sentiment Analysis Dashboard for Patient Progress", url: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6", source: "AI Medical Journal" }
+        ],
+        threads: [
+          { title: "Ethical considerations of AI in mental health treatment", replies: 12, lastUpdated: "2 hours ago" },
+          { title: "Privacy concerns with patient data in AI systems", replies: 8, lastUpdated: "1 day ago" },
+          { title: "Integration challenges in clinical settings", replies: 15, lastUpdated: "3 days ago" },
+          { title: "Comparative effectiveness of different AI approaches", replies: 22, lastUpdated: "1 week ago" }
+        ]
+      };
+    } else if (query.includes("climate change")) {
+      topicData = {
+        pdfs: [
+          { id: "pdf1", title: "Global Climate Change Mitigation Strategies", author: "A. Martinez et al.", pages: 42, url: "https://www.africau.edu/images/default/sample.pdf" },
+          { id: "pdf2", title: "Sea Level Rise Projections 2025-2100", author: "C. Thompson & J. Wong", pages: 38, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+          { id: "pdf3", title: "Economic Impact of Climate Change on Agriculture", author: "R. Gupta", pages: 56, url: "https://www.africau.edu/images/default/sample.pdf" },
+          { id: "pdf4", title: "Carbon Capture Technologies: A Comprehensive Review", author: "S. Lee & B. Patel", pages: 64, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
+        ],
+        tables: [
+          { title: "Global Temperature Increase by Region (2000-2025)", rows: 25, columns: 6 },
+          { title: "Greenhouse Gas Emissions by Sector and Country", rows: 30, columns: 8 },
+          { title: "Climate Adaptation Funding Allocation", rows: 22, columns: 5 },
+          { title: "Projected Species Loss Due to Climate Change", rows: 40, columns: 7 }
+        ],
+        images: [
+          { id: "img1", title: "Arctic Ice Sheet Recession (1980-2025)", url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085", source: "Environmental Science Journal" },
+          { id: "img2", title: "Global Temperature Anomaly Map", url: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7", source: "IPCC Report 2025" },
+          { id: "img3", title: "Flooding Impact in Coastal Communities", url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b", source: "Climate Disasters Archive" },
+          { id: "img4", title: "Sustainable Energy Transition Models", url: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6", source: "Renewable Energy Foundation" }
+        ],
+        threads: [
+          { title: "Effectiveness of current carbon reduction policies", replies: 18, lastUpdated: "5 hours ago" },
+          { title: "Social equity in climate change adaptation", replies: 14, lastUpdated: "2 days ago" },
+          { title: "Technological breakthroughs needed for 1.5°C target", replies: 26, lastUpdated: "1 week ago" },
+          { title: "Climate refugee crisis projections and solutions", replies: 32, lastUpdated: "2 weeks ago" }
+        ]
+      };
+    } else if (query.includes("quantum computing")) {
+      topicData = {
+        pdfs: [
+          { id: "pdf1", title: "Quantum Algorithm Advances for Optimization Problems", author: "L. Zhang et al.", pages: 34, url: "https://www.africau.edu/images/default/sample.pdf" },
+          { id: "pdf2", title: "Quantum Supremacy: Practical Applications", author: "D. Fischer & M. Gupta", pages: 47, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+          { id: "pdf3", title: "Error Correction in Quantum Computing Systems", author: "E. Nakamura", pages: 52, url: "https://www.africau.edu/images/default/sample.pdf" },
+          { id: "pdf4", title: "Quantum Computing for Drug Discovery", author: "H. Anderson & V. Rodriguez", pages: 58, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
+        ],
+        tables: [
+          { title: "Quantum Computing Market Growth by Industry (2022-2025)", rows: 18, columns: 5 },
+          { title: "Qubit Stability Comparison Across Different Quantum Architectures", rows: 24, columns: 9 },
+          { title: "Quantum vs. Classical Computing Performance Benchmarks", rows: 30, columns: 7 },
+          { title: "Quantum Encryption Standards Development Timeline", rows: 22, columns: 6 }
+        ],
+        images: [
+          { id: "img1", title: "Quantum Circuit Diagram for Shor's Algorithm", url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5", source: "Quantum Computing Journal" },
+          { id: "img2", title: "Superconducting Quantum Processor Architecture", url: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7", source: "IBM Quantum Research" },
+          { id: "img3", title: "Quantum Entanglement Visualization", url: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6", source: "Physics Today" },
+          { id: "img4", title: "Quantum Cloud Services Infrastructure", url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085", source: "Quantum Industry Report" }
+        ],
+        threads: [
+          { title: "Post-quantum cryptography implementation challenges", replies: 16, lastUpdated: "3 hours ago" },
+          { title: "Commercial viability of quantum computing applications", replies: 22, lastUpdated: "1 day ago" },
+          { title: "Quantum machine learning breakthrough potential", replies: 29, lastUpdated: "4 days ago" },
+          { title: "Talent shortage in quantum computing industry", replies: 18, lastUpdated: "1 week ago" }
+        ]
+      };
+    }
+
+    setTopicSpecificData(topicData);
+  };
 
   const startGeneratingReport = (query: string) => {
     // Reset state
@@ -97,6 +204,9 @@ const ResearchDashboard: React.FC = () => {
         ]
       });
     }
+    
+    // Update topic-specific data based on the query
+    updateTopicSpecificData(query);
   };
 
   const simulateRealisticGeneration = (reportData: { title: string, sections: { title: string, content: string }[] }) => {
@@ -240,12 +350,7 @@ const ResearchDashboard: React.FC = () => {
         </Button>
       </div>
       <div className="grid grid-cols-1 gap-3 overflow-auto">
-        {[
-          { id: "pdf1", title: "Neural Networks in Mental Health", author: "J. Smith", pages: 28, url: "https://www.africau.edu/images/default/sample.pdf" },
-          { id: "pdf2", title: "AI Applications in Therapy", author: "K. Johnson", pages: 42, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-          { id: "pdf3", title: "Ethics of AI in Healthcare", author: "M. Williams", pages: 36, url: "https://www.africau.edu/images/default/sample.pdf" },
-          { id: "pdf4", title: "Digital Interventions Review", author: "T. Roberts", pages: 54, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
-        ].map((pdf, index) => (
+        {topicSpecificData.pdfs.map((pdf, index) => (
           <div 
             key={index} 
             className={`bg-[#2A2F3C] p-3 rounded-lg border ${selectedPdf === pdf.id ? 'border-violet-500' : 'border-gray-800'} cursor-pointer hover:border-violet-400 transition-colors`}
@@ -337,12 +442,7 @@ const ResearchDashboard: React.FC = () => {
         <h3 className="text-xl font-semibold">Data Tables</h3>
       </div>
       <div className="grid grid-cols-1 gap-4">
-        {[
-          { title: "AI Adoption Rates by Sector", rows: 12, columns: 5 },
-          { title: "Mental Health Indicators Study", rows: 20, columns: 8 },
-          { title: "Treatment Effectiveness Comparison", rows: 15, columns: 6 },
-          { title: "Clinical Trial Results Summary", rows: 32, columns: 10 }
-        ].map((table, index) => (
+        {topicSpecificData.tables.map((table, index) => (
           <div key={index} className="bg-[#2A2F3C] p-4 rounded-lg border border-gray-800">
             <div className="flex items-start gap-3">
               <div className="bg-gray-800 p-2 rounded">
@@ -369,12 +469,7 @@ const ResearchDashboard: React.FC = () => {
         <h3 className="text-xl font-semibold">Discussion Threads</h3>
       </div>
       <div className="space-y-4">
-        {[
-          { title: "Ethical considerations of AI in mental health", replies: 12, lastUpdated: "2 hours ago" },
-          { title: "Limitations of current research methods", replies: 8, lastUpdated: "1 day ago" },
-          { title: "Potential future applications to explore", replies: 15, lastUpdated: "3 days ago" },
-          { title: "Data privacy concerns with AI therapy", replies: 22, lastUpdated: "1 week ago" }
-        ].map((thread, index) => (
+        {topicSpecificData.threads.map((thread, index) => (
           <div key={index} className="bg-[#2A2F3C] p-4 rounded-lg border border-gray-800">
             <div className="flex items-start gap-3">
               <div className="bg-gray-800 p-2 rounded">
@@ -523,289 +618,4 @@ const ResearchDashboard: React.FC = () => {
                   
                   <div className="text-sm font-medium space-y-1 max-h-24 overflow-y-auto">
                     {generationSteps.map((step, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        {index === generationSteps.length - 1 ? (
-                          <div className="animate-pulse h-2 w-2 bg-violet-700 rounded-full"></div>
-                        ) : (
-                          <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                        )}
-                        <span>{step}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="max-w-4xl mx-auto p-8 pb-32">
-                {activeView === 'full-report' && (
-                  <>
-                    <div className="flex justify-between items-center mb-6">
-                      <h1 className="text-3xl font-bold text-gray-900">
-                        {state.query || "Impact of AI on Mental Health Research"}
-                      </h1>
-                      <div className="flex items-center gap-1">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                onClick={() => setActiveSideView(prev => prev === 'pdf-viewer' ? null : 'pdf-viewer')}
-                                className={`h-8 w-8 ${activeSideView === 'pdf-viewer' ? 'bg-violet-100' : ''}`}
-                                aria-label="View PDFs"
-                              >
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>View PDFs</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                onClick={() => setActiveSideView(prev => prev === 'images' ? null : 'images')}
-                                className={`h-8 w-8 ${activeSideView === 'images' ? 'bg-violet-100' : ''}`}
-                                aria-label="View Images"
-                              >
-                                <Image className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>View Images</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                onClick={() => setActiveSideView(prev => prev === 'tables' ? null : 'tables')}
-                                className={`h-8 w-8 ${activeSideView === 'tables' ? 'bg-violet-100' : ''}`}
-                                aria-label="View Tables"
-                              >
-                                <Table className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>View Tables</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              className="h-8 w-8"
-                              aria-label="Export Options"
-                            >
-                              <FileDown className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-56 bg-[#1A1F2C] text-white border border-gray-800">
-                            <DropdownMenuLabel>Export Options</DropdownMenuLabel>
-                            <DropdownMenuSeparator className="bg-gray-800" />
-                            <DropdownMenuGroup>
-                              <DropdownMenuItem onClick={handleExportReport} className="hover:bg-white/10 focus:bg-white/10">
-                                <FileDown className="mr-2 h-4 w-4" />
-                                <span>Export as PDF</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={handleEmailReport} className="hover:bg-white/10 focus:bg-white/10">
-                                <Mail className="mr-2 h-4 w-4" />
-                                <span>Email Report</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-gray-800" />
-                              <DropdownMenuItem onClick={handleSecureExport} className="hover:bg-white/10 focus:bg-white/10">
-                                <Lock className="mr-2 h-4 w-4 text-violet-400" />
-                                <span>Secure Export (XooG)</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={handleShareReport}
-                                aria-label="Share Report"
-                              >
-                                <Share2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>Share & Encrypt Report</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    </div>
-                    
-                    {sections.map((section, index) => (
-                      <div 
-                        key={index} 
-                        className={`mb-8 ${dropTargetIndex === index ? 'border-2 border-dashed border-violet-400 rounded-lg p-4' : ''}`}
-                        onDragOver={(e) => handleSectionDragOver(e, index)}
-                        onDragLeave={handleSectionDragLeave}
-                        onDrop={(e) => handleImageDrop(e, index)}
-                      >
-                        <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
-                        <div className="prose max-w-none">
-                          {section.content.split('\n\n').map((paragraph, idx) => {
-                            if (paragraph.startsWith('<div class="my-4')) {
-                              return (
-                                <div key={idx} dangerouslySetInnerHTML={{ __html: paragraph }} />
-                              );
-                            }
-                            
-                            const citationRegex = /\[(\d+)\]/g;
-                            const parts = [];
-                            let lastIndex = 0;
-                            let match;
-                            
-                            while ((match = citationRegex.exec(paragraph)) !== null) {
-                              parts.push(paragraph.substring(lastIndex, match.index));
-                              const citationNumber = parseInt(match[1]);
-                              parts.push(
-                                <CitationPopover 
-                                  key={`${idx}-${citationNumber}`}
-                                  reference={mockReferences[citationNumber - 1] || mockReferences[0]} 
-                                  index={citationNumber - 1}
-                                  inline
-                                />
-                              );
-                              lastIndex = match.index + match[0].length;
-                            }
-                            parts.push(paragraph.substring(lastIndex));
-                            return (
-                              <p key={idx} className="text-gray-700 mb-4">
-                                {parts}
-                              </p>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {activeView === 'pdf-viewer' && pdfViewerContent}
-                {activeView === 'images' && <ResearchImagePanel />}
-                {activeView === 'citations' && citationsContent}
-                {activeView === 'tables' && tablesContent}
-                {activeView === 'threads' && threadsContent}
-              </div>
-            </div>
-          </ResizablePanel>
-
-          {activeSideView && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={35} minSize={25}>
-                {renderSidePanel()}
-              </ResizablePanel>
-            </>
-          )}
-          
-          {collaborationMode === 'panel' && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={30} minSize={25}>
-                <div className="h-full bg-[#1A1F2C] relative">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute top-2 right-2 z-10 text-gray-400 hover:text-white"
-                    onClick={() => setCollaborationMode('drawer')}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <CollaborationWindow
-                    reportSections={sections}
-                    isFloating={false}
-                    onClose={() => setCollaborationMode('drawer')}
-                  />
-                </div>
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
-
-        {collaborationMode === 'drawer' && (
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button 
-                className="fixed bottom-4 right-4 rounded-full shadow-lg bg-violet-600 hover:bg-violet-700 z-50"
-                size="icon"
-                onClick={() => setShowCollaborator(true)}
-              >
-                <Users className="h-5 w-5" />
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent className="h-[60vh] bg-[#1A1F2C] p-0">
-              <div className="h-1 w-12 rounded-full bg-gray-600 mx-auto my-2" />
-              <div className="flex justify-between px-4">
-                <span className="text-sm text-gray-400 font-medium">Collaboration</span>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs text-gray-400 hover:text-white"
-                    onClick={() => {
-                      setCollaborationMode('panel');
-                      setShowCollaborator(false);
-                    }}
-                  >
-                    <Maximize2 className="h-3 w-3 mr-1" />
-                    Dock to Panel
-                  </Button>
-                  <DrawerClose asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-gray-400 hover:text-white"
-                    >
-                      <X className="h-3 w-3 mr-1" />
-                      Close
-                    </Button>
-                  </DrawerClose>
-                </div>
-              </div>
-              <CollaborationWindow 
-                reportSections={sections}
-                onClose={() => setShowCollaborator(false)} 
-              />
-            </DrawerContent>
-          </Drawer>
-        )}
-      </div>
-      {selectedPdfForView && (
-        <PDFViewerDialog
-          isOpen={!!selectedPdfForView}
-          onClose={() => setSelectedPdfForView(null)}
-          pdf={selectedPdfForView}
-        />
-      )}
-      <EncryptionDialog 
-        isOpen={showEncryptionDialog}
-        onClose={() => setShowEncryptionDialog(false)}
-        documentTitle={state.query || "Impact of AI on Mental Health Research"}
-      />
-    </div>
-  );
-};
-
-export default ResearchDashboard;
+                      <div key={index}
