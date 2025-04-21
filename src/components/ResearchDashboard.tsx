@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -13,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CitationPopover from './CitationPopover';
 import { ResearchImagePanel } from './ResearchImagePanel';
 import CollaborationWindow from './CollaborationWindow';
-import { mockReport, mockReferences } from '@/data/mockData';
+import { mockReport, mockReferences, mockImages, topicReports } from '@/data/mockData';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -39,43 +40,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const topicReports: Record<string, string> = {
-  "How is AI transforming mental health research and interventions? Provide an overview and significant trends.": 
-`AI in Mental Health Research
-
-Artificial Intelligence is revolutionizing diagnosis, personalized treatment, and trend analysis in mental health:
-- Diagnostics & Screening: AI chatbots and language models help screen mental health conditions.
-- Personalized Treatment: Machine learning tailors interventions.
-- Big Data: AI uncovers population-level trends and intervention outcomes.
-Trends: Teletherapy, crisis response, and stigma reduction through AI.`,
-  "Summarize the latest findings on climate change impact analysis, focusing on risk factors and adaptation.":
-`Climate Change Impact
-
-Latest findings indicate:
-- Risk Factors: Increasing severe weather, sea-level rise, and biodiversity loss.
-- Socio-Economic: Food, health, and displacement risks mounting.
-- Adaptation: Strong policy, resilient infrastructure, and green energy are key.
-Global cooperation and innovation are critical for climate adaptation.`,
-  "Explain key applications and advancements in quantum computing and their industry adoption.":
-`Quantum Computing Applications
-
-Quantum computing breakthroughs:
-- Applications: Quantum cryptography, chemistry simulation, financial models.
-- Industry: IBM, Google, and cloud-accessible quantum platforms.
-- Advances: Error correction, hybrid workflows, and cloud quantum.
-Next-gen computing will transform industries dependent on high-performance data and analytics.`,
-};
-
-interface DashboardState {
-  query?: string;
-  files?: string[];
-  urls?: string[];
-  useDocuments?: boolean;
-  useWebSources?: boolean;
-  useAcademic?: boolean;
-  source?: string;
-}
-
 const ResearchDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -95,83 +59,105 @@ const ResearchDashboard: React.FC = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedPdfForView, setSelectedPdfForView] = useState<{title: string; url: string} | null>(null);
   const [showEncryptionDialog, setShowEncryptionDialog] = useState(false);
+  const [generationSteps, setGenerationSteps] = useState<string[]>([]);
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
       navigate('/');
       return;
     }
-    if (state.query && topicReports[state.query]) {
-      setSections([{
-        title: state.query,
-        content: topicReports[state.query]
-      }]);
-      setIsGenerating(false);
-      setProgress(100);
-      return;
-    }
+    
     startGeneratingReport(state.query || "Impact of AI on Mental Health Research");
   }, [state, navigate]);
 
   const startGeneratingReport = (query: string) => {
+    // Reset state
     setReport('');
     setSections([]);
     setIsGenerating(true);
     setProgress(0);
+    setGenerationSteps([]);
     
-    const totalSteps = 5;
+    // If we have a predefined topic report, use it
+    const topicReport = topicReports[query];
     
+    if (topicReport) {
+      // Simulate realistic generation with predefined report
+      simulateRealisticGeneration(topicReport);
+    } else {
+      // Fallback to default report if query doesn't match predefined topics
+      simulateRealisticGeneration({
+        title: query,
+        sections: [
+          { title: "Executive Summary", content: mockReport.executiveSummary },
+          { title: "Introduction", content: mockReport.introduction },
+          { title: "Literature Review", content: mockReport.literatureReview },
+          { title: "Impact Analysis", content: mockReport.impactAnalysis },
+          { title: "Conclusions and Recommendations", content: mockReport.conclusions }
+        ]
+      });
+    }
+  };
+
+  const simulateRealisticGeneration = (reportData: { title: string, sections: { title: string, content: string }[] }) => {
+    const generationSteps = [
+      "Analyzing research question...",
+      "Retrieving relevant academic sources...",
+      "Evaluating source credibility and relevance...",
+      "Extracting key information from sources...",
+      "Identifying major themes and patterns...",
+      "Synthesizing findings across multiple sources...",
+      "Generating comprehensive analysis...",
+      "Creating executive summary...",
+      "Adding citations and references...",
+      "Formatting final report..."
+    ];
+    
+    setGenerationSteps([generationSteps[0]]);
+    
+    // Initial progress update
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 95) {
           clearInterval(progressInterval);
           return prev;
         }
-        return prev + Math.random() * 15;
+        return prev + Math.random() * 5;
       });
     }, 800);
     
-    setTimeout(() => {
-      setSections(prev => [...prev, {
-        title: "Executive Summary",
-        content: mockReport.executiveSummary
-      }]);
-      setProgress(20);
-    }, 2000);
+    // Simulate the steps of generating a report
+    let currentStep = 0;
+    const stepInterval = setInterval(() => {
+      currentStep++;
+      
+      if (currentStep < generationSteps.length) {
+        setGenerationSteps(prev => [...prev, generationSteps[currentStep]]);
+      } else {
+        clearInterval(stepInterval);
+      }
+    }, 1500);
     
-    setTimeout(() => {
-      setSections(prev => [...prev, {
-        title: "Introduction",
-        content: mockReport.introduction
-      }]);
-      setProgress(40);
-    }, 4000);
-    
-    setTimeout(() => {
-      setSections(prev => [...prev, {
-        title: "Literature Review",
-        content: mockReport.literatureReview
-      }]);
-      setProgress(60);
-    }, 6000);
-    
-    setTimeout(() => {
-      setSections(prev => [...prev, {
-        title: "Impact Analysis",
-        content: mockReport.impactAnalysis
-      }]);
-      setProgress(80);
-    }, 8000);
-    
-    setTimeout(() => {
-      setSections(prev => [...prev, {
-        title: "Conclusions and Recommendations",
-        content: mockReport.conclusions
-      }]);
-      setProgress(100);
-      setIsGenerating(false);
-      clearInterval(progressInterval);
-    }, 10000);
+    // Generate each section with a realistic delay
+    let sectionIndex = 0;
+    const sectionInterval = setInterval(() => {
+      if (sectionIndex < reportData.sections.length) {
+        setSections(prev => [...prev, reportData.sections[sectionIndex]]);
+        setProgress(Math.min(95, (sectionIndex + 1) / reportData.sections.length * 90));
+        sectionIndex++;
+      } else {
+        // All sections added, complete the process
+        clearInterval(sectionInterval);
+        clearInterval(progressInterval);
+        setProgress(100);
+        setIsGenerating(false);
+        
+        // Add a small delay before marking as complete
+        setTimeout(() => {
+          setGenerationSteps(prev => [...prev, "Report generation complete!"]);
+        }, 1000);
+      }
+    }, reportData.sections.length <= 3 ? 2000 : 3000); // Adjust timing based on number of sections
   };
 
   const handleShareReport = () => {
@@ -522,9 +508,31 @@ const ResearchDashboard: React.FC = () => {
           <ResizablePanel defaultSize={collaborationMode === 'panel' ? 65 : 100} minSize={50}>
             <div className="bg-white overflow-auto h-full">
               {isGenerating && (
-                <div className="bg-violet-100 p-4 flex items-center gap-2 text-violet-700">
-                  <div className="animate-spin h-4 w-4 border-2 border-violet-700 border-t-transparent rounded-full" />
-                  Generating comprehensive research report...
+                <div className="bg-violet-100 p-6 text-violet-700 sticky top-0 z-10">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="animate-spin h-5 w-5 border-2 border-violet-700 border-t-transparent rounded-full" />
+                    <h3 className="font-medium">Generating comprehensive research report...</h3>
+                  </div>
+                  
+                  <div className="w-full bg-violet-200 rounded-full h-2 mb-3">
+                    <div 
+                      className="bg-violet-600 h-2 rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                  
+                  <div className="text-sm font-medium space-y-1 max-h-24 overflow-y-auto">
+                    {generationSteps.map((step, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        {index === generationSteps.length - 1 ? (
+                          <div className="animate-pulse h-2 w-2 bg-violet-700 rounded-full"></div>
+                        ) : (
+                          <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                        )}
+                        <span>{step}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

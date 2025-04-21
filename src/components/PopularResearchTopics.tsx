@@ -34,7 +34,7 @@ const PopularResearchTopics: React.FC<PopularResearchTopicsProps> = ({
     <div className="pt-8">
       <h3 className="text-lg font-medium text-gray-300 mb-4">Popular Research Topics</h3>
       <div className="flex flex-wrap gap-3 justify-center">
-        {topics.map((topic, idx) => (
+        {topics.map((topic) => (
           <Button
             key={topic.title}
             variant="outline"
