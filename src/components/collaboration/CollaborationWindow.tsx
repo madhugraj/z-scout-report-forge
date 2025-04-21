@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import CollaborationHeader from './CollaborationHeader';
@@ -31,7 +30,6 @@ interface CollaborationWindowProps {
   reportSections?: {title: string; content: string}[];
   onClose?: () => void;
   isFloating?: boolean;
-  title?: string;
 }
 
 const CollaborationWindow: React.FC<CollaborationWindowProps> = ({ 
@@ -39,8 +37,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   currentUser = 'You',
   reportSections = [],
   onClose,
-  isFloating = false,
-  title = 'Research Report'
+  isFloating = false
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -158,7 +155,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         setShowInviteDialog={setShowInviteDialog}
         editorMode={editorMode}
         setEditorMode={setEditorMode}
-        title={title}
       />
 
       <div className="flex flex-row flex-1 overflow-hidden">
