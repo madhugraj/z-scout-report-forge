@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-.0-flash:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -61,6 +61,8 @@ ${formattedInfo || "N/A"}
 
 - Do not fabricate any PDFs or visuals. Only include them if they are explicitly mentioned in the collected data or answers.
 
+- If any gaps are found in the collected data, **initiate real-time grounded Google search** to fill them.
+
 ### 🏗️ Report Structure Requirements:
 - Start with a clear **Title** and a **Table of Contents**.
 - Use proper **Markdown formatting**: include headings, subheadings, bullet points, and tables where needed.
@@ -77,35 +79,9 @@ ${formattedInfo || "N/A"}
 {
   "title": "...",
   "sections": [...],
-  "references": [
-    {
-      "id": 1,
-      "title": "...",
-      "authors": "...",
-      "journal": "...",
-      "year": "...",
-      "url": "...",
-      "doi": "..."
-    }
-  ],
-  "suggestedPdfs": [
-    {
-      "title": "...",
-      "author": "...",
-      "description": "...",
-      "relevance": "...",
-      "referenceId": 1
-    }
-  ],
-  "suggestedImages": [
-    {
-      "title": "...",
-      "description": "...",
-      "source": "https://link-to-pdf-or-original",
-      "relevanceToSection": "Section Name",
-      "referenceId": 1
-    }
-  ],
+  "references": [...],
+  "suggestedPdfs": [...],
+  "suggestedImages": [...],
   "suggestedDatasets": [...]
 }
 
