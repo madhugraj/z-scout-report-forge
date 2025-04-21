@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -40,6 +39,120 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const topicPDFs: Record<string, { id: string; title: string; author: string; pages: number; url: string }[]> = {
+  "How is AI transforming mental health research and interventions? Provide an overview and significant trends.": [
+    {
+      id: "pdf1",
+      title: "Neural Networks in Mental Health",
+      author: "J. Smith",
+      pages: 28,
+      url: "https://www.africau.edu/images/default/sample.pdf"
+    },
+    {
+      id: "pdf2",
+      title: "AI Applications in Therapy",
+      author: "K. Johnson",
+      pages: 42,
+      url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+    }
+  ],
+  "Summarize the latest findings on climate change impact analysis, focusing on risk factors and adaptation.": [
+    {
+      id: "pdf1",
+      title: "Global Climate Change 2025",
+      author: "A. Martinez",
+      pages: 36,
+      url: "https://www.africau.edu/images/default/sample.pdf"
+    },
+    {
+      id: "pdf2",
+      title: "Sea Level Rises",
+      author: "C. Thompson",
+      pages: 40,
+      url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+    }
+  ],
+  "Explain key applications and advancements in quantum computing and their industry adoption.": [
+    {
+      id: "pdf1",
+      title: "Quantum Computing Applications",
+      author: "L. Zhang",
+      pages: 30,
+      url: "https://www.africau.edu/images/default/sample.pdf"
+    },
+    {
+      id: "pdf2",
+      title: "Quantum Cryptography",
+      author: "D. Fischer",
+      pages: 38,
+      url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+    }
+  ]
+};
+
+const topicImages: Record<string, { id: string; title: string; url: string; source: string }[]> = {
+  "How is AI transforming mental health research and interventions? Provide an overview and significant trends.": [
+    {
+      id: "ai1",
+      title: "AI Chatbot Interface",
+      url: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
+      source: "Digital Psychology Review"
+    }
+  ],
+  "Summarize the latest findings on climate change impact analysis, focusing on risk factors and adaptation.": [
+    {
+      id: "cl1",
+      title: "Arctic Ice Recession",
+      url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
+      source: "Environmental Science Journal"
+    }
+  ],
+  "Explain key applications and advancements in quantum computing and their industry adoption.": [
+    {
+      id: "qc1",
+      title: "Quantum Logic Diagram",
+      url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5",
+      source: "Quantum Computing Journal"
+    }
+  ]
+};
+
+const topicCitations: Record<string, typeof mockReferences> = {
+  "How is AI transforming mental health research and interventions? Provide an overview and significant trends.": [
+    {
+      title: "Artificial Intelligence in Mental Health Care",
+      authors: ["J. Smith", "L. Chen"],
+      year: 2024,
+      journal: "AI Psychiatry",
+      url: "https://example.com/ai-mental-health",
+      doi: "10.1001/aipsych.2024.001",
+      abstract: "AI is reshaping diagnosis and treatment in mental health."
+    }
+  ],
+  "Summarize the latest findings on climate change impact analysis, focusing on risk factors and adaptation.": [
+    {
+      title: "Climate Change Impacts: 2025 Review",
+      authors: ["A. Martinez", "R. Gupta"],
+      year: 2025,
+      journal: "Climate Journal",
+      url: "https://example.com/climate2025",
+      doi: "10.1002/climate.2025.001",
+      abstract: "A comprehensive analysis of climate risk factors and adaptation."
+    }
+  ],
+  "Explain key applications and advancements in quantum computing and their industry adoption.": [
+    {
+      title: "Quantum Algorithms and Industry Adoption",
+      authors: ["L. Zhang", "D. Fischer"],
+      year: 2024,
+      journal: "Quantum Science",
+      url: "https://example.com/quantum-industry",
+      doi: "10.1007/qc.2024.005",
+      abstract: "Industry trends and applications of quantum computing."
+    }
+  ]
+};
+
 const ResearchDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -60,6 +173,9 @@ const ResearchDashboard: React.FC = () => {
   const [selectedPdfForView, setSelectedPdfForView] = useState<{title: string; url: string} | null>(null);
   const [showEncryptionDialog, setShowEncryptionDialog] = useState(false);
   const [generationSteps, setGenerationSteps] = useState<string[]>([]);
+  const [topicPDFList, setTopicPDFList] = useState<{ id: string; title: string; author: string; pages: number; url: string }[]>([]);
+  const [topicImageList, setTopicImageList] = useState<{ id: string; title: string; url: string; source: string }[]>([]);
+  const [topicCitationList, setTopicCitationList] = useState<typeof mockReferences>([]);
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -67,25 +183,34 @@ const ResearchDashboard: React.FC = () => {
       return;
     }
     
+    let _query = state.query || "Impact of AI on Mental Health Research";
+    if (topicPDFs[_query]) {
+      setTopicPDFList(topicPDFs[_query]);
+      setTopicImageList(topicImages[_query]);
+      setTopicCitationList(topicCitations[_query]);
+    } else {
+      setTopicPDFList([
+        { id: "pdf1", title: "Neural Networks in Mental Health", author: "J. Smith", pages: 28, url: "https://www.africau.edu/images/default/sample.pdf" }
+      ]);
+      setTopicImageList([]);
+      setTopicCitationList(mockReferences);
+    }
+    
     startGeneratingReport(state.query || "Impact of AI on Mental Health Research");
   }, [state, navigate]);
 
   const startGeneratingReport = (query: string) => {
-    // Reset state
     setReport('');
     setSections([]);
     setIsGenerating(true);
     setProgress(0);
     setGenerationSteps([]);
     
-    // If we have a predefined topic report, use it
     const topicReport = topicReports[query];
     
     if (topicReport) {
-      // Simulate realistic generation with predefined report
       simulateRealisticGeneration(topicReport);
     } else {
-      // Fallback to default report if query doesn't match predefined topics
       simulateRealisticGeneration({
         title: query,
         sections: [
@@ -115,7 +240,6 @@ const ResearchDashboard: React.FC = () => {
     
     setGenerationSteps([generationSteps[0]]);
     
-    // Initial progress update
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 95) {
@@ -126,7 +250,6 @@ const ResearchDashboard: React.FC = () => {
       });
     }, 800);
     
-    // Simulate the steps of generating a report
     let currentStep = 0;
     const stepInterval = setInterval(() => {
       currentStep++;
@@ -138,26 +261,38 @@ const ResearchDashboard: React.FC = () => {
       }
     }, 1500);
     
-    // Generate each section with a realistic delay
     let sectionIndex = 0;
     const sectionInterval = setInterval(() => {
       if (sectionIndex < reportData.sections.length) {
-        setSections(prev => [...prev, reportData.sections[sectionIndex]]);
+        setSections(prevSections => {
+          const updatedSections = [...prevSections];
+          const section = updatedSections[sectionIndex];
+          const imageHtml = `<div class="my-4 w-full max-w-md mx-auto">
+            <img src="${imageData.url}" alt="${imageData.title}" class="w-full rounded-lg shadow-md" />
+            <p class="text-sm text-gray-500 mt-1">${imageData.title} • ${imageData.source}</p>
+          </div>`;
+          
+          updatedSections[sectionIndex] = {
+            ...section,
+            content: section.content + '\n\n' + imageHtml
+          };
+          
+          return updatedSections;
+        });
+        
         setProgress(Math.min(95, (sectionIndex + 1) / reportData.sections.length * 90));
         sectionIndex++;
       } else {
-        // All sections added, complete the process
         clearInterval(sectionInterval);
         clearInterval(progressInterval);
         setProgress(100);
         setIsGenerating(false);
         
-        // Add a small delay before marking as complete
         setTimeout(() => {
           setGenerationSteps(prev => [...prev, "Report generation complete!"]);
         }, 1000);
       }
-    }, reportData.sections.length <= 3 ? 2000 : 3000); // Adjust timing based on number of sections
+    }, reportData.sections.length <= 3 ? 2000 : 3000);
   };
 
   const handleShareReport = () => {
@@ -193,7 +328,6 @@ const ResearchDashboard: React.FC = () => {
     try {
       const imageData = JSON.parse(e.dataTransfer.getData('application/json'));
       
-      // Update the section content to include the image
       setSections(prevSections => {
         const updatedSections = [...prevSections];
         const section = updatedSections[sectionIndex];
@@ -202,7 +336,6 @@ const ResearchDashboard: React.FC = () => {
           <p class="text-sm text-gray-500 mt-1">${imageData.title} • ${imageData.source}</p>
         </div>`;
         
-        // Split the content at the drop position or append at the end
         updatedSections[sectionIndex] = {
           ...section,
           content: section.content + '\n\n' + imageHtml
@@ -240,12 +373,7 @@ const ResearchDashboard: React.FC = () => {
         </Button>
       </div>
       <div className="grid grid-cols-1 gap-3 overflow-auto">
-        {[
-          { id: "pdf1", title: "Neural Networks in Mental Health", author: "J. Smith", pages: 28, url: "https://www.africau.edu/images/default/sample.pdf" },
-          { id: "pdf2", title: "AI Applications in Therapy", author: "K. Johnson", pages: 42, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-          { id: "pdf3", title: "Ethics of AI in Healthcare", author: "M. Williams", pages: 36, url: "https://www.africau.edu/images/default/sample.pdf" },
-          { id: "pdf4", title: "Digital Interventions Review", author: "T. Roberts", pages: 54, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
-        ].map((pdf, index) => (
+        {topicPDFList.map((pdf, index) => (
           <div 
             key={index} 
             className={`bg-[#2A2F3C] p-3 rounded-lg border ${selectedPdf === pdf.id ? 'border-violet-500' : 'border-gray-800'} cursor-pointer hover:border-violet-400 transition-colors`}
@@ -320,7 +448,7 @@ const ResearchDashboard: React.FC = () => {
         <h3 className="text-xl font-semibold">Citations</h3>
       </div>
       <div className="space-y-3">
-        {mockReferences.map((reference, index) => (
+        {topicCitationList.map((reference, index) => (
           <CitationPopover 
             key={index}
             reference={reference}

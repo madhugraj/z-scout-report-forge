@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   ArrowLeft, 
@@ -32,7 +31,11 @@ interface AuditModule {
   primaryAction: string;
 }
 
-const TrustSafetyDashboard: React.FC = () => {
+interface TrustSafetyDashboardProps {
+  projectTitle?: string;
+}
+
+const TrustSafetyDashboard: React.FC<TrustSafetyDashboardProps> = ({ projectTitle }) => {
   const navigate = useNavigate();
   
   const [selectedModule, setSelectedModule] = useState<string>('all');
@@ -199,6 +202,11 @@ const TrustSafetyDashboard: React.FC = () => {
     setActionDialogOpen(true);
   };
 
+  const effectiveTitle =
+    projectTitle ||
+    (typeof window !== 'undefined' && window.history.state?.usr?.query) ||
+    "Z-Grid (Trust & Safety) Dashboard";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white">
       <header className="w-full border-b border-gray-800/50 bg-black/10 backdrop-blur-sm sticky top-0 z-50">
@@ -210,7 +218,7 @@ const TrustSafetyDashboard: React.FC = () => {
             </Button>
             <Separator orientation="vertical" className="h-6 bg-gray-700/50" />
             <h1 className="text-xl font-semibold bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">
-              Z-Grid (Trust & Safety) Dashboard
+              {effectiveTitle}
             </h1>
           </div>
         </div>
