@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive, FileText } from 'lucide-react';
+
+import React, { useState, useEffect } from 'react';
+import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive, FileText, ArrowRight, ChevronRight, ShieldCheck, FolderTree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
@@ -7,13 +8,24 @@ import { toast } from '@/components/ui/sonner';
 import SignInDialog from './SignInDialog';
 import { cn } from '@/lib/utils';
 import WhatYouCanBuildSection from './WhatYouCanBuildSection';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const LandingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
+  const [showFeatureTooltip, setShowFeatureTooltip] = useState(false);
   const navigate = useNavigate();
+
+  // Show feature tooltips after 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowFeatureTooltip(true);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +34,10 @@ const LandingPage: React.FC = () => {
       return;
     }
     setIsGenerating(true);
+    
+    toast.success('Starting research on "' + searchQuery + '"');
+    
+    // Simulate generating research
     setTimeout(() => {
       setIsGenerating(false);
       navigate('/dashboard', {
@@ -42,11 +58,24 @@ const LandingPage: React.FC = () => {
   };
 
   const handleWorkspaceClick = () => {
-    navigate('/workspace');
+    toast.info('Navigating to Research Workspace...', { duration: 1500 });
+    setTimeout(() => {
+      navigate('/workspace');
+    }, 500);
   };
 
   const handleTrustSafetyClick = () => {
-    navigate('/trust-safety');
+    toast.info('Opening Z-Grid Trust & Safety Dashboard...', { duration: 1500 });
+    setTimeout(() => {
+      navigate('/trust-safety');
+    }, 500);
+  };
+
+  const showFeaturedResearch = (topic: string) => {
+    setSearchQuery(topic);
+    setTimeout(() => {
+      handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+    }, 100);
   };
 
   return (
@@ -65,12 +94,42 @@ const LandingPage: React.FC = () => {
             <Button variant="ghost" className="text-gray-400 hover:text-white">
               About
             </Button>
-            <Button onClick={handleTrustSafetyClick} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
-              Z-Grid (Trust & Safety)
-            </Button>
-            <Button onClick={handleWorkspaceClick} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
-              Workspace
-            </Button>
+            
+            <TooltipProvider>
+              <Tooltip open={showFeatureTooltip}>
+                <TooltipTrigger asChild>
+                  <Button 
+                    onClick={handleTrustSafetyClick} 
+                    className="bg-gradient-to-r from-indigo-600/80 to-indigo-700/80 hover:from-indigo-600 hover:to-indigo-700 text-white border-none group relative"
+                  >
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Z-Grid (Trust & Safety)
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping duration-1000 opacity-75"></span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-indigo-900 border-indigo-700 p-3 max-w-xs">
+                  <p>Ensure ethical AI use with our Trust & Safety features</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    onClick={handleWorkspaceClick} 
+                    className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none group"
+                  >
+                    <FolderTree className="mr-2 h-4 w-4 group-hover:animate-pulse" />
+                    Workspace
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>View and manage all your research projects</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
             <Button onClick={() => setShowSignIn(true)} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
               Sign In
             </Button>
@@ -118,14 +177,31 @@ const LandingPage: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="w-full" onClick={() => setShowUploadOptions(false)}>
               <div className="relative rounded-xl border border-gray-800 bg-[#2A2F3C]/80 backdrop-blur-sm shadow-lg transition-colors focus-within:border-violet-500">
-                <Input type="text" placeholder="Ask a question or search your documents..." className="pl-12 pr-24 py-7 text-lg border-0 focus-visible:ring-0 rounded-xl bg-transparent text-white placeholder:text-gray-500" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                <Input 
+                  type="text" 
+                  placeholder="Ask a question or search your documents..." 
+                  className="pl-12 pr-24 py-7 text-lg border-0 focus-visible:ring-0 rounded-xl bg-transparent text-white placeholder:text-gray-500" 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
-                  <Button type="button" size="icon" variant="ghost" className="hover:bg-white/5 text-gray-400 hover:text-violet-400" onClick={e => {
-                    e.stopPropagation();
-                    setShowUploadOptions(!showUploadOptions);
-                  }}>
+                  <Button 
+                    type="button" 
+                    size="icon" 
+                    variant="ghost" 
+                    className="hover:bg-white/5 text-gray-400 hover:text-violet-400 relative"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setShowUploadOptions(!showUploadOptions);
+                    }}
+                  >
                     <CloudUpload className="h-5 w-5" />
+                    {!showUploadOptions && showFeatureTooltip && (
+                      <span className="absolute -top-10 whitespace-nowrap bg-violet-900 text-white text-xs py-1 px-2 rounded animate-bounce">
+                        Upload documents here
+                      </span>
+                    )}
                   </Button>
                   <Button type="button" size="icon" disabled={isGenerating} className="bg-gradient-to-r from-violet-600/80 to-violet-700/80 hover:from-violet-600 hover:to-violet-700 text-white border-none">
                     <Mic className="h-5 w-5" />
@@ -144,6 +220,74 @@ const LandingPage: React.FC = () => {
                 </Button>
               </div>
             </form>
+          </div>
+          
+          {/* Featured Research Topics */}
+          <div className="pt-8">
+            <h3 className="text-lg font-medium text-gray-300 mb-4">Popular Research Topics</h3>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Button 
+                variant="outline"
+                className="bg-white/5 border-gray-700 hover:border-violet-500 hover:bg-white/10"
+                onClick={() => showFeaturedResearch("AI in mental health research")}
+              >
+                <span>AI in Mental Health</span>
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline"
+                className="bg-white/5 border-gray-700 hover:border-violet-500 hover:bg-white/10"
+                onClick={() => showFeaturedResearch("Climate change impact analysis")}
+              >
+                <span>Climate Change</span>
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline"
+                className="bg-white/5 border-gray-700 hover:border-violet-500 hover:bg-white/10"
+                onClick={() => showFeaturedResearch("Quantum computing applications")}
+              >
+                <span>Quantum Computing</span>
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Quick Navigation Buttons */}
+          <div className="pt-6 pb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto">
+              <Button 
+                className="flex items-center justify-between p-4 h-auto bg-indigo-900/40 hover:bg-indigo-900/60 border border-indigo-700/30"
+                onClick={handleTrustSafetyClick}
+              >
+                <div className="flex items-center">
+                  <div className="bg-indigo-900/70 p-2 rounded-full mr-3">
+                    <ShieldCheck className="h-5 w-5 text-indigo-300" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">Z-Grid Dashboard</p>
+                    <p className="text-xs text-gray-400">Trust & Safety Controls</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-indigo-300" />
+              </Button>
+              
+              <Button 
+                className="flex items-center justify-between p-4 h-auto bg-violet-900/40 hover:bg-violet-900/60 border border-violet-700/30"
+                onClick={handleWorkspaceClick}
+              >
+                <div className="flex items-center">
+                  <div className="bg-violet-900/70 p-2 rounded-full mr-3">
+                    <FolderTree className="h-5 w-5 text-violet-300" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">Research Workspace</p>
+                    <p className="text-xs text-gray-400">All Your Projects</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-violet-300" />
+              </Button>
+            </div>
           </div>
         </div>
       </main>
