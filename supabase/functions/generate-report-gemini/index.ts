@@ -28,20 +28,43 @@ serve(async (req) => {
       });
     }
 
-    // Compose a precise prompt for research report generation
+    // Compose a more comprehensive prompt for research report generation with grounding
     const systemPrompt = `
-You are a world-class research assistant. Write a detailed research report on the following topic.
-1. Structure the report with an Executive Summary, Introduction, Literature Review, Impact Analysis, and Conclusions/Recommendations.
-2. Use an academic tone and add bullet points, lists, or tables when helpful.
-3. If relevant, generate plausible fake citations as [1], [2], ...
-4. Output as a JSON object with this shape:
+You are a world-class research assistant. Write a very detailed research report on the following topic.
+The report should be comprehensive, with at least 10-12 sections covering different aspects of the topic.
+
+1. Structure the report with an Executive Summary, Introduction, Background, Methodology, Main Analysis Sections (multiple), Impact Analysis, Future Directions, and Conclusions/Recommendations.
+2. Use an academic tone and add bullet points, lists, and tables when helpful.
+3. Generate plausible fake citations/references as [1], [2], etc. and include a References section at the end with 15-20 detailed academic citations.
+4. Create rich content with mentions of relevant images, datasets, and PDF sources that would be valuable for the report.
+5. For each section, aim for at least 2-3 paragraphs of detailed information.
+
+Output as a JSON object with this shape:
 {
   "title": "...",
   "sections": [
     {"title": "Executive Summary", "content": "..."},
+    {"title": "Introduction", "content": "..."},
+    ...
+  ],
+  "references": [
+    {"id": 1, "title": "...", "authors": "...", "journal": "...", "year": "...", "url": "..."},
+    ...
+  ],
+  "suggestedPdfs": [
+    {"title": "...", "author": "...", "description": "...", "relevance": "..."},
+    ...
+  ],
+  "suggestedImages": [
+    {"title": "...", "description": "...", "source": "...", "relevanceToSection": "..."},
+    ...
+  ],
+  "suggestedDatasets": [
+    {"title": "...", "description": "...", "source": "...", "relevanceToSection": "..."},
     ...
   ]
 }
+
 Topic: "${query}"
     `.trim();
 
@@ -57,8 +80,8 @@ Topic: "${query}"
           { role: "user", parts: [{ text: systemPrompt }] }
         ],
         generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 4096
+          temperature: 0.2,
+          maxOutputTokens: 8192  // Increased token limit for more detailed reports
         }
       }),
     });
@@ -93,7 +116,7 @@ Topic: "${query}"
       console.log("Successfully parsed report JSON");
     } catch (e) {
       console.error("Failed to parse Gemini output as JSON:", e);
-      console.log("Raw response:", textResponse);
+      console.log("Raw response:", textResponse.substring(0, 500) + "...");
       
       // Attempt to create a basic report structure if parsing fails
       try {
@@ -105,13 +128,17 @@ Topic: "${query}"
               title: "Generated Content",
               content: textResponse.replace(/```json|```/g, '').trim()
             }
-          ]
+          ],
+          references: [],
+          suggestedPdfs: [],
+          suggestedImages: [],
+          suggestedDatasets: []
         };
         console.log("Created fallback report structure");
       } catch (fallbackError) {
         return new Response(JSON.stringify({ 
           error: "Could not parse or create report from Gemini output.", 
-          raw: textResponse 
+          raw: textResponse.substring(0, 500) + "..." 
         }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" }

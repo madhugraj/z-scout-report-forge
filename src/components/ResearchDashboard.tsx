@@ -1,44 +1,23 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Share2, Mail, FileDown, Send, Users,
-  FileText, Image, Table, BookOpen, MessageSquare, 
-  ChevronRight, ExternalLink, Search, Edit, Download, Maximize2, Minimize2, X,
-  FolderTree, ArrowLeft, Lock, Shield
+  Users, FileText, MessageSquare, FolderTree, ArrowLeft, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CitationPopover from './CitationPopover';
-import { ResearchImagePanel } from './ResearchImagePanel';
-import CollaborationWindow from './CollaborationWindow';
-import { mockReport, mockReferences, mockImages, topicReports } from '@/data/mockData';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+import { Drawer, DrawerClose, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import PDFViewerDialog from './PDFViewerDialog';
 import EncryptionDialog from './EncryptionDialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useGeminiReport } from "@/hooks/useGeminiReport";
+import CollaborationWindow from './CollaborationWindow';
+import { useGeminiReport, GeminiReport } from "@/hooks/useGeminiReport";
+import ResearchHeader from './research/ResearchHeader';
+import ResearchContent from './research/ResearchContent';
+import PDFsPanel from './research/PDFsPanel';
+import DataTablesPanel from './research/DataTablesPanel';
+import { ResearchImagePanel } from './ResearchImagePanel';
 
 const ResearchDashboard: React.FC = () => {
   const location = useLocation();
@@ -47,21 +26,24 @@ const ResearchDashboard: React.FC = () => {
 
   const [activeView, setActiveView] = useState('full-report');
   const [progress, setProgress] = useState(0);
-  const [sections, setSections] = useState<{title: string; content: string}[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [question, setQuestion] = useState('');
-  const [report, setReport] = useState('');
   const [activeSideView, setActiveSideView] = useState<'pdf-viewer' | 'images' | 'tables' | null>(null);
-  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
-  const [showCollaborator, setShowCollaborator] = useState(false);
-  const [collaborationMode, setCollaborationMode] = useState<'drawer' | 'panel'>('drawer');
-  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
-  const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedPdfForView, setSelectedPdfForView] = useState<{title: string; url: string} | null>(null);
   const [showEncryptionDialog, setShowEncryptionDialog] = useState(false);
   const [generationSteps, setGenerationSteps] = useState<string[]>([]);
+  const [report, setReport] = useState<GeminiReport>({
+    title: "",
+    sections: [],
+    references: [],
+    suggestedPdfs: [],
+    suggestedImages: [],
+    suggestedDatasets: []
+  });
+  const [showCollaborator, setShowCollaborator] = useState(false);
+  const [collaborationMode, setCollaborationMode] = useState<'drawer' | 'panel'>('drawer');
+
   const geminiReport = useGeminiReport();
-  const isGeneratingGemini = geminiReport.isPending;
+  const isPending = geminiReport.isPending;
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -73,16 +55,21 @@ const ResearchDashboard: React.FC = () => {
   }, [state, navigate]);
 
   const startGeneratingReport = (query: string) => {
-    setReport("");
-    setSections([]);
+    setReport({
+      title: "",
+      sections: [],
+      references: [],
+      suggestedPdfs: [],
+      suggestedImages: [],
+      suggestedDatasets: []
+    });
     setIsGenerating(true);
     setProgress(0);
     setGenerationSteps(["Sending request to Gemini..."]);
 
     geminiReport.mutate(query, {
-      onSuccess: (result: { title: string, sections: { title: string, content: string}[] }) => {
-        setReport(result.title);
-        setSections(result.sections);
+      onSuccess: (result: GeminiReport) => {
+        setReport(result);
         setProgress(100);
         setGenerationSteps((steps) => [...steps, "Report generation complete!"]);
         setIsGenerating(false);
@@ -99,249 +86,29 @@ const ResearchDashboard: React.FC = () => {
     setShowEncryptionDialog(true);
   };
 
-  const handleExportReport = () => {
-    const content = sections.map(s => `${s.title}\n\n${s.content}`).join('\n\n');
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'research-report.txt';
-    a.click();
-    window.URL.revokeObjectURL(url);
-    toast.success("Research report downloaded successfully!");
+  const toggleSideView = (view: 'pdf-viewer' | 'images' | 'tables' | null) => {
+    setActiveSideView(prev => prev === view ? null : view);
   };
-
-  const handleEmailReport = () => {
-    const subject = encodeURIComponent("Research Report: " + (state.query || "AI Impact Analysis"));
-    const body = encodeURIComponent("Access the full research report here: " + window.location.href);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    toast.success("Email client opened with report link!");
-  };
-
-  const handleSecureExport = () => {
-    setShowEncryptionDialog(true);
-  };
-
-  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
-    e.preventDefault();
-    setDropTargetIndex(null);
-    try {
-      const imageData = JSON.parse(e.dataTransfer.getData('application/json'));
-      
-      // Update the section content to include the image
-      setSections(prevSections => {
-        const updatedSections = [...prevSections];
-        const section = updatedSections[sectionIndex];
-        const imageHtml = `<div class="my-4 w-full max-w-md mx-auto">
-          <img src="${imageData.url}" alt="${imageData.title}" class="w-full rounded-lg shadow-md" />
-          <p class="text-sm text-gray-500 mt-1">${imageData.title} • ${imageData.source}</p>
-        </div>`;
-        
-        // Split the content at the drop position or append at the end
-        updatedSections[sectionIndex] = {
-          ...section,
-          content: section.content + '\n\n' + imageHtml
-        };
-        
-        return updatedSections;
-      });
-      
-      toast.success(`Image "${imageData.title}" added to ${sections[sectionIndex].title}`);
-    } catch (err) {
-      toast.error('Failed to add image');
-    }
-  };
-  
-  const handleSectionDragOver = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
-    e.preventDefault();
-    setDropTargetIndex(sectionIndex);
-  };
-  
-  const handleSectionDragLeave = () => {
-    setDropTargetIndex(null);
-  };
-
-  const pdfViewerContent = (
-    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-4 rounded-lg">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Source PDFs</h3>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setActiveSideView(null)}
-          className="text-gray-400 hover:text-white"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="grid grid-cols-1 gap-3 overflow-auto">
-        {[
-          { id: "pdf1", title: "Neural Networks in Mental Health", author: "J. Smith", pages: 28, url: "https://www.africau.edu/images/default/sample.pdf" },
-          { id: "pdf2", title: "AI Applications in Therapy", author: "K. Johnson", pages: 42, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-          { id: "pdf3", title: "Ethics of AI in Healthcare", author: "M. Williams", pages: 36, url: "https://www.africau.edu/images/default/sample.pdf" },
-          { id: "pdf4", title: "Digital Interventions Review", author: "T. Roberts", pages: 54, url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
-        ].map((pdf, index) => (
-          <div 
-            key={index} 
-            className={`bg-[#2A2F3C] p-3 rounded-lg border ${selectedPdf === pdf.id ? 'border-violet-500' : 'border-gray-800'} cursor-pointer hover:border-violet-400 transition-colors`}
-            onClick={() => setSelectedPdf(pdf.id)}
-          >
-            <div className="flex items-start gap-2">
-              <div className="bg-gray-800 p-1.5 rounded">
-                <FileText className="h-6 w-6 text-gray-400" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-medium text-white text-sm">{pdf.title}</h4>
-                <p className="text-xs text-gray-400">{pdf.author} • {pdf.pages} pages</p>
-                <div className="flex mt-1 gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-violet-400 h-7 text-xs px-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPdfForView({ title: pdf.title, url: pdf.url });
-                    }}
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    View
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-violet-400 h-7 text-xs px-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const a = document.createElement('a');
-                      a.href = pdf.url;
-                      a.download = pdf.title.replace(/\s+/g, '_') + '.pdf';
-                      a.click();
-                    }}
-                  >
-                    <Download className="h-3 w-3 mr-1" />
-                    Download
-                  </Button>
-                </div>
-              </div>
-            </div>
-            {selectedPdf === pdf.id && (
-              <div className="mt-3 bg-gray-900 rounded-lg overflow-hidden relative">
-                <div className="absolute top-2 right-2 z-10 flex gap-1">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-6 w-6 bg-gray-800 border-gray-700"
-                    onClick={() => setIsFullScreen(!isFullScreen)}
-                  >
-                    {isFullScreen ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-                  </Button>
-                </div>
-                <iframe 
-                  src={pdf.url} 
-                  className={`w-full ${isFullScreen ? 'h-[calc(100vh-400px)]' : 'h-80'}`}
-                  title={pdf.title}
-                />
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const citationsContent = (
-    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold">Citations</h3>
-      </div>
-      <div className="space-y-3">
-        {mockReferences.map((reference, index) => (
-          <CitationPopover 
-            key={index}
-            reference={reference}
-            index={index}
-          />
-        ))}
-      </div>
-    </div>
-  );
-
-  const tablesContent = (
-    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold">Data Tables</h3>
-      </div>
-      <div className="grid grid-cols-1 gap-4">
-        {[
-          { title: "AI Adoption Rates by Sector", rows: 12, columns: 5 },
-          { title: "Mental Health Indicators Study", rows: 20, columns: 8 },
-          { title: "Treatment Effectiveness Comparison", rows: 15, columns: 6 },
-          { title: "Clinical Trial Results Summary", rows: 32, columns: 10 }
-        ].map((table, index) => (
-          <div key={index} className="bg-[#2A2F3C] p-4 rounded-lg border border-gray-800">
-            <div className="flex items-start gap-3">
-              <div className="bg-gray-800 p-2 rounded">
-                <Table className="h-8 w-8 text-gray-400" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-medium text-white">{table.title}</h4>
-                <p className="text-sm text-gray-400">{table.rows} rows • {table.columns} columns</p>
-                <Button variant="ghost" size="sm" className="mt-2 text-violet-400">
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Export Table
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const threadsContent = (
-    <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold">Discussion Threads</h3>
-      </div>
-      <div className="space-y-4">
-        {[
-          { title: "Ethical considerations of AI in mental health", replies: 12, lastUpdated: "2 hours ago" },
-          { title: "Limitations of current research methods", replies: 8, lastUpdated: "1 day ago" },
-          { title: "Potential future applications to explore", replies: 15, lastUpdated: "3 days ago" },
-          { title: "Data privacy concerns with AI therapy", replies: 22, lastUpdated: "1 week ago" }
-        ].map((thread, index) => (
-          <div key={index} className="bg-[#2A2F3C] p-4 rounded-lg border border-gray-800">
-            <div className="flex items-start gap-3">
-              <div className="bg-gray-800 p-2 rounded">
-                <MessageSquare className="h-6 w-6 text-gray-400" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-medium text-white">{thread.title}</h4>
-                <p className="text-sm text-gray-400">{thread.replies} replies • Last updated {thread.lastUpdated}</p>
-                <Button variant="ghost" size="sm" className="mt-2 text-violet-400">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Join Discussion
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
-        <Button variant="outline" className="w-full mt-4 text-white">
-          <MessageSquare className="h-4 w-4 mr-2" />
-          Start New Discussion
-        </Button>
-      </div>
-    </div>
-  );
 
   const renderSidePanel = () => {
     switch (activeSideView) {
       case 'pdf-viewer':
-        return pdfViewerContent;
+        return (
+          <PDFsPanel 
+            pdfs={report.suggestedPdfs}
+            onClose={() => toggleSideView(null)}
+            onViewPDF={setSelectedPdfForView}
+          />
+        );
       case 'images':
-        return <ResearchImagePanel />;
+        return <ResearchImagePanel onClose={() => toggleSideView(null)} />;
       case 'tables':
-        return tablesContent;
+        return (
+          <DataTablesPanel 
+            datasets={report.suggestedDatasets}
+            onClose={() => toggleSideView(null)}
+          />
+        );
       default:
         return null;
     }
@@ -377,17 +144,23 @@ const ResearchDashboard: React.FC = () => {
             <Button
               variant={activeView === 'pdf-viewer' ? 'secondary' : 'ghost'}
               className="w-full justify-start hover:bg-white/5 transition-colors"
-              onClick={() => setActiveView('pdf-viewer')}
+              onClick={() => {
+                setActiveView('pdf-viewer');
+                toggleSideView('pdf-viewer');
+              }}
             >
-              <BookOpen className="h-5 w-5 mr-3 text-violet-400" />
+              <FileText className="h-5 w-5 mr-3 text-violet-400" />
               Source PDFs
             </Button>
             <Button
               variant={activeView === 'images' ? 'secondary' : 'ghost'}
               className="w-full justify-start hover:bg-white/5 transition-colors"
-              onClick={() => setActiveView('images')}
+              onClick={() => {
+                setActiveView('images');
+                toggleSideView('images');
+              }}
             >
-              <Image className="h-5 w-5 mr-3 text-violet-400" />
+              <img src="/placeholder.svg" alt="Images" className="h-5 w-5 mr-3 text-violet-400" />
               Research Images
             </Button>
             <Button
@@ -401,9 +174,12 @@ const ResearchDashboard: React.FC = () => {
             <Button
               variant={activeView === 'tables' ? 'secondary' : 'ghost'}
               className="w-full justify-start hover:bg-white/5 transition-colors"
-              onClick={() => setActiveView('tables')}
+              onClick={() => {
+                setActiveView('tables');
+                toggleSideView('tables');
+              }}
             >
-              <Table className="h-5 w-5 mr-3 text-violet-400" />
+              <img src="/placeholder.svg" alt="Tables" className="h-5 w-5 mr-3 text-violet-400" />
               Data Tables
             </Button>
             <Button
@@ -474,174 +250,54 @@ const ResearchDashboard: React.FC = () => {
               <div className="max-w-4xl mx-auto p-8 pb-32">
                 {activeView === 'full-report' && (
                   <>
-                    <div className="flex justify-between items-center mb-6">
-                      <h1 className="text-3xl font-bold text-gray-900">
-                        {state.query || "Impact of AI on Mental Health Research"}
-                      </h1>
-                      <div className="flex items-center gap-1">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                onClick={() => setActiveSideView(prev => prev === 'pdf-viewer' ? null : 'pdf-viewer')}
-                                className={`h-8 w-8 ${activeSideView === 'pdf-viewer' ? 'bg-violet-100' : ''}`}
-                                aria-label="View PDFs"
-                              >
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>View PDFs</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                onClick={() => setActiveSideView(prev => prev === 'images' ? null : 'images')}
-                                className={`h-8 w-8 ${activeSideView === 'images' ? 'bg-violet-100' : ''}`}
-                                aria-label="View Images"
-                              >
-                                <Image className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>View Images</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                onClick={() => setActiveSideView(prev => prev === 'tables' ? null : 'tables')}
-                                className={`h-8 w-8 ${activeSideView === 'tables' ? 'bg-violet-100' : ''}`}
-                                aria-label="View Tables"
-                              >
-                                <Table className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>View Tables</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon"
-                              className="h-8 w-8"
-                              aria-label="Export Options"
-                            >
-                              <FileDown className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-56 bg-[#1A1F2C] text-white border border-gray-800">
-                            <DropdownMenuLabel>Export Options</DropdownMenuLabel>
-                            <DropdownMenuSeparator className="bg-gray-800" />
-                            <DropdownMenuGroup>
-                              <DropdownMenuItem onClick={handleExportReport} className="hover:bg-white/10 focus:bg-white/10">
-                                <FileDown className="mr-2 h-4 w-4" />
-                                <span>Export as PDF</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={handleEmailReport} className="hover:bg-white/10 focus:bg-white/10">
-                                <Mail className="mr-2 h-4 w-4" />
-                                <span>Email Report</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-gray-800" />
-                              <DropdownMenuItem onClick={handleSecureExport} className="hover:bg-white/10 focus:bg-white/10">
-                                <Lock className="mr-2 h-4 w-4 text-violet-400" />
-                                <span>Secure Export (XooG)</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={handleShareReport}
-                                aria-label="Share Report"
-                              >
-                                <Share2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>Share & Encrypt Report</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    </div>
+                    <ResearchHeader 
+                      title={report.title || state.query || "Research Report"}
+                      onToggleSideView={toggleSideView}
+                      activeSideView={activeSideView}
+                      onShare={handleShareReport}
+                    />
                     
-                    {sections.map((section, index) => (
-                      <div 
-                        key={index} 
-                        className={`mb-8 ${dropTargetIndex === index ? 'border-2 border-dashed border-violet-400 rounded-lg p-4' : ''}`}
-                        onDragOver={(e) => handleSectionDragOver(e, index)}
-                        onDragLeave={handleSectionDragLeave}
-                        onDrop={(e) => handleImageDrop(e, index)}
-                      >
-                        <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
-                        <div className="prose max-w-none">
-                          {section.content.split('\n\n').map((paragraph, idx) => {
-                            if (paragraph.startsWith('<div class="my-4')) {
-                              return (
-                                <div key={idx} dangerouslySetInnerHTML={{ __html: paragraph }} />
-                              );
-                            }
-                            
-                            const citationRegex = /\[(\d+)\]/g;
-                            const parts = [];
-                            let lastIndex = 0;
-                            let match;
-                            
-                            while ((match = citationRegex.exec(paragraph)) !== null) {
-                              parts.push(paragraph.substring(lastIndex, match.index));
-                              const citationNumber = parseInt(match[1]);
-                              parts.push(
-                                <CitationPopover 
-                                  key={`${idx}-${citationNumber}`}
-                                  reference={mockReferences[citationNumber - 1] || mockReferences[0]} 
-                                  index={citationNumber - 1}
-                                  inline
-                                />
-                              );
-                              lastIndex = match.index + match[0].length;
-                            }
-                            parts.push(paragraph.substring(lastIndex));
-                            return (
-                              <p key={idx} className="text-gray-700 mb-4">
-                                {parts}
-                              </p>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                    <ResearchContent 
+                      sections={report.sections} 
+                      references={report.references}
+                    />
                   </>
                 )}
 
-                {activeView === 'pdf-viewer' && pdfViewerContent}
+                {activeView === 'pdf-viewer' && (
+                  <PDFsPanel 
+                    pdfs={report.suggestedPdfs}
+                    onClose={() => setActiveView('full-report')}
+                    onViewPDF={setSelectedPdfForView}
+                  />
+                )}
+                
                 {activeView === 'images' && <ResearchImagePanel />}
-                {activeView === 'citations' && citationsContent}
-                {activeView === 'tables' && tablesContent}
-                {activeView === 'threads' && threadsContent}
+                
+                {activeView === 'tables' && (
+                  <DataTablesPanel 
+                    datasets={report.suggestedDatasets}
+                    onClose={() => setActiveView('full-report')}
+                  />
+                )}
+                
+                {activeView === 'citations' && (
+                  <div className="mt-8">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-6">Citations</h2>
+                    <div className="space-y-4">
+                      {report.references.map((reference, index) => (
+                        <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-gray-800">
+                            [{reference.id}] {reference.authors} ({reference.year}). <strong>{reference.title}</strong>. <em>{reference.journal}</em>.
+                            {reference.url && (
+                              <span> <a href={reference.url} className="text-violet-600 hover:underline" target="_blank" rel="noopener noreferrer">Link</a></span>
+                            )}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </ResizablePanel>
@@ -669,7 +325,7 @@ const ResearchDashboard: React.FC = () => {
                     <X className="h-4 w-4" />
                   </Button>
                   <CollaborationWindow
-                    reportSections={sections}
+                    reportSections={report.sections}
                     isFloating={false}
                     onClose={() => setCollaborationMode('drawer')}
                   />
@@ -692,35 +348,36 @@ const ResearchDashboard: React.FC = () => {
             </DrawerTrigger>
             <DrawerContent className="h-[60vh] bg-[#1A1F2C] p-0">
               <div className="h-1 w-12 rounded-full bg-gray-600 mx-auto my-2" />
-              <div className="flex justify-between px-4">
-                <span className="text-sm text-gray-400 font-medium">Collaboration</span>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs text-gray-400 hover:text-white"
-                    onClick={() => {
-                      setCollaborationMode('panel');
-                      setShowCollaborator(false);
-                    }}
-                  >
-                    <Maximize2 className="h-3 w-3 mr-1" />
-                    Dock to Panel
-                  </Button>
-                  <DrawerClose asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+              <DrawerHeader>
+                <div className="flex justify-between px-4">
+                  <span className="text-sm text-gray-400 font-medium">Collaboration</span>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
                       className="text-xs text-gray-400 hover:text-white"
+                      onClick={() => {
+                        setCollaborationMode('panel');
+                        setShowCollaborator(false);
+                      }}
                     >
-                      <X className="h-3 w-3 mr-1" />
-                      Close
+                      Dock to Panel
                     </Button>
-                  </DrawerClose>
+                    <DrawerClose asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-gray-400 hover:text-white"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Close
+                      </Button>
+                    </DrawerClose>
+                  </div>
                 </div>
-              </div>
+              </DrawerHeader>
               <CollaborationWindow 
-                reportSections={sections}
+                reportSections={report.sections}
                 onClose={() => setShowCollaborator(false)} 
               />
             </DrawerContent>
@@ -737,7 +394,7 @@ const ResearchDashboard: React.FC = () => {
       <EncryptionDialog 
         isOpen={showEncryptionDialog}
         onClose={() => setShowEncryptionDialog(false)}
-        documentTitle={state.query || "Impact of AI on Mental Health Research"}
+        documentTitle={report.title || state.query || "Research Report"}
       />
     </div>
   );
