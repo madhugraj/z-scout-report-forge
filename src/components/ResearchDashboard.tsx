@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { FileText, Image, Table, FileDown, Mail, Lock } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
@@ -452,31 +453,7 @@ const ResearchDashboard: React.FC = () => {
                 )}
 
                 {activeView === 'citations' && (
-                  <div className="space-y-4">
-                    <h2 className="text-2xl font-bold text-gray-800">Citations</h2>
-                    <div className="space-y-4">
-                      {topicCitationList.map((reference, index) => (
-                        <div key={index} className="border rounded-lg p-4">
-                          <h3 className="font-medium">{reference.title}</h3>
-                          <p className="text-sm text-gray-500">{reference.authors.join(', ')} ({reference.year})</p>
-                          <p className="text-sm italic mt-1">{reference.journal}</p>
-                          {reference.abstract && (
-                            <p className="text-sm text-gray-600 mt-2">{reference.abstract}</p>
-                          )}
-                          <div className="flex mt-2 gap-2">
-                            <Button variant="outline" size="sm">
-                              <ExternalLink className="h-4 w-4 mr-1" />
-                              View Source
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <FileDown className="h-4 w-4 mr-1" />
-                              Cite
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <CitationsContent topicCitationList={topicCitationList} />
                 )}
 
                 {activeView === 'tables' && <TablesContent />}
@@ -518,6 +495,7 @@ const ResearchDashboard: React.FC = () => {
         <EncryptionDialog
           isOpen={showEncryptionDialog}
           onClose={() => setShowEncryptionDialog(false)}
+          documentTitle={state.query || "Research Report"}
         />
       )}
 

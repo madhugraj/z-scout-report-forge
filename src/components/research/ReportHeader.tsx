@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileText, Image, Table, FileDown } from 'lucide-react';
+import { FileText, Image, Table, FileDown, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Lock, Mail } from 'lucide-react';
 
 interface ReportHeaderProps {
   title: string;
@@ -41,7 +40,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
               <Button 
                 variant="outline" 
                 size="icon"
-                onClick={() => setActiveSideView(prev => prev === 'pdf-viewer' ? null : 'pdf-viewer')}
+                onClick={() => setActiveSideView(activeSideView === 'pdf-viewer' ? null : 'pdf-viewer')}
                 className={`h-8 w-8 ${activeSideView === 'pdf-viewer' ? 'bg-violet-100' : ''}`}
                 aria-label="View PDFs"
               >
@@ -60,7 +59,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
               <Button 
                 variant="outline" 
                 size="icon"
-                onClick={() => setActiveSideView(prev => prev === 'images' ? null : 'images')}
+                onClick={() => setActiveSideView(activeSideView === 'images' ? null : 'images')}
                 className={`h-8 w-8 ${activeSideView === 'images' ? 'bg-violet-100' : ''}`}
                 aria-label="View Images"
               >
@@ -79,7 +78,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
               <Button 
                 variant="outline" 
                 size="icon"
-                onClick={() => setActiveSideView(prev => prev === 'tables' ? null : 'tables')}
+                onClick={() => setActiveSideView(activeSideView === 'tables' ? null : 'tables')}
                 className={`h-8 w-8 ${activeSideView === 'tables' ? 'bg-violet-100' : ''}`}
                 aria-label="View Tables"
               >
