@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import CitationPopover from '../CitationPopover';
 import { ReportSection, Reference } from '@/hooks/useGeminiReport';
+import ImagePopover from '../ImagePopover';
 
 interface ResearchContentProps {
   sections: ReportSection[];
@@ -54,13 +55,13 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
               }
               
               const citationRegex = /\[(\d+)\]/g;
-              const parts: (string | JSX.Element)[] = []; // Fix: Specify correct type for parts array
+              const parts: (string | JSX.Element)[] = []; // Explicitly define as an array of strings or JSX elements
               let lastIndex = 0;
               let match;
               
               while ((match = citationRegex.exec(paragraph)) !== null) {
                 parts.push(paragraph.substring(lastIndex, match.index));
-                const citationNumber = parseInt(match[1]); // Fix: Ensure this is a number
+                const citationNumber = parseInt(match[1]); // Parse string to number
                 const reference = references.find(ref => ref.id === citationNumber) || 
                   { id: citationNumber, title: "Reference", authors: "Unknown", journal: "Unknown", year: "Unknown", url: "#" };
                 
