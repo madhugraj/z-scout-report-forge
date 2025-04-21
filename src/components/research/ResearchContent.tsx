@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import CitationPopover from '../CitationPopover';
-import { ReportSection, Reference } from '@/hooks/useGeminiReport';
+import { ReportSection, Reference, SuggestedImage } from '@/hooks/useGeminiReport';
 import ImagePopover from '../ImagePopover';
 
 interface ResearchContentProps {
@@ -11,15 +11,28 @@ interface ResearchContentProps {
 
 const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references }) => {
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  const [sectionImages, setSectionImages] = useState<{[key: number]: SuggestedImage[]}>({});
 
   const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
     e.preventDefault();
     setDropTargetIndex(null);
     try {
       const imageData = JSON.parse(e.dataTransfer.getData('application/json'));
-      // You would update the section content to include the image here
-      // This would typically involve state updates or API calls
       console.log("Image dropped:", imageData, "to section:", sectionIndex);
+      
+      // Update state to include the image in this section
+      setSectionImages(prev => {
+        const currentSectionImages = prev[sectionIndex] || [];
+        return {
+          ...prev,
+          [sectionIndex]: [...currentSectionImages, {
+            title: imageData.title,
+            description: imageData.description || '',
+            source: imageData.source,
+            relevanceToSection: imageData.relevanceToSection || 'Related content'
+          }]
+        };
+      });
     } catch (err) {
       console.error("Failed to process dropped image:", err);
     }
@@ -45,8 +58,9 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
           onDrop={(e) => handleImageDrop(e, index)}
         >
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">{section.title}</h2>
+          
           <div className="prose max-w-none">
-            {(section.content as string).split('\n\n').map((paragraph: string, idx: number) => {
+            {typeof section.content === 'string' && section.content.split('\n\n').map((paragraph: string, idx: number) => {
               if (paragraph.startsWith('<div class="my-4')) {
                 return (
                   <div key={idx} dangerouslySetInnerHTML={{ __html: paragraph }} />
@@ -92,6 +106,23 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
               );
             })}
           </div>
+          
+          {/* Display images dropped into this section */}
+          {sectionImages[index] && sectionImages[index].length > 0 && (
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+              {sectionImages[index].map((image, imageIdx) => (
+                <ImagePopover
+                  key={`${index}-${imageIdx}`}
+                  image={{
+                    src: image.title.includes('AI') ? 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b' : 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5',
+                    caption: image.title,
+                    source: image.source,
+                    description: image.description
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ))}
 
