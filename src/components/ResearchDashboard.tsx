@@ -4,7 +4,7 @@ import {
   Share2, Mail, FileDown, Send, Users,
   FileText, Image, Table, BookOpen, MessageSquare, 
   ChevronRight, ExternalLink, Search, Edit, Download, Maximize2, Minimize2, X,
-  FolderTree, ArrowLeft
+  FolderTree, ArrowLeft, Lock, Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,16 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import PDFViewerDialog from './PDFViewerDialog';
+import EncryptionDialog from './EncryptionDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface DashboardState {
   query?: string;
@@ -57,6 +67,7 @@ const ResearchDashboard: React.FC = () => {
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedPdfForView, setSelectedPdfForView] = useState<{title: string; url: string} | null>(null);
+  const [showEncryptionDialog, setShowEncryptionDialog] = useState(false);
 
   useEffect(() => {
     if (!state.query && !state.files?.length && !state.urls?.length) {
@@ -150,6 +161,10 @@ const ResearchDashboard: React.FC = () => {
     const body = encodeURIComponent("Access the full research report here: " + window.location.href);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
     toast.success("Email client opened with report link!");
+  };
+
+  const handleSecureExport = () => {
+    setShowEncryptionDialog(true);
   };
 
   const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
@@ -544,6 +559,38 @@ const ResearchDashboard: React.FC = () => {
                           </Tooltip>
                         </TooltipProvider>
 
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label="Export Options"
+                            >
+                              <FileDown className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-56 bg-[#1A1F2C] text-white border border-gray-800">
+                            <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-gray-800" />
+                            <DropdownMenuGroup>
+                              <DropdownMenuItem onClick={handleExportReport} className="hover:bg-white/10 focus:bg-white/10">
+                                <FileDown className="mr-2 h-4 w-4" />
+                                <span>Export as PDF</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={handleEmailReport} className="hover:bg-white/10 focus:bg-white/10">
+                                <Mail className="mr-2 h-4 w-4" />
+                                <span>Email Report</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-gray-800" />
+                              <DropdownMenuItem onClick={handleSecureExport} className="hover:bg-white/10 focus:bg-white/10">
+                                <Lock className="mr-2 h-4 w-4 text-violet-400" />
+                                <span>Secure Export (XooG)</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -559,44 +606,6 @@ const ResearchDashboard: React.FC = () => {
                             </TooltipTrigger>
                             <TooltipContent side="bottom">
                               <p>Share Report</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={handleExportReport}
-                                aria-label="Export Report"
-                              >
-                                <FileDown className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>Export Report</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={handleEmailReport}
-                                aria-label="Email Report"
-                              >
-                                <Mail className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>Email Report</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -748,6 +757,11 @@ const ResearchDashboard: React.FC = () => {
           pdf={selectedPdfForView}
         />
       )}
+      <EncryptionDialog 
+        isOpen={showEncryptionDialog}
+        onClose={() => setShowEncryptionDialog(false)}
+        documentTitle={state.query || "Impact of AI on Mental Health Research"}
+      />
     </div>
   );
 };
