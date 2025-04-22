@@ -1,3 +1,4 @@
+// /generate-full-report.ts (Monolithic chained approach)
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -7,60 +8,98 @@ const corsHeaders = {
 };
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-// Use the latest Gemini 2.0 Flash alias
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent";
 
+async function callGemini(prompt: string) {
+  const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
+  const response = await fetch(requestUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 12000,
+        topP: 0.7,
+        topK: 40,
+      },
+      tools: [
+        {
+          google_search: {
+            dynamicRetrievalConfig: {
+              mode: "MODE_ALWAYS"
+            }
+          }
+        }
+      ],
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
+      ]
+    }),
+  });
+  const json = await response.json();
+  return json.candidates?.[0]?.content?.parts?.[0]?.text || "";
+}
+
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { query, chatHistory, topic, formattedInfo } = await req.json();
-
+    const { query } = await req.json();
     if (!GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY is not set in environment variables");
-      return new Response(JSON.stringify({ error: "API key configuration error" }), {
+      return new Response(JSON.stringify({ error: "Missing API key" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+        headers: corsHeaders,
       });
     }
 
-    const systemPrompt = `
-You are a senior research and survey analyst responsible for generating professional, industry-grade research reports. Based on the collected information below—gathered by agents in a modular workflow—produce a comprehensive, data-grounded survey report.
+    // Stage 1: Generate Abstract
+    const abstractPrompt = `Write a professional 200-300 word abstract from this research intent:\n"${query}"`;
+    const abstract = await callGemini(abstractPrompt);
 
-Current date: ${new Date().toLocaleDateString()}
+    // Stage 2: Extract Subtopics
+    const subtopicsPrompt = `
+From this abstract:
+${abstract}
 
-<User and AI Agent Conversation History>
-${chatHistory || "N/A"}
-</User and AI Agent Conversation History>
+Extract:
+- A main topic (1 line)
+- A list of 5–10 well-defined subtopics
+Return in this JSON format:
+{
+  "mainTopic": "...",
+  "subtopics": ["...", "..."]
+}`;
+    const subtopicText = await callGemini(subtopicsPrompt);
+    const { mainTopic, subtopics } = JSON.parse(subtopicText.match(/```json\s*([\s\S]+?)\s*```/)?.[1] || subtopicText);
 
-<Current Workflow Agents>
-1. 📌 *Requirement Agent*: Collects high-level user needs and goals.
-   - User requirement: ${JSON.stringify(topic || query)}.
+    // Stage 3: Scrape each subtopic deeply
+    const formattedInfo: string[] = [];
+    for (const topic of subtopics) {
+      const scrapingPrompt = `
+Use Google Search to collect professional, cited information about:
+"${topic}"
+Return at least 5-10 distinct, cited points with original URLs in Markdown format. Use only real, grounded sources.`;
+      const result = await callGemini(scrapingPrompt);
+      formattedInfo.push(`### ${topic}\n${result}`);
+    }
 
-2. 🔍 *Planning & Research Agent*: Breaks down the requirement into subtopics and questions, and retrieves relevant web content using grounded search. If gaps exist in the provided data, you must perform real-time Google Search to fill them.
+    // Stage 4: Full Report Generation
+    const reportPrompt = `
+You are a professional research analyst. Use the below content to write a cited research report.
 
-<Collected Web-Based Research>
-${formattedInfo || "N/A"}
-</Collected Web-Based Research>
+<Abstract>
+${abstract}
+</Abstract>
 
----
+<Collected Research Info>
+${formattedInfo.join("\n\n")}
+</Collected Research Info>
 
-### 🔖 Important Guidelines:
-- Use citations exactly as provided, formatted inline in Markdown (e.g., [⁴](https://example.com)).
-- Identify referenced PDFs under `suggestedPdfs` (title, author(s), description, `referenceId`).
-- Extract any tables or images from those PDFs into `suggestedImages` (title, description, source URL, `relevanceToSection`, `referenceId`).
-- Do not fabricate any content; only use data explicitly provided or retrieved.
-
-### 🏗️ Report Structure Requirements:
-- Title and Table of Contents.
-- Proper Markdown: headings, subheadings, bullet points, tables.
-- Cover dimensions from user requirement (infrastructure, demographics, economics, etc.).
-- Executive summary, detailed sections, conclusion.
-- Professional tone and depth equivalent to an 8+ page printed report.
-
-### 📌 Output Format (JSON):
+Report must be formatted in JSON:
 {
   "title": "...",
   "sections": [...],
@@ -70,71 +109,24 @@ ${formattedInfo || "N/A"}
   "suggestedDatasets": [...]
 }
 
-If no relevant PDFs, images, or datasets are found, leave those arrays empty.
-`.trim();
+Ensure:
+- Only grounded citations are used [¹](url)
+- suggestedPdfs refer only to PDFs mentioned
+- suggestedImages must only come from suggestedPdfs with proper relevance tags.
+`;
+    const reportText = await callGemini(reportPrompt);
+    let jsonStr = reportText;
+    const match = reportText.match(/```json\s*([\s\S]+?)\s*```/);
+    if (match) jsonStr = match[1];
+    const report = JSON.parse(jsonStr);
 
-    console.log("Initiating Gemini request for query:", query);
-
-    const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
-    const response = await fetch(requestUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [ { role: "user", parts: [{ text: systemPrompt }] } ],
-        generationConfig: {
-          temperature: 0.0,
-          maxOutputTokens: 12000,
-          topP: 0.0,
-          topK: 1
-        },
-        tools: [
-          {
-            // Force grounded Google Search every time
-            google_search: {
-              dynamicRetrievalConfig: { mode: "MODE_ALWAYS" }
-            }
-          }
-        ],
-        safetySettings: [
-          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-        ]
-      })
-    });
-
-    const data = await response.json();
-    // Log full response to inspect grounding/tool usage
-    console.log("Full Gemini response:", JSON.stringify(data, null, 2));
-
-    const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    let report;
-
-    try {
-      let jsonString = textResponse;
-      const jsonMatch = textResponse.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch && jsonMatch[1]) jsonString = jsonMatch[1];
-
-      report = JSON.parse(jsonString);
-      report.suggestedPdfs = Array.isArray(report.suggestedPdfs) ? report.suggestedPdfs : [];
-      report.suggestedImages = Array.isArray(report.suggestedImages) ? report.suggestedImages : [];
-      report.suggestedDatasets = Array.isArray(report.suggestedDatasets) ? report.suggestedDatasets : [];
-      report.sections = Array.isArray(report.sections) ? report.sections : [];
-      report.references = Array.isArray(report.references) ? report.references : [];
-
-    } catch (e) {
-      console.error("Failed to parse JSON from Gemini output:", e);
-      return new Response(JSON.stringify({ error: "Parsing error", raw: textResponse.substring(0, 500) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    return new Response(JSON.stringify({ report }), {
+    return new Response(JSON.stringify({ report, abstract, mainTopic, subtopics }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
 
-  } catch (error) {
-    console.error("Unexpected error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (err) {
+    console.error(err);
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
