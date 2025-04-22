@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
 async function callGemini(prompt: string): Promise<string> {
   if (!GEMINI_API_KEY) {
@@ -17,49 +17,47 @@ async function callGemini(prompt: string): Promise<string> {
 
   console.log("Calling Gemini with prompt:", prompt.substring(0, 100) + "...");
   
-  const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 12000,
-        topP: 0.7,
-        topK: 40,
-      },
-      tools: [{
-        google_search: {
-          dynamicRetrievalConfig: {
-            mode: "MODE_ALWAYS"
-          }
-        }
-      }],
-      safetySettings: [
-        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-      ]
-    }),
-  });
+  try {
+    const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 8000,
+          topP: 0.7,
+          topK: 40
+        },
+        safetySettings: [
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
+        ]
+      }),
+    });
 
-  const json = await response.json();
-  console.log("Gemini API response structure:", Object.keys(json));
+    const json = await response.json();
+    console.log("Gemini API response structure:", Object.keys(json));
 
-  if (!response.ok) {
-    console.error("Gemini API error:", json);
-    throw new Error(`Gemini API error: ${json.error?.message || JSON.stringify(json)}`);
+    if (!response.ok) {
+      console.error("Gemini API error:", json);
+      throw new Error(`Gemini API error: ${json.error?.message || JSON.stringify(json)}`);
+    }
+
+    if (!json.candidates || !json.candidates[0]?.content?.parts?.[0]?.text) {
+      console.error("Invalid Gemini response structure:", JSON.stringify(json, null, 2));
+      throw new Error("Gemini did not return a valid response structure");
+    }
+
+    const text = json.candidates[0].content.parts[0].text;
+    console.log("Gemini response text (first 100 chars):", text.substring(0, 100) + "...");
+    return text;
+  } catch (error) {
+    console.error("Error making Gemini API call:", error);
+    throw error;
   }
-
-  if (!json.candidates || !json.candidates[0]?.content?.parts?.[0]?.text) {
-    console.error("Invalid Gemini response structure:", JSON.stringify(json, null, 2));
-    throw new Error("Gemini did not return a valid response structure");
-  }
-
-  const text = json.candidates[0].content.parts[0].text;
-  console.log("Gemini response text (first 100 chars):", text.substring(0, 100) + "...");
-  return text;
 }
 
 serve(async (req) => {

@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface ReportGenerationProgressProps {
   isGenerating: boolean;
@@ -50,6 +51,11 @@ const ReportGenerationProgress: React.FC<ReportGenerationProgressProps> = ({
     }
   };
 
+  // Check if there is an error in any step
+  const hasError = generationSteps.some(step => 
+    step.toLowerCase().includes("error") || step.toLowerCase().includes("failed")
+  );
+
   return (
     <div className="bg-violet-100 p-6 text-violet-700 sticky top-0 z-10">
       <div className="flex items-center gap-3 mb-3">
@@ -70,21 +76,31 @@ const ReportGenerationProgress: React.FC<ReportGenerationProgressProps> = ({
       <Progress 
         value={progress} 
         className={`h-2 mb-3 bg-violet-200`}
+        indicatorClassName={getProgressColor()}
       />
       <div className="text-sm font-medium space-y-1 max-h-24 overflow-y-auto">
         {generationSteps.map((step, index) => (
           <div key={index} className="flex items-center gap-2">
-            {step.toLowerCase().includes("error") ? (
+            {step.toLowerCase().includes("error") || step.toLowerCase().includes("failed") ? (
               <div className="h-2 w-2 bg-red-500 rounded-full" />
             ) : index === generationSteps.length - 1 ? (
               <div className="animate-pulse h-2 w-2 bg-violet-700 rounded-full" />
             ) : (
               <div className="h-2 w-2 bg-green-500 rounded-full" />
             )}
-            <span className={step.toLowerCase().includes("error") ? "text-red-600 font-semibold" : ""}>{step}</span>
+            <span className={step.toLowerCase().includes("error") || step.toLowerCase().includes("failed") ? "text-red-600 font-semibold" : ""}>{step}</span>
           </div>
         ))}
       </div>
+      
+      {hasError && (
+        <Alert variant="destructive" className="mt-4 bg-red-50 border-red-200 text-red-800">
+          <AlertTitle>Error Detected</AlertTitle>
+          <AlertDescription>
+            We encountered an issue generating your report. This might be due to API connectivity problems or configuration issues with the Gemini API key. Please check the Supabase Edge Function logs for more details.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 };
