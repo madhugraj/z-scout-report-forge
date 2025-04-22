@@ -25,12 +25,9 @@ async function callGemini(prompt: string): Promise<string> {
           topP: 0.7,
           topK: 40,
         },
+        // Removing the dynamicRetrievalConfig property that's causing issues
         tools: [{
-          google_search: {
-            dynamicRetrievalConfig: {
-              mode: "MODE_ALWAYS"
-            }
-          }
+          googleSearchRetrieval: {}
         }],
         safetySettings: [
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
@@ -123,12 +120,9 @@ Query: "${query}"
                 topP: 0.7,
                 topK: 40,
               },
+              // Use same corrected format for the fallback
               tools: [{
-                google_search: {
-                  dynamicRetrievalConfig: {
-                    mode: "MODE_ALWAYS"
-                  }
-                }
+                googleSearchRetrieval: {}
               }],
               safetySettings: [
                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
