@@ -105,8 +105,8 @@ ${abstract}
 
 Extract:
 1. A clear, concise main topic (1 line)
-2. A list of AT LEAST 5 major topics related to this research area
-3. For EACH major topic, provide AT LEAST 10 specific, focused subtopics that warrant detailed investigation
+2. A list of **AT LEAST 10 major topics** related to this research area. Each topic should be broad and substantive enough to form a major chapter in a comprehensive research report.
+3. For EACH major topic, provide **10 to 15 specific, focused subtopics** that warrant detailed investigation.
 
 Return in this JSON format ONLY:
 {
@@ -114,17 +114,22 @@ Return in this JSON format ONLY:
   "topics": [
     {
       "title": "First Major Topic",
-      "subtopics": ["Subtopic 1.1", "Subtopic 1.2", ..., "Subtopic 1.10"]
+      "subtopics": ["Subtopic 1.1", "Subtopic 1.2", ..., "Subtopic 1.15"]
     },
     {
       "title": "Second Major Topic",
-      "subtopics": ["Subtopic 2.1", "Subtopic 2.2", ..., "Subtopic 2.10"]
+      "subtopics": ["Subtopic 2.1", "Subtopic 2.2", ..., "Subtopic 2.15"]
     },
-    ...and so on for at least 5 major topics
+    ...and so on for at least 10 major topics
   ]
 }
 
-Ensure each major topic is distinct and substantive, and each subtopic is specific enough for focused research.`;
+Instructions:
+- Ensure each major topic is distinct, substantive, and covers a unique, essential aspect of the research field.
+- Each subtopic should be specific enough for focused research and designed to generate detailed, evidence-based sections in a professional report.
+- Output valid JSON only, *no commentary or markdown*.
+- For maximum depth, err on the side of giving *more subtopics per topic (prefer 15 where possible)*.
+`;
 
     console.log("Stage 2: Extracting extensive topic structure...");
     const topicStructureText = await callGemini(topicsPrompt, false);
