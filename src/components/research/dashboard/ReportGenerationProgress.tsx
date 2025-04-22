@@ -75,7 +75,8 @@ const ReportGenerationProgress: React.FC<ReportGenerationProgressProps> = ({
       </div>
       <Progress 
         value={progress} 
-        className={`h-2 mb-3 bg-violet-200 ${getProgressColor()}`}
+        className="h-2 mb-3 bg-violet-200"
+        indicatorClassName={getProgressColor()}
       />
       <div className="text-sm font-medium space-y-1 max-h-24 overflow-y-auto">
         {generationSteps.map((step, index) => (
