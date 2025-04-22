@@ -1,4 +1,3 @@
-
 // Generate full report with Google grounding and comprehensive search
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -9,7 +8,7 @@ const corsHeaders = {
 };
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
 async function callGemini(prompt: string, enableSearch = true, maxOutputTokens = 12000) {
   const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
@@ -32,7 +31,6 @@ async function callGemini(prompt: string, enableSearch = true, maxOutputTokens =
     ]
   };
   
-  // Enable Google search for grounding when requested
   if (enableSearch) {
     requestBody.tools = [
       {
@@ -134,12 +132,10 @@ Ensure each major topic is distinct and substantive, and each subtopic is specif
     
     let topicStructure;
     try {
-      // First try to find JSON in markdown code block
       const jsonMatch = topicStructureText.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
       if (jsonMatch) {
         topicStructure = JSON.parse(jsonMatch[1]);
       } else {
-        // If no code block, try parsing the entire response
         topicStructure = JSON.parse(topicStructureText);
       }
     } catch (err) {
@@ -161,7 +157,6 @@ Ensure each major topic is distinct and substantive, and each subtopic is specif
       console.log(`Researching major topic: ${topic.title}`);
       const topicContent = [`## ${topic.title}\n`];
       
-      // For each subtopic, get deep research with Google Search grounding
       for (const subtopic of topic.subtopics) {
         console.log(`  - Researching subtopic: ${subtopic}`);
         
@@ -262,12 +257,10 @@ Ensure all content is properly cited, factual, and grounded in the research prov
     
     let report;
     try {
-      // Attempt to extract JSON from the response
       const jsonMatch = reportText.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
       const jsonStr = jsonMatch ? jsonMatch[1] : reportText;
       report = JSON.parse(jsonStr);
       
-      // Ensure all expected report sections exist
       report.sections = report.sections || [];
       report.references = report.references || [];
       report.suggestedPdfs = report.suggestedPdfs || [];
@@ -286,7 +279,7 @@ Ensure all content is properly cited, factual, and grounded in the research prov
       subtopics: topics.flatMap(t => t.subtopics),
       intermediateResults: {
         topicStructure,
-        researchSample: topicResearch[0]?.substring(0, 500) + "..." // Just a sample for debugging
+        researchSample: topicResearch[0]?.substring(0, 500) + "..."
       }
     };
 
