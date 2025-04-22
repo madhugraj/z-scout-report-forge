@@ -54,8 +54,19 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
   const getPdfUrlById = (referenceId: number): string => {
     // Get a consistent category based on the referenceId
     const categories = Object.keys(academicPdfUrls);
-    const category = categories[referenceId % categories.length] as keyof typeof academicPdfUrls;
-    const urls = academicPdfUrls[category];
+    const category = categories[referenceId % categories.length];
+    
+    // Check if the category exists in academicPdfUrls before accessing it
+    if (!academicPdfUrls[category as keyof typeof academicPdfUrls]) {
+      // Fallback to the first category if the calculated category doesn't exist
+      return academicPdfUrls.ai[0];
+    }
+    
+    const urls = academicPdfUrls[category as keyof typeof academicPdfUrls];
+    // Make sure urls array exists and has items before accessing by index
+    if (!urls || urls.length === 0) {
+      return academicPdfUrls.ai[0]; // Fallback to first AI PDF if no URLs in category
+    }
     
     // Get a consistent URL within the category based on the referenceId
     return urls[referenceId % urls.length];
@@ -63,7 +74,7 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
 
   // Get a PDF URL based on the paper topic and reference ID
   const getPdfUrl = (pdf: SuggestedPdf): string => {
-    if (pdf.referenceId) {
+    if (pdf.referenceId !== undefined) {
       return getPdfUrlById(pdf.referenceId);
     }
     
@@ -81,6 +92,11 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
     for (const [category, terms] of Object.entries(keywords)) {
       if (terms.some(term => title.includes(term))) {
         const urls = academicPdfUrls[category as keyof typeof academicPdfUrls];
+        // Make sure urls array exists and has items before creating a hash
+        if (!urls || urls.length === 0) {
+          return academicPdfUrls.ai[0]; // Fallback to first AI PDF
+        }
+        
         // Create a hash from the title to get a consistent index
         const titleHash = [...title].reduce((hash, char) => hash + char.charCodeAt(0), 0);
         return urls[titleHash % urls.length];
@@ -91,7 +107,10 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
     return academicPdfUrls.ai[0];
   };
 
-  if (pdfs.length === 0) {
+  // Create a safe wrapper for pdfs array
+  const safePdfs = Array.isArray(pdfs) ? pdfs : [];
+
+  if (safePdfs.length === 0) {
     return (
       <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-4 rounded-lg">
         <div className="flex justify-between items-center mb-4">
@@ -129,7 +148,7 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
       </div>
       
       <div className="grid grid-cols-1 gap-3 overflow-auto">
-        {pdfs.map((pdf, index) => {
+        {safePdfs.map((pdf, index) => {
           // Get appropriate PDF URL based on the reference
           const pdfUrl = getPdfUrl(pdf);
           
@@ -147,7 +166,7 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
                   <h4 className="font-medium text-white text-sm">{pdf.title}</h4>
                   <p className="text-xs text-gray-400">
                     {pdf.author} • Relevance: {pdf.relevance}
-                    {pdf.referenceId && <span> • Citation [{pdf.referenceId}]</span>}
+                    {pdf.referenceId !== undefined && <span> • Citation [{pdf.referenceId}]</span>}
                   </p>
                   <p className="text-xs text-gray-300 mt-1">{pdf.description}</p>
                   <div className="flex mt-2 gap-1">
