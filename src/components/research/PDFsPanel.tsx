@@ -66,6 +66,9 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
     const extractedCategories = new Set<string>();
     
     safePdfs.forEach(pdf => {
+      // Guard against undefined or null fields
+      if (!pdf || !pdf.title) return;
+
       // Try to determine category from title keywords
       const title = pdf.title.toLowerCase();
       
@@ -120,12 +123,21 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
 
   // Get a PDF URL based on the paper topic and reference ID
   const getPdfUrl = (pdf: SuggestedPdf): string => {
+    if (!pdf) {
+      return academicPdfUrls.ai[0]; // Default fallback
+    }
+
     if (pdf.referenceId !== undefined) {
       return getPdfUrlById(pdf.referenceId);
     }
     
     // If no referenceId, determine category by title keywords
-    const title = pdf.title.toLowerCase();
+    // Guard against missing title
+    const title = pdf.title ? pdf.title.toLowerCase() : '';
+    if (!title) {
+      return academicPdfUrls.ai[0]; // Default fallback
+    }
+
     const keywords = {
       ai: ['ai', 'artificial intelligence', 'machine learning', 'neural', 'deep learning', 'nlp', 'computer vision'],
       cs: ['computer science', 'algorithm', 'computing', 'software', 'programming', 'database'],
@@ -155,6 +167,8 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
 
   // Determine publication source from URL
   const getPublicationSource = (url: string): string => {
+    if (!url) return 'Academic Source'; // Handle empty URL
+    
     if (url.includes('arxiv.org')) return 'arXiv';
     if (url.includes('ncbi.nlm.nih.gov')) return 'PubMed/NIH';
     if (url.includes('science.org')) return 'Science';
@@ -174,10 +188,12 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
   
   // Filter PDFs based on active tab and search query
   const filteredPdfs = safePdfs.filter(pdf => {
+    if (!pdf || !pdf.title) return false; // Skip invalid PDFs
+
     const matchesSearch = searchQuery === '' || 
-      pdf.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pdf.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pdf.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (pdf.title && pdf.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (pdf.author && pdf.author.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (pdf.description && pdf.description.toLowerCase().includes(searchQuery.toLowerCase()));
     
     if (!matchesSearch) return false;
     
@@ -188,7 +204,7 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
     const source = getPublicationSource(pdfUrl);
     
     // Filter by academic category
-    const title = pdf.title.toLowerCase();
+    const title = pdf.title ? pdf.title.toLowerCase() : '';
     const categoryKeywords = {
       'AI & ML': ['ai', 'artificial intelligence', 'machine learning', 'neural', 'deep learning'],
       'Computer Science': ['computer science', 'algorithm', 'computing', 'software', 'programming'],
@@ -293,10 +309,10 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
                     <FileText className="h-6 w-6 text-gray-400" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium text-white text-sm">{pdf.title}</h4>
+                    <h4 className="font-medium text-white text-sm">{pdf.title || 'Untitled Document'}</h4>
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-gray-400">
-                        {pdf.author} • Relevance: {pdf.relevance}
+                        {pdf.author || 'Unknown Author'} • Relevance: {pdf.relevance || 'N/A'}
                       </p>
                       {pdf.referenceId !== undefined && (
                         <Badge variant="outline" className="text-xs bg-violet-900/30 text-violet-300 border-violet-700">
@@ -309,7 +325,7 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
                         <Tag className="h-3 w-3 mr-1" /> {source}
                       </Badge>
                     </div>
-                    <p className="text-xs text-gray-300 mt-1">{pdf.description}</p>
+                    <p className="text-xs text-gray-300 mt-1">{pdf.description || 'No description available.'}</p>
                     <div className="flex mt-2 gap-1">
                       <Button 
                         variant="ghost" 
@@ -318,10 +334,10 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
                         onClick={(e) => {
                           e.stopPropagation();
                           onViewPDF({ 
-                            title: pdf.title, 
+                            title: pdf.title || 'Untitled Document', 
                             url: pdfUrl
                           });
-                          toast.success(`Opening "${pdf.title}"`);
+                          toast.success(`Opening "${pdf.title || 'Untitled Document'}"`);
                         }}
                       >
                         <ExternalLink className="h-3 w-3 mr-1" />
@@ -335,9 +351,9 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
                           e.stopPropagation();
                           const a = document.createElement('a');
                           a.href = pdfUrl;
-                          a.download = pdf.title.replace(/\s+/g, '_') + '.pdf';
+                          a.download = (pdf.title || 'document').replace(/\s+/g, '_') + '.pdf';
                           a.click();
-                          toast.success(`Downloading "${pdf.title}"`);
+                          toast.success(`Downloading "${pdf.title || 'Untitled Document'}"`);
                         }}
                       >
                         <Download className="h-3 w-3 mr-1" />
@@ -364,7 +380,7 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
                     <iframe 
                       src={pdfUrl}
                       className={`w-full ${isFullScreen ? 'h-[calc(100vh-400px)]' : 'h-80'}`}
-                      title={pdf.title}
+                      title={pdf.title || 'PDF Document'}
                     />
                   </div>
                 )}
