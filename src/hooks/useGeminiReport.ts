@@ -19,6 +19,7 @@ export interface SuggestedPdf {
   description: string;
   relevance: string;
   referenceId?: number;
+  url?: string;
 }
 
 export interface SuggestedImage {
@@ -26,6 +27,7 @@ export interface SuggestedImage {
   description: string;
   source: string;
   relevanceToSection: string;
+  url?: string;
 }
 
 export interface SuggestedDataset {
@@ -33,6 +35,7 @@ export interface SuggestedDataset {
   description: string;
   source: string;
   relevanceToSection: string;
+  url?: string;
 }
 
 export interface ReportSection {
@@ -51,7 +54,14 @@ export interface GeminiReport {
     abstract?: string;
     mainTopic?: string;
     subtopics?: string[];
-    researchData?: string[];
+    topicStructure?: {
+      mainTopic: string;
+      topics: Array<{
+        title: string;
+        subtopics: string[];
+      }>;
+    };
+    researchSample?: string;
   };
 }
 
@@ -72,147 +82,48 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
   try {
     console.log("Starting report generation for query:", query);
     
-    // Collect intermediate results to display in case of errors
-    const intermediateResults: any = {};
-    
-    // Step 1: Generate Abstract
-    console.log("Step 1: Generating abstract...");
-    const { data: abstractData, error: abstractError } = await supabase.functions.invoke('generate-abstract', {
+    // Use the all-in-one edge function approach
+    const { data, error } = await supabase.functions.invoke('generate-report-gemini', {
       body: { query }
     });
     
-    if (abstractError) {
-      console.error("Abstract generation error:", abstractError);
-      const error = new Error(`Failed to generate abstract: ${abstractError.message}`);
-      Object.assign(error, { details: intermediateResults });
-      throw error;
+    if (error) {
+      console.error("Error invoking generate-report-gemini function:", error);
+      throw new Error(`Failed to generate report: ${error.message}`);
     }
     
-    if (!abstractData) {
-      console.error("No data returned from abstract generation");
-      const error = new Error("Failed to generate abstract: No data returned");
-      Object.assign(error, { details: intermediateResults });
-      throw error;
+    if (!data) {
+      console.error("No data returned from generate-report-gemini function");
+      throw new Error("Failed to generate report: No data returned");
     }
     
-    // Check if there's an error coming back from the function
-    if (abstractData.error) {
-      console.error("Error from generate-abstract function:", abstractData.error);
-      const error = new Error(`Gemini API error: ${abstractData.error}`);
-      Object.assign(error, { details: intermediateResults });
-      throw error;
+    if (data.error) {
+      console.error("Error from generate-report-gemini function:", data.error);
+      throw Object.assign(
+        new Error(`Gemini API error: ${data.error}`),
+        { details: data.intermediateResults || {} }
+      );
     }
     
-    // Even if there's an error generating the abstract, the function now returns a fallback one
-    const abstract = abstractData.abstract;
-    intermediateResults.abstract = abstract;
+    // Extract the report from the response
+    const report = data.report;
     
-    if (!abstract || abstract.trim() === "") {
-      console.error("Empty abstract received:", abstractData);
-      const error = new Error("Failed to generate abstract: Empty abstract received");
-      Object.assign(error, { details: intermediateResults });
-      throw error;
-    }
-    
-    console.log("Abstract generated successfully:", abstract.substring(0, 100) + "...");
-    
-    // Step 2: Extract Subtopics
-    console.log("Step 2: Extracting subtopics...");
-    const { data: subtopicsData, error: subtopicsError } = await supabase.functions.invoke('extract-subtopics', {
-      body: { abstract }
-    });
-    
-    if (subtopicsError) {
-      console.error("Subtopics extraction error:", subtopicsError);
-      const error = new Error(`Failed to extract subtopics: ${subtopicsError.message}`);
-      Object.assign(error, { details: intermediateResults });
-      throw error;
-    }
-    
-    if (!subtopicsData) {
-      console.error("No data returned from subtopics extraction");
-      const error = new Error("Failed to extract subtopics: No data returned");
-      Object.assign(error, { details: intermediateResults });
-      throw error;
-    }
-    
-    // If there's an error in the response but we got fallback data
-    if (subtopicsData.error) {
-      console.warn("Warning from extract-subtopics function:", subtopicsData.error);
-      toast.warning("Using fallback topics due to extraction issues", {
-        description: subtopicsData.error,
-        duration: 5000
-      });
-    }
-    
-    const { mainTopic, subtopics } = subtopicsData;
-    intermediateResults.mainTopic = mainTopic;
-    intermediateResults.subtopics = subtopics;
-    
-    if (!mainTopic || !Array.isArray(subtopics) || subtopics.length === 0) {
-      console.error("Invalid subtopics data:", subtopicsData);
-      const error = new Error("Failed to extract subtopics: Received invalid response");
-      Object.assign(error, { details: intermediateResults });
-      throw error;
-    }
-    
-    console.log("Extracted subtopics:", subtopics);
-    
-    // Step 3: Research Subtopics
-    console.log("Step 3: Researching subtopics...");
-    const { data: researchData, error: researchError } = await supabase.functions.invoke('scrape-subtopics', {
-      body: { subtopics }
-    });
-    
-    if (researchError) {
-      console.error("Subtopic research error:", researchError);
-      const error = new Error(`Failed to research subtopics: ${researchError.message}`);
-      Object.assign(error, { details: intermediateResults });
-      throw error;
-    }
-    
-    if (!researchData || !Array.isArray(researchData.formattedInfo)) {
-      console.error("Invalid research data:", researchData);
-      const error = new Error("Failed to research subtopics: Received invalid response");
-      Object.assign(error, { details: intermediateResults });
-      throw error;
-    }
-    
-    const { formattedInfo } = researchData;
-    intermediateResults.researchData = formattedInfo;
-    console.log("Subtopic research completed successfully");
-    
-    // Step 4: Generate Final Report
-    console.log("Step 4: Generating final report...");
-    const { data: reportData, error: reportError } = await supabase.functions.invoke('generate-report', {
-      body: { abstract, formattedInfo }
-    });
-    
-    if (reportError) {
-      console.error("Report generation error:", reportError);
-      const error = new Error(`Failed to generate final report: ${reportError.message}`);
-      Object.assign(error, { details: intermediateResults });
-      throw error;
-    }
-    
-    if (!reportData || !reportData.report) {
-      console.error("Invalid report data:", reportData);
-      const error = new Error("Failed to generate final report: Received invalid response");
-      Object.assign(error, { details: intermediateResults });
-      throw error;
-    }
-    
-    console.log("Report generation completed successfully");
-    
-    // Ensure all arrays are properly initialized
+    // Ensure all the expected arrays exist
     const processedReport = {
-      ...reportData.report,
-      sections: reportData.report.sections || [],
-      references: reportData.report.references || [],
-      suggestedPdfs: reportData.report.suggestedPdfs || [],
-      suggestedImages: reportData.report.suggestedImages || [],
-      suggestedDatasets: reportData.report.suggestedDatasets || [],
-      intermediateResults
+      ...report,
+      sections: report.sections || [],
+      references: report.references || [],
+      suggestedPdfs: report.suggestedPdfs || [],
+      suggestedImages: report.suggestedImages || [],
+      suggestedDatasets: report.suggestedDatasets || [],
+      // Include any intermediate results for debugging
+      intermediateResults: {
+        abstract: data.abstract,
+        mainTopic: data.mainTopic,
+        subtopics: data.subtopics,
+        topicStructure: data.intermediateResults?.topicStructure,
+        researchSample: data.intermediateResults?.researchSample
+      }
     };
     
     return processedReport;
@@ -263,10 +174,15 @@ export function useGeminiReport() {
     mutationFn: (query: string) => generateGeminiReport(query),
     onError: (error: any) => {
       console.error("Mutation error:", error);
-      toast.error(error.message || "Failed to generate report from Gemini.", {
+      toast.error(error.message || "Failed to generate comprehensive report from Gemini.", {
         description: "Check your Gemini API key in Supabase Edge Function Secrets.",
         duration: 6000
       });
+      
+      // If the error contains an errorReport object, return it as a fallback
+      if (error.errorReport) {
+        return error.errorReport;
+      }
     }
   });
 }

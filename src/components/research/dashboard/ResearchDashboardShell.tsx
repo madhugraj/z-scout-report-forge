@@ -28,16 +28,27 @@ const ResearchDashboardShell: React.FC = () => {
   });
 
   useEffect(() => {
+    // Allow using the dashboard even without a query for testing
     if (!state.query && !state.files?.length && !state.urls?.length) {
-      navigate('/');
+      // If no query is provided, use a default one
+      const defaultQuery = "Impact of climate change on global agricultural systems";
+      console.log("No query provided, using default query:", defaultQuery);
+      // Update the location state with the default query
+      navigate(location.pathname, { 
+        state: { ...state, query: defaultQuery },
+        replace: true 
+      });
       return;
     }
+    
     // Start report generation when component mounts
     setIsGenerating(true);
     // eslint-disable-next-line
   }, [state, navigate]);
 
   const handleReportGenerated = (newReport: GeminiReport) => {
+    console.log("Report generated:", newReport.title);
+    
     // Ensure all arrays are defined even if they're not in the response
     const safeReport = {
       ...newReport,
@@ -47,6 +58,11 @@ const ResearchDashboardShell: React.FC = () => {
       suggestedImages: newReport.suggestedImages || [],
       suggestedDatasets: newReport.suggestedDatasets || []
     };
+    
+    // Update the title if it's not present
+    if (!safeReport.title || safeReport.title.trim() === "") {
+      safeReport.title = "Research Report: " + (state.query || "Topic Analysis");
+    }
     
     setReport(safeReport);
     setIsGenerating(false);
@@ -70,7 +86,7 @@ const ResearchDashboardShell: React.FC = () => {
         onProgress={setProgress}
         onGenerationStep={(step) => setGenerationSteps(prev => [...prev, step])}
         onReportGenerated={handleReportGenerated}
-        query={state.query || "Impact of AI on Mental Health Research"}
+        query={state.query || "Impact of climate change on global agricultural systems"}
       />
       
       <ViewStateManager
