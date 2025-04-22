@@ -1,9 +1,12 @@
 
-import React, { useState } from 'react';
-import { X, FileText, ExternalLink, Download, Maximize2, Minimize2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, FileText, ExternalLink, Download, Maximize2, Minimize2, Tag, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SuggestedPdf } from '@/hooks/useGeminiReport';
 import { toast } from '@/components/ui/sonner';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 interface PDFsPanelProps {
   pdfs: SuggestedPdf[];
@@ -14,6 +17,9 @@ interface PDFsPanelProps {
 const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [categories, setCategories] = useState<string[]>([]);
   
   // Academic PDF URLs mapped by domain for better categorization
   const academicPdfUrls = {
@@ -49,6 +55,46 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
       "https://www.usenix.org/system/files/osdi20-li-pingchiang.pdf"
     ]
   };
+
+  // Create a safe wrapper for pdfs array
+  const safePdfs = Array.isArray(pdfs) ? pdfs : [];
+  
+  // Extract unique categories based on PDF topics or keywords
+  useEffect(() => {
+    if (safePdfs.length === 0) return;
+    
+    const extractedCategories = new Set<string>();
+    
+    safePdfs.forEach(pdf => {
+      // Try to determine category from title keywords
+      const title = pdf.title.toLowerCase();
+      
+      const categoryKeywords = {
+        'AI & ML': ['ai', 'artificial intelligence', 'machine learning', 'neural', 'deep learning'],
+        'Computer Science': ['computer science', 'algorithm', 'computing', 'software', 'programming'],
+        'Healthcare': ['health', 'medical', 'medicine', 'clinical', 'patient', 'disease'],
+        'Business': ['business', 'economic', 'market', 'finance', 'management', 'industry'],
+        'Science': ['science', 'physics', 'chemistry', 'biology', 'climate', 'research'],
+        'Technology': ['technology', 'engineering', 'system', 'device', 'hardware', 'network']
+      };
+      
+      let foundCategory = false;
+      
+      for (const [category, keywords] of Object.entries(categoryKeywords)) {
+        if (keywords.some(keyword => title.includes(keyword))) {
+          extractedCategories.add(category);
+          foundCategory = true;
+          break;
+        }
+      }
+      
+      if (!foundCategory) {
+        extractedCategories.add('Other');
+      }
+    });
+    
+    setCategories(Array.from(extractedCategories));
+  }, [safePdfs]);
 
   // Map referenceIds to consistent PDF URLs
   const getPdfUrlById = (referenceId: number): string => {
@@ -107,8 +153,61 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
     return academicPdfUrls.ai[0];
   };
 
-  // Create a safe wrapper for pdfs array
-  const safePdfs = Array.isArray(pdfs) ? pdfs : [];
+  // Determine publication source from URL
+  const getPublicationSource = (url: string): string => {
+    if (url.includes('arxiv.org')) return 'arXiv';
+    if (url.includes('ncbi.nlm.nih.gov')) return 'PubMed/NIH';
+    if (url.includes('science.org')) return 'Science';
+    if (url.includes('nature.com')) return 'Nature';
+    if (url.includes('acm.org')) return 'ACM Digital Library';
+    if (url.includes('ieee')) return 'IEEE Xplore';
+    if (url.includes('nber.org')) return 'NBER';
+    if (url.includes('mdpi.com')) return 'MDPI';
+    if (url.includes('jamanetwork.com')) return 'JAMA Network';
+    if (url.includes('princeton.edu')) return 'Princeton University';
+    if (url.includes('proceedings.neurips.cc')) return 'NeurIPS';
+    if (url.includes('hbr.org')) return 'Harvard Business Review';
+    if (url.includes('aeaweb.org')) return 'American Economic Association';
+    if (url.includes('usenix.org')) return 'USENIX';
+    return 'Academic Source';
+  };
+  
+  // Filter PDFs based on active tab and search query
+  const filteredPdfs = safePdfs.filter(pdf => {
+    const matchesSearch = searchQuery === '' || 
+      pdf.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pdf.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pdf.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    if (activeTab === 'all') return true;
+    
+    // Get the publication source for category filtering
+    const pdfUrl = getPdfUrl(pdf);
+    const source = getPublicationSource(pdfUrl);
+    
+    // Filter by academic category
+    const title = pdf.title.toLowerCase();
+    const categoryKeywords = {
+      'AI & ML': ['ai', 'artificial intelligence', 'machine learning', 'neural', 'deep learning'],
+      'Computer Science': ['computer science', 'algorithm', 'computing', 'software', 'programming'],
+      'Healthcare': ['health', 'medical', 'medicine', 'clinical', 'patient', 'disease'],
+      'Business': ['business', 'economic', 'market', 'finance', 'management', 'industry'],
+      'Science': ['science', 'physics', 'chemistry', 'biology', 'climate', 'research'],
+      'Technology': ['technology', 'engineering', 'system', 'device', 'hardware', 'network']
+    };
+    
+    if (activeTab === 'citations') {
+      return pdf.referenceId !== undefined;
+    }
+    
+    if (activeTab in categoryKeywords) {
+      return categoryKeywords[activeTab as keyof typeof categoryKeywords].some(keyword => title.includes(keyword));
+    }
+    
+    return false;
+  });
 
   if (safePdfs.length === 0) {
     return (
@@ -147,89 +246,137 @@ const PDFsPanel: React.FC<PDFsPanelProps> = ({ pdfs, onClose, onViewPDF }) => {
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 gap-3 overflow-auto">
-        {safePdfs.map((pdf, index) => {
-          // Get appropriate PDF URL based on the reference
-          const pdfUrl = getPdfUrl(pdf);
-          
-          return (
-            <div 
-              key={index} 
-              className={`bg-[#2A2F3C] p-3 rounded-lg border ${selectedPdf === pdf.title ? 'border-violet-500' : 'border-gray-800'} cursor-pointer hover:border-violet-400 transition-colors`}
-              onClick={() => setSelectedPdf(pdf.title)}
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search papers..."
+            className="pl-8 bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+        <TabsList className="bg-gray-800">
+          <TabsTrigger value="all" className="data-[state=active]:bg-violet-600">All</TabsTrigger>
+          <TabsTrigger value="citations" className="data-[state=active]:bg-violet-600">Citations</TabsTrigger>
+          {categories.map(category => (
+            <TabsTrigger 
+              key={category} 
+              value={category}
+              className="data-[state=active]:bg-violet-600"
             >
-              <div className="flex items-start gap-2">
-                <div className="bg-gray-800 p-1.5 rounded">
-                  <FileText className="h-6 w-6 text-gray-400" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-white text-sm">{pdf.title}</h4>
-                  <p className="text-xs text-gray-400">
-                    {pdf.author} • Relevance: {pdf.relevance}
-                    {pdf.referenceId !== undefined && <span> • Citation [{pdf.referenceId}]</span>}
-                  </p>
-                  <p className="text-xs text-gray-300 mt-1">{pdf.description}</p>
-                  <div className="flex mt-2 gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-violet-400 h-7 text-xs px-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onViewPDF({ 
-                          title: pdf.title, 
-                          url: pdfUrl
-                        });
-                        toast.success(`Opening "${pdf.title}"`);
-                      }}
-                    >
-                      <ExternalLink className="h-3 w-3 mr-1" />
-                      View
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-violet-400 h-7 text-xs px-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const a = document.createElement('a');
-                        a.href = pdfUrl;
-                        a.download = pdf.title.replace(/\s+/g, '_') + '.pdf';
-                        a.click();
-                        toast.success(`Downloading "${pdf.title}"`);
-                      }}
-                    >
-                      <Download className="h-3 w-3 mr-1" />
-                      Download
-                    </Button>
+              {category}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+      
+      <div className="grid grid-cols-1 gap-3 overflow-auto">
+        {filteredPdfs.length > 0 ? (
+          filteredPdfs.map((pdf, index) => {
+            // Get appropriate PDF URL based on the reference
+            const pdfUrl = getPdfUrl(pdf);
+            const source = getPublicationSource(pdfUrl);
+            
+            return (
+              <div 
+                key={index} 
+                className={`bg-[#2A2F3C] p-3 rounded-lg border ${selectedPdf === pdf.title ? 'border-violet-500' : 'border-gray-800'} cursor-pointer hover:border-violet-400 transition-colors`}
+                onClick={() => setSelectedPdf(pdf.title)}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="bg-gray-800 p-1.5 rounded">
+                    <FileText className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-white text-sm">{pdf.title}</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-gray-400">
+                        {pdf.author} • Relevance: {pdf.relevance}
+                      </p>
+                      {pdf.referenceId !== undefined && (
+                        <Badge variant="outline" className="text-xs bg-violet-900/30 text-violet-300 border-violet-700">
+                          Citation [{pdf.referenceId}]
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex gap-1 mt-1">
+                      <Badge variant="secondary" className="text-xs bg-gray-700/50">
+                        <Tag className="h-3 w-3 mr-1" /> {source}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-300 mt-1">{pdf.description}</p>
+                    <div className="flex mt-2 gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-violet-400 h-7 text-xs px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewPDF({ 
+                            title: pdf.title, 
+                            url: pdfUrl
+                          });
+                          toast.success(`Opening "${pdf.title}"`);
+                        }}
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-violet-400 h-7 text-xs px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const a = document.createElement('a');
+                          a.href = pdfUrl;
+                          a.download = pdf.title.replace(/\s+/g, '_') + '.pdf';
+                          a.click();
+                          toast.success(`Downloading "${pdf.title}"`);
+                        }}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Download
+                      </Button>
+                    </div>
                   </div>
                 </div>
+                {selectedPdf === pdf.title && (
+                  <div className="mt-3 bg-gray-900 rounded-lg overflow-hidden relative">
+                    <div className="absolute top-2 right-2 z-10 flex gap-1">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-6 w-6 bg-gray-800 border-gray-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsFullScreen(!isFullScreen);
+                        }}
+                      >
+                        {isFullScreen ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+                      </Button>
+                    </div>
+                    <iframe 
+                      src={pdfUrl}
+                      className={`w-full ${isFullScreen ? 'h-[calc(100vh-400px)]' : 'h-80'}`}
+                      title={pdf.title}
+                    />
+                  </div>
+                )}
               </div>
-              {selectedPdf === pdf.title && (
-                <div className="mt-3 bg-gray-900 rounded-lg overflow-hidden relative">
-                  <div className="absolute top-2 right-2 z-10 flex gap-1">
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="h-6 w-6 bg-gray-800 border-gray-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsFullScreen(!isFullScreen);
-                      }}
-                    >
-                      {isFullScreen ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-                    </Button>
-                  </div>
-                  <iframe 
-                    src={pdfUrl}
-                    className={`w-full ${isFullScreen ? 'h-[calc(100vh-400px)]' : 'h-80'}`}
-                    title={pdf.title}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })
+        ) : (
+          <div className="text-center text-gray-400 py-8">
+            <FileText className="h-12 w-12 mx-auto mb-4 opacity-30" />
+            <p>No matches found for "{searchQuery}"</p>
+          </div>
+        )}
       </div>
     </div>
   );
