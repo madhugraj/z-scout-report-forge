@@ -49,6 +49,19 @@ export interface GeminiReport {
   suggestedDatasets: SuggestedDataset[];
 }
 
+// Default empty report structure to use when there's an error
+const fallbackReport: GeminiReport = {
+  title: "Error Generating Report",
+  sections: [{
+    title: "Error Information",
+    content: "We encountered an error while generating your research report. Please check the error details and try again."
+  }],
+  references: [],
+  suggestedPdfs: [],
+  suggestedImages: [],
+  suggestedDatasets: []
+};
+
 export async function generateGeminiReport(query: string): Promise<GeminiReport> {
   try {
     console.log("Starting report generation for query:", query);
@@ -64,13 +77,19 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
       throw new Error(`Failed to generate abstract: ${abstractError.message}`);
     }
     
-    if (!abstractData || !abstractData.abstract) {
-      console.error("Invalid abstract data:", abstractData);
-      throw new Error("Failed to generate abstract: Received invalid response");
+    if (!abstractData) {
+      console.error("No data returned from abstract generation");
+      throw new Error("Failed to generate abstract: No data returned");
     }
     
+    // Even if there's an error generating the abstract, the function now returns a fallback one
     const abstract = abstractData.abstract;
-    console.log("Abstract generated successfully");
+    if (!abstract || abstract.trim() === "") {
+      console.error("Empty abstract received:", abstractData);
+      throw new Error("Failed to generate abstract: Empty abstract received");
+    }
+    
+    console.log("Abstract generated successfully:", abstract.substring(0, 100) + "...");
     
     // Step 2: Extract Subtopics
     console.log("Step 2: Extracting subtopics...");
@@ -130,6 +149,17 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     return reportData.report;
   } catch (error: any) {
     console.error("Error in report generation pipeline:", error);
+    
+    // Creating a fallback report with error information
+    const errorReport = {
+      ...fallbackReport,
+      title: `Error Report for "${query}"`,
+      sections: [{
+        title: "Error Information",
+        content: `We encountered an error while generating your research report: "${error.message}". This may be due to issues with the Gemini API connection or configuration. Please check that your API key is valid and try again.`
+      }]
+    };
+    
     throw new Error(error.message || "Failed to generate report");
   }
 }

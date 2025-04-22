@@ -86,9 +86,23 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
       onError: (err: any) => {
         clearInterval(interval);
         console.error("Report generation error:", err);
+        onProgress(100);
         onGenerationStep(`Error: ${err.message || "Unable to generate report"}`);
         setIsGenerating(false);
         toast.error(err.message || "Failed to generate report from Gemini.");
+        
+        // Create a basic error report so the UI can still display something
+        onReportGenerated({
+          title: "Error Generating Report",
+          sections: [{
+            title: "Error Details",
+            content: `We encountered an error while generating your research report: "${err.message}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets.`
+          }],
+          references: [],
+          suggestedPdfs: [],
+          suggestedImages: [],
+          suggestedDatasets: []
+        });
       }
     });
   };

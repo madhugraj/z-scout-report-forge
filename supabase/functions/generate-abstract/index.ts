@@ -10,9 +10,14 @@ const corsHeaders = {
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent";
 
-async function callGemini(prompt: string) {
-  const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
-  const response = await fetch(requestUrl, {
+async function callGemini(prompt: string): Promise<string> {
+  if (!GEMINI_API_KEY) {
+    throw new Error("Missing Gemini API key");
+  }
+
+  console.log("Calling Gemini with prompt:", prompt.substring(0, 100) + "...");
+  
+  const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -38,15 +43,34 @@ async function callGemini(prompt: string) {
       ]
     }),
   });
+
   const json = await response.json();
-  return json.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  console.log("Gemini API response structure:", Object.keys(json));
+
+  if (!response.ok) {
+    console.error("Gemini API error:", json);
+    throw new Error(`Gemini API error: ${json.error?.message || JSON.stringify(json)}`);
+  }
+
+  if (!json.candidates || !json.candidates[0]?.content?.parts?.[0]?.text) {
+    console.error("Invalid Gemini response structure:", JSON.stringify(json, null, 2));
+    throw new Error("Gemini did not return a valid response structure");
+  }
+
+  const text = json.candidates[0].content.parts[0].text;
+  console.log("Gemini response text (first 100 chars):", text.substring(0, 100) + "...");
+  return text;
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
     const { query } = await req.json();
+    console.log("Received abstract generation request for query:", query);
+
     if (!GEMINI_API_KEY) {
       return new Response(JSON.stringify({ error: "Missing API key" }), {
         status: 500,
@@ -54,20 +78,45 @@ serve(async (req) => {
       });
     }
 
-    const abstractPrompt = `You are a domain-specific research assistant. Convert the following project intent into a detailed 200–300 word professional abstract suitable for an industry-grade feasibility or market report. Ensure clarity, background, objective, and outcome expectations are addressed.
+    const abstractPrompt = `
+You are a domain-specific research assistant.
 
-Query: \"${query}\"`;
-    
-    const abstract = await callGemini(abstractPrompt);
-    console.log("Generated abstract:", abstract);
+Convert the following project intent into a detailed 200–300 word professional abstract suitable for an industry-grade feasibility or market report.
 
-    return new Response(JSON.stringify({ abstract }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+Ensure your output covers:
+- Context and background
+- Key goals of the project
+- Challenges or considerations
+- Expected outcomes or deliverables
 
+Avoid bullet points and return only a continuous, coherent abstract.
+
+Query: "${query}"
+    `.trim();
+
+    try {
+      const abstract = await callGemini(abstractPrompt);
+      console.log("Successfully generated abstract of length:", abstract.length);
+      
+      return new Response(JSON.stringify({ abstract }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    } catch (geminiError) {
+      console.error("Error calling Gemini API:", geminiError);
+      return new Response(JSON.stringify({ 
+        error: `Error from Gemini API: ${geminiError.message}`,
+        abstract: `We were unable to generate an abstract for "${query}" due to an API error. This may be due to temporary issues with the Gemini service or API key configuration.` 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
   } catch (err) {
-    console.error("Abstract generation error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("Abstract generation function error:", err);
+    return new Response(JSON.stringify({ 
+      error: err.message,
+      abstract: "An error occurred during abstract generation. Please check the logs for details."
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
