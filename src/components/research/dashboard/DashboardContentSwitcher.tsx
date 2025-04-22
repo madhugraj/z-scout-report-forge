@@ -28,40 +28,50 @@ const DashboardContentSwitcher: React.FC<DashboardContentSwitcherProps> = ({
   setActiveView,
   setSelectedPdfForView,
 }) => {
+  // Ensure all arrays in the report are defined, even if they're empty
+  const safeReport = {
+    ...report,
+    sections: report.sections || [],
+    references: report.references || [],
+    suggestedPdfs: report.suggestedPdfs || [],
+    suggestedImages: report.suggestedImages || [],
+    suggestedDatasets: report.suggestedDatasets || []
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-8 pb-32">
       {activeView === 'full-report' && (
         <>
           <ResearchHeader 
-            title={report.title || stateQuery || "Research Report"}
+            title={safeReport.title || stateQuery || "Research Report"}
             onToggleSideView={toggleSideView}
             activeSideView={activeSideView}
             onShare={handleShareReport}
           />
           <ResearchContent 
-            sections={report.sections} 
-            references={report.references}
-            intermediateResults={report.intermediateResults}
+            sections={safeReport.sections} 
+            references={safeReport.references}
+            intermediateResults={safeReport.intermediateResults}
           />
         </>
       )}
 
       {activeView === 'pdf-viewer' && (
         <PDFsPanel 
-          pdfs={report.suggestedPdfs}
+          pdfs={safeReport.suggestedPdfs}
           onClose={() => setActiveView('full-report')}
           onViewPDF={setSelectedPdfForView}
         />
       )}
       {activeView === 'images' && (
         <ResearchImagePanel 
-          images={report.suggestedImages}
+          images={safeReport.suggestedImages}
           onClose={() => setActiveView('full-report')}
         />
       )}
       {activeView === 'tables' && (
         <DataTablesPanel 
-          datasets={report.suggestedDatasets}
+          datasets={safeReport.suggestedDatasets}
           onClose={() => setActiveView('full-report')}
         />
       )}
@@ -69,7 +79,7 @@ const DashboardContentSwitcher: React.FC<DashboardContentSwitcherProps> = ({
         <div className="mt-8">
           <h2 className="text-2xl font-semibold text-gray-800 mb-6">Citations</h2>
           <div className="space-y-4">
-            {report.references.map((reference, index) => (
+            {safeReport.references.map((reference, index) => (
               <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-gray-800">
                   [{reference.id}] {reference.authors} ({reference.year}). <strong>{reference.title}</strong>. <em>{reference.journal}</em>.

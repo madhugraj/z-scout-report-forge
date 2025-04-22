@@ -38,7 +38,17 @@ const ResearchDashboardShell: React.FC = () => {
   }, [state, navigate]);
 
   const handleReportGenerated = (newReport: GeminiReport) => {
-    setReport(newReport);
+    // Ensure all arrays are defined even if they're not in the response
+    const safeReport = {
+      ...newReport,
+      sections: newReport.sections || [],
+      references: newReport.references || [],
+      suggestedPdfs: newReport.suggestedPdfs || [],
+      suggestedImages: newReport.suggestedImages || [],
+      suggestedDatasets: newReport.suggestedDatasets || []
+    };
+    
+    setReport(safeReport);
     setIsGenerating(false);
   };
 

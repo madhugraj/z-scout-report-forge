@@ -9,7 +9,10 @@ interface DataTablesPanelProps {
   onClose: () => void;
 }
 
-const DataTablesPanel: React.FC<DataTablesPanelProps> = ({ datasets, onClose }) => {
+const DataTablesPanel: React.FC<DataTablesPanelProps> = ({ datasets = [], onClose }) => {
+  // Ensure datasets is always an array
+  const safeDatasets = Array.isArray(datasets) ? datasets : [];
+  
   return (
     <div className="flex flex-col h-full bg-[#1A1F2C] text-white p-6 rounded-lg">
       <div className="flex justify-between items-center mb-6">
@@ -24,8 +27,8 @@ const DataTablesPanel: React.FC<DataTablesPanelProps> = ({ datasets, onClose }) 
         </Button>
       </div>
       <div className="grid grid-cols-1 gap-4">
-        {datasets.length > 0 ? (
-          datasets.map((dataset, index) => (
+        {safeDatasets.length > 0 ? (
+          safeDatasets.map((dataset, index) => (
             <div key={index} className="bg-[#2A2F3C] p-4 rounded-lg border border-gray-800">
               <div className="flex items-start gap-3">
                 <div className="bg-gray-800 p-2 rounded">

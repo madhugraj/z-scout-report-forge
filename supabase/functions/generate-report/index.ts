@@ -85,13 +85,32 @@ Instructions:
       const match = reportText.match(/```json\s*([\s\S]+?)\s*```/);
       const jsonStr = match ? match[1] : reportText;
       report = JSON.parse(jsonStr);
+      
+      // Ensure all expected arrays exist even if they're empty
+      report.sections = report.sections || [];
+      report.references = report.references || [];
+      report.suggestedPdfs = report.suggestedPdfs || [];
+      report.suggestedImages = report.suggestedImages || [];
+      report.suggestedDatasets = report.suggestedDatasets || [];
+      
     } catch (parseError) {
       console.error("Failed to parse Gemini response as JSON:", parseError);
       console.log("Raw response text:", reportText);
       
-      // Provide a fallback response
+      // Provide a fallback response with empty arrays
       return new Response(JSON.stringify({ 
         error: "Failed to parse Gemini response", 
+        report: {
+          title: "Error Generating Report",
+          sections: [{
+            title: "Error",
+            content: "Failed to parse Gemini response. Please try again."
+          }],
+          references: [],
+          suggestedPdfs: [],
+          suggestedImages: [],
+          suggestedDatasets: []
+        },
         rawResponse: reportText.substring(0, 500) + "..." // Include part of the raw response for debugging
       }), {
         status: 500,
@@ -107,7 +126,21 @@ Instructions:
 
   } catch (err) {
     console.error("Report generation error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    // Return a properly structured error response with empty arrays
+    return new Response(JSON.stringify({ 
+      error: err.message,
+      report: {
+        title: "Error Generating Report",
+        sections: [{
+          title: "Error",
+          content: "An error occurred while generating the report: " + err.message
+        }],
+        references: [],
+        suggestedPdfs: [],
+        suggestedImages: [],
+        suggestedDatasets: []
+      }
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });

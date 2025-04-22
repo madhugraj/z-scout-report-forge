@@ -204,11 +204,18 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     console.log("Report generation completed successfully");
     
-    // Include intermediate results in the final report
-    return {
+    // Ensure all arrays are properly initialized
+    const processedReport = {
       ...reportData.report,
+      sections: reportData.report.sections || [],
+      references: reportData.report.references || [],
+      suggestedPdfs: reportData.report.suggestedPdfs || [],
+      suggestedImages: reportData.report.suggestedImages || [],
+      suggestedDatasets: reportData.report.suggestedDatasets || [],
       intermediateResults
     };
+    
+    return processedReport;
   } catch (error: any) {
     console.error("Error in report generation pipeline:", error);
     
