@@ -47,6 +47,12 @@ export interface GeminiReport {
   suggestedPdfs: SuggestedPdf[];
   suggestedImages: SuggestedImage[];
   suggestedDatasets: SuggestedDataset[];
+  intermediateResults?: {
+    abstract?: string;
+    mainTopic?: string;
+    subtopics?: string[];
+    researchData?: string[];
+  };
 }
 
 // Default empty report structure to use when there's an error
@@ -65,6 +71,9 @@ const fallbackReport: GeminiReport = {
 export async function generateGeminiReport(query: string): Promise<GeminiReport> {
   try {
     console.log("Starting report generation for query:", query);
+    
+    // Collect intermediate results to display in case of errors
+    const intermediateResults: any = {};
     
     // Step 1: Generate Abstract
     console.log("Step 1: Generating abstract...");
@@ -90,9 +99,11 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     // Even if there's an error generating the abstract, the function now returns a fallback one
     const abstract = abstractData.abstract;
+    intermediateResults.abstract = abstract;
+    
     if (!abstract || abstract.trim() === "") {
       console.error("Empty abstract received:", abstractData);
-      throw new Error("Failed to generate abstract: Empty abstract received");
+      throw new Error("Failed to generate abstract: Empty abstract received", { cause: { details: intermediateResults } });
     }
     
     console.log("Abstract generated successfully:", abstract.substring(0, 100) + "...");
@@ -105,15 +116,32 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     if (subtopicsError) {
       console.error("Subtopics extraction error:", subtopicsError);
-      throw new Error(`Failed to extract subtopics: ${subtopicsError.message}`);
+      throw new Error(`Failed to extract subtopics: ${subtopicsError.message}`, { cause: { details: intermediateResults } });
     }
     
-    if (!subtopicsData || !subtopicsData.mainTopic || !Array.isArray(subtopicsData.subtopics)) {
-      console.error("Invalid subtopics data:", subtopicsData);
-      throw new Error("Failed to extract subtopics: Received invalid response");
+    if (!subtopicsData) {
+      console.error("No data returned from subtopics extraction");
+      throw new Error("Failed to extract subtopics: No data returned", { cause: { details: intermediateResults } });
+    }
+    
+    // If there's an error in the response but we got fallback data
+    if (subtopicsData.error) {
+      console.warn("Warning from extract-subtopics function:", subtopicsData.error);
+      toast.warning("Using fallback topics due to extraction issues", {
+        description: subtopicsData.error,
+        duration: 5000
+      });
     }
     
     const { mainTopic, subtopics } = subtopicsData;
+    intermediateResults.mainTopic = mainTopic;
+    intermediateResults.subtopics = subtopics;
+    
+    if (!mainTopic || !Array.isArray(subtopics) || subtopics.length === 0) {
+      console.error("Invalid subtopics data:", subtopicsData);
+      throw new Error("Failed to extract subtopics: Received invalid response", { cause: { details: intermediateResults } });
+    }
+    
     console.log("Extracted subtopics:", subtopics);
     
     // Step 3: Research Subtopics
@@ -124,15 +152,16 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     if (researchError) {
       console.error("Subtopic research error:", researchError);
-      throw new Error(`Failed to research subtopics: ${researchError.message}`);
+      throw new Error(`Failed to research subtopics: ${researchError.message}`, { cause: { details: intermediateResults } });
     }
     
     if (!researchData || !Array.isArray(researchData.formattedInfo)) {
       console.error("Invalid research data:", researchData);
-      throw new Error("Failed to research subtopics: Received invalid response");
+      throw new Error("Failed to research subtopics: Received invalid response", { cause: { details: intermediateResults } });
     }
     
     const { formattedInfo } = researchData;
+    intermediateResults.researchData = formattedInfo;
     console.log("Subtopic research completed successfully");
     
     // Step 4: Generate Final Report
@@ -143,18 +172,26 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     if (reportError) {
       console.error("Report generation error:", reportError);
-      throw new Error(`Failed to generate final report: ${reportError.message}`);
+      throw new Error(`Failed to generate final report: ${reportError.message}`, { cause: { details: intermediateResults } });
     }
     
     if (!reportData || !reportData.report) {
       console.error("Invalid report data:", reportData);
-      throw new Error("Failed to generate final report: Received invalid response");
+      throw new Error("Failed to generate final report: Received invalid response", { cause: { details: intermediateResults } });
     }
     
     console.log("Report generation completed successfully");
-    return reportData.report;
+    
+    // Include intermediate results in the final report
+    return {
+      ...reportData.report,
+      intermediateResults
+    };
   } catch (error: any) {
     console.error("Error in report generation pipeline:", error);
+    
+    // Try to extract any details if available
+    const details = error.cause?.details || {};
     
     // Creating a fallback report with error information
     const errorReport = {
@@ -163,10 +200,30 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
       sections: [{
         title: "Error Details",
         content: `We encountered an error while generating your research report: "${error.message}". This may be due to issues with the Gemini API connection or configuration.\n\nTroubleshooting steps:\n1. Check that your Gemini API key is valid and correctly set up in the Supabase Edge Function Secrets.\n2. Verify that the API key has access to the Gemini model specified in the edge functions.\n3. Check the Edge Function logs for more detailed error information.`
-      }]
+      }],
+      intermediateResults: details
     };
     
-    throw new Error(error.message || "Failed to generate report");
+    // If we have any intermediate results, add them to the error report
+    if (details.abstract) {
+      errorReport.sections.push({
+        title: "Generated Abstract",
+        content: details.abstract
+      });
+    }
+    
+    if (details.mainTopic && details.subtopics) {
+      errorReport.sections.push({
+        title: "Extracted Topics",
+        content: `**Main Topic**: ${details.mainTopic}\n\n**Subtopics**:\n${details.subtopics.map((sub: string) => `- ${sub}`).join('\n')}`
+      });
+    }
+    
+    // Re-throw with details
+    throw Object.assign(new Error(error.message || "Failed to generate report"), {
+      details: details,
+      errorReport: errorReport
+    });
   }
 }
 

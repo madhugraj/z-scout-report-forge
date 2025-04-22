@@ -75,7 +75,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
     }, 1000);
 
     geminiReport.mutate(query, {
-      onSuccess: (result: GeminiReport) => {
+      onSuccess: (result: GeminiReport & {intermediateResults?: any}) => {
         clearInterval(interval);
         onProgress(100);
         onGenerationStep("Report generation complete!");
@@ -90,9 +90,12 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         
         // More informative error message
         const errorMessage = err.message || "Unable to generate report";
+        const errorDetails = err.details || {};
+        
         const isGeminiApiError = errorMessage.includes("Gemini API") || 
                                 errorMessage.includes("abstract") || 
-                                errorMessage.includes("Edge Function");
+                                errorMessage.includes("Edge Function") ||
+                                errorMessage.includes("subtopic");
         
         onGenerationStep(`Error: ${errorMessage}. ${
           isGeminiApiError 
@@ -107,16 +110,27 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         });
         
         // Create a basic error report so the UI can still display something
+        // Add any intermediate results we might have
         onReportGenerated({
           title: "Error Generating Report",
           sections: [{
             title: "Error Details",
             content: `We encountered an error while generating your research report: "${errorMessage}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets. You may also need to verify that the API key has access to the Gemini model specified in the edge functions.`
-          }],
+          }, 
+          ...(errorDetails.abstract ? [{
+            title: "Generated Abstract",
+            content: errorDetails.abstract
+          }] : []),
+          ...(errorDetails.mainTopic && errorDetails.subtopics ? [{
+            title: "Extracted Topics",
+            content: `**Main Topic**: ${errorDetails.mainTopic}\n\n**Subtopics**:\n${errorDetails.subtopics.map((sub: string) => `- ${sub}`).join('\n')}`
+          }] : [])],
           references: [],
           suggestedPdfs: [],
           suggestedImages: [],
-          suggestedDatasets: []
+          suggestedDatasets: [],
+          // Include any debug information we have
+          intermediateResults: errorDetails
         });
       }
     });

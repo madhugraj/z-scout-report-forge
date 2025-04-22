@@ -3,15 +3,28 @@ import CitationPopover from '../CitationPopover';
 import { ReportSection, Reference, SuggestedImage } from '@/hooks/useGeminiReport';
 import ImagePopover from '../ImagePopover';
 import { toast } from '@/components/ui/sonner';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
 
 interface ResearchContentProps {
   sections: ReportSection[];
   references: Reference[];
+  intermediateResults?: {
+    abstract?: string;
+    mainTopic?: string;
+    subtopics?: string[];
+    researchData?: string[];
+  };
 }
 
-const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references }) => {
+const ResearchContent: React.FC<ResearchContentProps> = ({ 
+  sections, 
+  references,
+  intermediateResults 
+}) => {
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [sectionImages, setSectionImages] = useState<{[key: number]: SuggestedImage[]}>({});
+  const [showRawData, setShowRawData] = useState(false);
 
   const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
     e.preventDefault();
@@ -118,6 +131,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
             </div>
           );
         } catch (e) {
+          return <p key={idx} className="text-gray-700 mb-4">{processCitations(block, references)}</p>;
         }
       }
 
@@ -134,7 +148,9 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
     let match: RegExpExecArray | null;
 
     while ((match = citationRegex.exec(text)) !== null) {
-      parts.push(<React.Fragment key={`text-${match.index}`}>{text.substring(lastIndex, match.index)}</React.Fragment>);
+      if (lastIndex < match.index) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
       
       const citationNumber = parseInt(match[1], 10);
       const reference = references.find(ref => ref.id === citationNumber) || {
@@ -148,7 +164,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
 
       parts.push(
         <CitationPopover
-          key={`citation-${citationNumber}`}
+          key={`citation-${match.index}`}
           reference={{
             id: citationNumber,
             title: reference.title,
@@ -165,7 +181,10 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
       lastIndex = match.index + match[0].length;
     }
 
-    parts.push(<React.Fragment key={`text-end`}>{text.substring(lastIndex)}</React.Fragment>);
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    
     return parts;
   };
 
@@ -179,6 +198,61 @@ const ResearchContent: React.FC<ResearchContentProps> = ({ sections, references 
 
   return (
     <div className="research-content">
+      {intermediateResults && (
+        <div className="mb-6">
+          <button 
+            onClick={() => setShowRawData(!showRawData)}
+            className="flex items-center gap-2 text-violet-600 hover:text-violet-700 mb-2 text-sm font-medium bg-violet-50 px-3 py-1 rounded-md"
+          >
+            <InfoIcon size={16} />
+            {showRawData ? "Hide" : "Show"} Agent Outputs
+          </button>
+          
+          {showRawData && (
+            <div className="space-y-4 bg-slate-50 p-4 rounded-lg mb-6 border border-slate-200">
+              <h3 className="text-lg font-medium text-slate-700">Agent Outputs</h3>
+              
+              {intermediateResults.abstract && (
+                <div className="bg-white p-3 rounded border border-slate-200">
+                  <h4 className="text-sm font-medium text-slate-700 mb-1">Abstract Generator</h4>
+                  <div className="text-sm text-slate-600 max-h-32 overflow-y-auto">
+                    {intermediateResults.abstract.split('\n').map((line, i) => (
+                      <p key={i} className="mb-1">{line}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {intermediateResults.mainTopic && intermediateResults.subtopics && (
+                <div className="bg-white p-3 rounded border border-slate-200">
+                  <h4 className="text-sm font-medium text-slate-700 mb-1">Topic Extractor</h4>
+                  <div className="text-sm text-slate-600">
+                    <p className="font-medium">Main Topic:</p>
+                    <p className="mb-2">{intermediateResults.mainTopic}</p>
+                    <p className="font-medium">Subtopics:</p>
+                    <ul className="list-disc pl-5">
+                      {intermediateResults.subtopics.map((topic, i) => (
+                        <li key={i}>{topic}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+              
+              {intermediateResults.researchData && intermediateResults.researchData.length > 0 && (
+                <div className="bg-white p-3 rounded border border-slate-200">
+                  <h4 className="text-sm font-medium text-slate-700 mb-1">Research Agent ({intermediateResults.researchData.length} topics)</h4>
+                  <div className="text-xs text-slate-600 max-h-32 overflow-y-auto">
+                    <p className="italic">First research output excerpt:</p>
+                    {intermediateResults.researchData[0].substring(0, 150) + "..."}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {sections.map((section, index) => (
         <div
           key={index}

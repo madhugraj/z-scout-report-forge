@@ -41,6 +41,7 @@ const DashboardContentSwitcher: React.FC<DashboardContentSwitcherProps> = ({
           <ResearchContent 
             sections={report.sections} 
             references={report.references}
+            intermediateResults={report.intermediateResults}
           />
         </>
       )}
