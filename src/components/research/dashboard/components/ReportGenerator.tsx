@@ -1,7 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGeminiReport, GeminiReport } from "@/hooks/useGeminiReport";
 import { toast } from "@/components/ui/sonner";
+import { Progress } from "@/components/ui/progress";
 
 interface ReportGeneratorProps {
   onProgress: (progress: number) => void;
@@ -19,14 +20,21 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const geminiReport = useGeminiReport();
 
+  useEffect(() => {
+    if (query.trim()) {
+      startGeneratingReport(query);
+    }
+  }, [query]);
+
   const startGeneratingReport = (query: string) => {
     setIsGenerating(true);
     onProgress(0);
-    onGenerationStep("Sending request to Gemini...");
+    onGenerationStep("Initializing research pipeline...");
 
     const progressSteps = [
-      { threshold: 10, message: "Analyzing research query..." },
-      { threshold: 20, message: "Generating comprehensive abstract..." },
+      { threshold: 5, message: "Sending request to Gemini..." },
+      { threshold: 10, message: "Generating comprehensive abstract..." },
+      { threshold: 20, message: "Abstract generated! Analyzing research scope..." },
       { threshold: 30, message: "Identifying key research topics..." },
       { threshold: 40, message: "Extracting main topic and subtopics..." },
       { threshold: 50, message: "Beginning subtopic research..." },
@@ -42,7 +50,10 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
     let completedSteps = new Set();
     
     const interval = setInterval(() => {
-      currentProgress += Math.random() * 6 + 2;
+      // Increment faster at the beginning, slower towards the end
+      const incrementAmount = currentProgress < 60 ? Math.random() * 3 + 1 : Math.random() * 1.5 + 0.5;
+      currentProgress += incrementAmount;
+      
       if (currentProgress > 95) {
         clearInterval(interval);
         return;
@@ -82,7 +93,11 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
     });
   };
 
-  return null; // This is a logic-only component
+  return (
+    <div className="hidden">
+      {/* This is a non-visual component that manages the report generation process */}
+    </div>
+  );
 };
 
 export default ReportGenerator;

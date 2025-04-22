@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Progress } from "@/components/ui/progress";
 
 interface ReportGenerationProgressProps {
   isGenerating: boolean;
@@ -19,13 +20,12 @@ const ReportGenerationProgress: React.FC<ReportGenerationProgressProps> = ({
       <div className="flex items-center gap-3 mb-3">
         <div className="animate-spin h-5 w-5 border-2 border-violet-700 border-t-transparent rounded-full" />
         <h3 className="font-medium">Generating comprehensive research report...</h3>
+        <span className="ml-auto text-sm font-medium">{progress}%</span>
       </div>
-      <div className="w-full bg-violet-200 rounded-full h-2 mb-3">
-        <div 
-          className="bg-violet-600 h-2 rounded-full transition-all duration-300 ease-out"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+      <Progress 
+        value={progress} 
+        className="h-2 mb-3 bg-violet-200"
+      />
       <div className="text-sm font-medium space-y-1 max-h-24 overflow-y-auto">
         {generationSteps.map((step, index) => (
           <div key={index} className="flex items-center gap-2">
