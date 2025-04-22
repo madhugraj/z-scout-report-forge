@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -55,8 +56,10 @@ serve(async (req) => {
       });
     }
 
+    console.log("Processing subtopics:", subtopics);
     const formattedInfo: string[] = [];
     for (const topic of subtopics) {
+      console.log(`Researching subtopic: ${topic}`);
       const scrapingPrompt = `Perform a deep industry-grade search on the following subtopic: \"${topic}\".
 Conduct 5–10 distinct research scrapes and return:
 - Concrete, grounded insights.
@@ -65,9 +68,10 @@ Conduct 5–10 distinct research scrapes and return:
 
       const result = await callGemini(scrapingPrompt);
       formattedInfo.push(`### ${topic}\n${result}`);
-      console.log(`Scraped data for topic: ${topic}`);
+      console.log(`Completed research for topic: ${topic}`);
     }
 
+    console.log("All subtopics processed successfully");
     return new Response(JSON.stringify({ formattedInfo }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });

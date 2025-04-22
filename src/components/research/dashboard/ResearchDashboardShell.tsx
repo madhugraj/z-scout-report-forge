@@ -58,23 +58,27 @@ const ResearchDashboardShell: React.FC = () => {
     setProgress(0);
     setGenerationSteps(["Sending request to Gemini..."]);
 
-    // Enhanced progress tracking with unique steps and no repetition
+    // Enhanced progress tracking with more detailed subtopic steps
     const mockProgress = () => {
       let currentProgress = 0;
       const progressSteps = [
-        { threshold: 15, message: "Analyzing research query..." },
-        { threshold: 30, message: "Gathering scientific literature..." },
-        { threshold: 45, message: "Processing research data..." },
-        { threshold: 60, message: "Synthesizing findings..." },
-        { threshold: 75, message: "Creating visualizations and references..." },
-        { threshold: 90, message: "Finalizing research report..." }
+        { threshold: 10, message: "Analyzing research query..." },
+        { threshold: 20, message: "Generating comprehensive abstract..." },
+        { threshold: 30, message: "Identifying key research topics..." },
+        { threshold: 40, message: "Extracting main topic and subtopics..." },
+        { threshold: 50, message: "Beginning subtopic research..." },
+        { threshold: 60, message: "Gathering scientific literature..." },
+        { threshold: 70, message: "Collecting relevant citations..." },
+        { threshold: 80, message: "Synthesizing findings..." },
+        { threshold: 90, message: "Creating visualizations and references..." },
+        { threshold: 95, message: "Finalizing research report..." }
       ];
       
       let currentStepIndex = 0;
       let completedSteps = new Set();
       
       const interval = setInterval(() => {
-        currentProgress += Math.random() * 8 + 2; // More predictable progress
+        currentProgress += Math.random() * 6 + 2; // More predictable progress
         if (currentProgress > 95) {
           clearInterval(interval);
           return;
@@ -107,13 +111,20 @@ const ResearchDashboardShell: React.FC = () => {
         clearInterval(progressInterval);
         setReport(result);
         setProgress(100);
-        setGenerationSteps((steps) => [...steps.filter(step => step !== "Finalizing research report..."), "Report generation complete!"]);
+        setGenerationSteps((steps) => [
+          ...steps.filter(step => step !== "Finalizing research report..."), 
+          "Report generation complete!"
+        ]);
         setIsGenerating(false);
         toast.success("Research report generated successfully!");
       },
       onError: (err: any) => {
         clearInterval(progressInterval);
-        setGenerationSteps((steps) => [...steps, "Error: Unable to generate report"]);
+        console.error("Report generation error:", err);
+        setGenerationSteps((steps) => [
+          ...steps, 
+          `Error: ${err.message || "Unable to generate report"}`
+        ]);
         setIsGenerating(false);
         toast.error(err.message || "Failed to generate report from Gemini.");
       }
