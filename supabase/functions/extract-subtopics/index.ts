@@ -9,9 +9,8 @@ const corsHeaders = {
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent";
 
-async function callGemini(prompt: string) {
-  const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
-  const response = await fetch(requestUrl, {
+async function callGemini(prompt: string): Promise<string> {
+  const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -39,15 +38,19 @@ async function callGemini(prompt: string) {
       ]
     }),
   });
+
   const json = await response.json();
   return json.candidates?.[0]?.content?.parts?.[0]?.text || "";
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
     const { abstract } = await req.json();
+
     if (!GEMINI_API_KEY) {
       return new Response(JSON.stringify({ error: "Missing API key" }), {
         status: 500,
@@ -55,24 +58,67 @@ serve(async (req) => {
       });
     }
 
-    const subtopicsPrompt = `Analyze this abstract:
-${abstract}
+    const subtopicsPrompt = `
+Analyze the following abstract and identify the core domain and components:
 
-Extract:
-- Main topic (one sentence summary)
-- 5 to 10 diverse subtopics that comprehensively cover the domain (e.g. infrastructure needs, regional health statistics, economic viability, stakeholder analysis, regulatory landscape, etc.)
-Return strictly in this format:
+<ABSTRACT>
+${abstract}
+</ABSTRACT>
+
+Your task:
+- Determine the **main topic**: A single sentence summarizing the research/report scope.
+- Extract **5 to 10 diverse, insightful subtopics** that fully cover the scope for deeper exploration (e.g., infrastructure, economic viability, regulatory compliance, demographic impact, etc.).
+
+Return only a valid JSON object **inside a triple backtick block**, exactly like this:
+
+\`\`\`json
 {
-  "mainTopic": "...",
-  "subtopics": ["...", "..."]
-}`;
+  "mainTopic": "Summarized main topic here",
+  "subtopics": [
+    "Subtopic 1",
+    "Subtopic 2",
+    "Subtopic 3",
+    "Subtopic 4",
+    "Subtopic 5"
+  ]
+}
+\`\`\`
+
+Avoid commentary or natural language outside this format.
+    `.trim();
 
     const subtopicText = await callGemini(subtopicsPrompt);
-    const match = subtopicText.match(/```json\s*([\s\S]+?)\s*```/);
-    const jsonStr = match ? match[1] : subtopicText;
-    const { mainTopic, subtopics } = JSON.parse(jsonStr);
-    
-    console.log("Extracted subtopics:", { mainTopic, subtopics });
+    console.log("Gemini raw response:", subtopicText);
+
+    // Robust JSON extraction
+    let jsonStr = subtopicText;
+    const codeBlockMatch = subtopicText.match(/```json\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch && codeBlockMatch[1]) {
+      jsonStr = codeBlockMatch[1];
+    } else {
+      const fallbackMatch = subtopicText.match(/{[\s\S]+}/);
+      if (fallbackMatch) jsonStr = fallbackMatch[0];
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (e) {
+      console.error("Failed to parse JSON:", e);
+      console.error("Raw Gemini output:", subtopicText);
+      return new Response(JSON.stringify({ error: "Failed to parse Gemini output", raw: subtopicText }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    const { mainTopic, subtopics } = parsed;
+    if (!mainTopic || !Array.isArray(subtopics)) {
+      return new Response(JSON.stringify({ error: "Invalid structure in extracted content", raw: parsed }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
 
     return new Response(JSON.stringify({ mainTopic, subtopics }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
