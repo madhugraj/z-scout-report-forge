@@ -83,18 +83,24 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     if (abstractError) {
       console.error("Abstract generation error:", abstractError);
-      throw new Error(`Failed to generate abstract: ${abstractError.message}`);
+      const error = new Error(`Failed to generate abstract: ${abstractError.message}`);
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     if (!abstractData) {
       console.error("No data returned from abstract generation");
-      throw new Error("Failed to generate abstract: No data returned");
+      const error = new Error("Failed to generate abstract: No data returned");
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     // Check if there's an error coming back from the function
     if (abstractData.error) {
       console.error("Error from generate-abstract function:", abstractData.error);
-      throw new Error(`Gemini API error: ${abstractData.error}`);
+      const error = new Error(`Gemini API error: ${abstractData.error}`);
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     // Even if there's an error generating the abstract, the function now returns a fallback one
@@ -103,7 +109,9 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     if (!abstract || abstract.trim() === "") {
       console.error("Empty abstract received:", abstractData);
-      throw new Error("Failed to generate abstract: Empty abstract received", { cause: { details: intermediateResults } });
+      const error = new Error("Failed to generate abstract: Empty abstract received");
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     console.log("Abstract generated successfully:", abstract.substring(0, 100) + "...");
@@ -116,12 +124,16 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     if (subtopicsError) {
       console.error("Subtopics extraction error:", subtopicsError);
-      throw new Error(`Failed to extract subtopics: ${subtopicsError.message}`, { cause: { details: intermediateResults } });
+      const error = new Error(`Failed to extract subtopics: ${subtopicsError.message}`);
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     if (!subtopicsData) {
       console.error("No data returned from subtopics extraction");
-      throw new Error("Failed to extract subtopics: No data returned", { cause: { details: intermediateResults } });
+      const error = new Error("Failed to extract subtopics: No data returned");
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     // If there's an error in the response but we got fallback data
@@ -139,7 +151,9 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     if (!mainTopic || !Array.isArray(subtopics) || subtopics.length === 0) {
       console.error("Invalid subtopics data:", subtopicsData);
-      throw new Error("Failed to extract subtopics: Received invalid response", { cause: { details: intermediateResults } });
+      const error = new Error("Failed to extract subtopics: Received invalid response");
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     console.log("Extracted subtopics:", subtopics);
@@ -152,12 +166,16 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     if (researchError) {
       console.error("Subtopic research error:", researchError);
-      throw new Error(`Failed to research subtopics: ${researchError.message}`, { cause: { details: intermediateResults } });
+      const error = new Error(`Failed to research subtopics: ${researchError.message}`);
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     if (!researchData || !Array.isArray(researchData.formattedInfo)) {
       console.error("Invalid research data:", researchData);
-      throw new Error("Failed to research subtopics: Received invalid response", { cause: { details: intermediateResults } });
+      const error = new Error("Failed to research subtopics: Received invalid response");
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     const { formattedInfo } = researchData;
@@ -172,12 +190,16 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     if (reportError) {
       console.error("Report generation error:", reportError);
-      throw new Error(`Failed to generate final report: ${reportError.message}`, { cause: { details: intermediateResults } });
+      const error = new Error(`Failed to generate final report: ${reportError.message}`);
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     if (!reportData || !reportData.report) {
       console.error("Invalid report data:", reportData);
-      throw new Error("Failed to generate final report: Received invalid response", { cause: { details: intermediateResults } });
+      const error = new Error("Failed to generate final report: Received invalid response");
+      Object.assign(error, { details: intermediateResults });
+      throw error;
     }
     
     console.log("Report generation completed successfully");
@@ -191,7 +213,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     console.error("Error in report generation pipeline:", error);
     
     // Try to extract any details if available
-    const details = error.cause?.details || {};
+    const details = error.details || {};
     
     // Creating a fallback report with error information
     const errorReport = {
@@ -220,10 +242,12 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     }
     
     // Re-throw with details
-    throw Object.assign(new Error(error.message || "Failed to generate report"), {
+    const enhancedError = new Error(error.message || "Failed to generate report");
+    Object.assign(enhancedError, {
       details: details,
       errorReport: errorReport
     });
+    throw enhancedError;
   }
 }
 
