@@ -1,3 +1,4 @@
+
 // Generate full report with Google grounding and comprehensive search
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -62,6 +63,51 @@ async function callGemini(prompt: string, enableSearch = true, maxOutputTokens =
   }
   
   return json.candidates[0].content.parts[0].text;
+}
+
+// Function to research a specific subtopic with search grounding
+async function researchSubtopic(mainTopic: string, topicTitle: string, subtopic: string) {
+  console.log(`Researching subtopic: "${subtopic}" under topic "${topicTitle}"`);
+  
+  const subtopicPrompt = `
+You are a professional academic researcher conducting a thorough literature analysis on the specific subtopic: 
+"${subtopic}" (which is part of the broader topic "${topicTitle}" within the main research area "${mainTopic}").
+
+Use Google Search to find and analyze AT LEAST 7-10 high-quality, authoritative sources specifically on this subtopic.
+Focus on finding:
+- Recent peer-reviewed research papers
+- Official statistics and data
+- Expert analyses from authoritative organizations
+- Case studies and real-world applications
+- Historical development and context
+
+For each source you find:
+1. Extract key findings, methodologies, and insights
+2. Note statistics, data points, and quantitative evidence
+3. Identify author credentials and institutional affiliations
+4. Evaluate the significance and limitations of the research
+5. Include direct quotes (with proper citation) when they provide unique value
+
+Format your response as a thoroughly researched, academic-quality section (at least 800-1000 words) with:
+- A brief introduction to this specific subtopic
+- Comprehensive analysis of findings across multiple sources
+- Proper in-text citations in [Author, Year] format
+- Tables or lists of key statistics/findings when relevant
+- Critical evaluation of the research landscape on this subtopic
+- Discussion of gaps or areas for further research
+
+This is for a comprehensive research report, so your analysis must be substantive, evidence-based, and nuanced.
+Do not summarize or provide a general overview - this needs to be detailed scholarly research.`;
+
+  try {
+    // Always enable search for subtopic research to get grounded information
+    const research = await callGemini(subtopicPrompt, true, 8000);
+    console.log(`Successfully researched subtopic "${subtopic}": ${research.length} chars`);
+    return research;
+  } catch (error) {
+    console.error(`Error researching subtopic "${subtopic}":`, error);
+    return `**Research Error**: Unable to retrieve comprehensive research for "${subtopic}". This may be due to API limitations or connection issues. The report will continue with other sections.`;
+  }
 }
 
 serve(async (req) => {
@@ -156,49 +202,76 @@ Instructions:
     // Stage 3: Research Each Subtopic with Google Search Grounding
     console.log("Stage 3: Researching subtopics with Google Search grounding...");
     
-    const topicResearch = [];
+    // Create a structured collection of researched content
+    const researchedContent = {};
     
-    for (const topic of topics) {
-      console.log(`Researching major topic: ${topic.title}`);
-      const topicContent = [`## ${topic.title}\n`];
+    // Limit the number of topics and subtopics to research to avoid timeouts
+    // For production, we'd implement a more robust approach like queuing or streaming
+    const topicsToResearch = topics.slice(0, 10); // Limit to 10 topics max
+    
+    // Function to limit subtopics per topic while maintaining coverage
+    const getBalancedSubtopics = (topic) => {
+      // Calculate how many subtopics we can process per topic
+      const maxSubtopicsPerTopic = 5; // Can adjust based on testing
+      return topic.subtopics.slice(0, maxSubtopicsPerTopic);
+    };
+    
+    // Research each topic and its subtopics in parallel for efficiency
+    const topicResearchPromises = topicsToResearch.map(async (topic) => {
+      const topicTitle = topic.title;
+      console.log(`Researching major topic: ${topicTitle}`);
       
-      for (const subtopic of topic.subtopics) {
-        console.log(`  - Researching subtopic: ${subtopic}`);
-        
-        const subtopicPrompt = `
-You are a professional researcher conducting a comprehensive literature search on: "${subtopic}" 
-(which is part of the broader topic "${topic.title}" within the main research area of "${mainTopic}").
-
-Use Google Search to find and analyze AT LEAST 5-7 high-quality, relevant sources on this specific subtopic.
-
-For each source:
-1. Extract key findings, statistics, methodologies, and insights
-2. Identify author(s), publication venue, and date where available
-3. Evaluate the credibility and significance of the source
-4. Note any limitations or areas for further research
-
-Format your response as a well-structured, detailed section with:
-- Clear subheadings for the subtopic
-- Properly cited information (use format [Author, Year](URL))
-- Direct quotes when appropriate (with proper citation)
-- Synthesized insights across multiple sources
-- Tables or lists of key statistics/findings when relevant
-
-Your research should be thorough, academic in tone, and provide substantive, factual information with proper citations.`;
-
-        try {
-          const subtopicResearch = await callGemini(subtopicPrompt, true, 8000);
-          topicContent.push(`### ${subtopic}\n${subtopicResearch}\n`);
-        } catch (error) {
-          console.error(`Error researching subtopic "${subtopic}":`, error);
-          topicContent.push(`### ${subtopic}\n*Error retrieving research for this subtopic. Please see the main report for information related to this area.*\n`);
-        }
-      }
+      // Get a balanced selection of subtopics
+      const subtopics = getBalancedSubtopics(topic);
       
-      topicResearch.push(topicContent.join("\n"));
+      // Research each subtopic in this topic (in parallel for efficiency)
+      const subtopicResearchPromises = subtopics.map(subtopic => 
+        researchSubtopic(mainTopic, topicTitle, subtopic)
+      );
+      
+      // Wait for all subtopic research to complete
+      const subtopicResearchResults = await Promise.all(subtopicResearchPromises);
+      
+      // Store the research results in our structured content object
+      researchedContent[topicTitle] = {
+        subtopics: subtopics,
+        research: subtopicResearchResults
+      };
+      
+      return {
+        topic: topicTitle,
+        numberOfSubtopicsResearched: subtopics.length
+      };
+    });
+    
+    // Wait for all topic research to complete
+    const topicResearchResults = await Promise.all(topicResearchPromises);
+    
+    // Log research completion statistics
+    const totalSubtopicsResearched = topicResearchResults.reduce(
+      (sum, result) => sum + result.numberOfSubtopicsResearched, 0
+    );
+    console.log(`Research completed for ${topicResearchResults.length} topics and ${totalSubtopicsResearched} subtopics`);
+
+    // Stage 4: Generate Final Comprehensive Report using the research
+    // Prepare the research content for the final report generation
+    let researchContentForPrompt = "";
+    
+    Object.keys(researchedContent).forEach(topicTitle => {
+      researchContentForPrompt += `## ${topicTitle}\n\n`;
+      
+      const topic = researchedContent[topicTitle];
+      topic.subtopics.forEach((subtopic, index) => {
+        researchContentForPrompt += `### ${subtopic}\n${topic.research[index]}\n\n`;
+      });
+    });
+    
+    // If the research is very large, truncate it to avoid token limits
+    if (researchContentForPrompt.length > 30000) {
+      console.log(`Research content is large (${researchContentForPrompt.length} chars), truncating for final report generation`);
+      researchContentForPrompt = researchContentForPrompt.substring(0, 30000) + "\n\n[Additional research content truncated due to size limitations]";
     }
 
-    // Stage 4: Generate Final Comprehensive Report
     const reportPrompt = `
 You are a distinguished research analyst creating a comprehensive, academic-quality report.
 
@@ -211,15 +284,20 @@ ${abstract}
 
 Detailed Research Content:
 """
-${topicResearch.join("\n\n")}
+${researchContentForPrompt}
 """
+
+Main Topic: "${mainTopic}"
+
+Topic Structure:
+${topics.map(t => `- ${t.title}`).join('\n')}
 
 Your report MUST include:
 1. An informative, specific title
 2. An executive summary
 3. A table of contents
 4. Introduction section contextualizing the research
-5. Main body organized by the major topics and subtopics
+5. Main body organized by the major topics and subtopics WITH ALL THE DETAILED RESEARCH CONTENT
 6. Conclusion summarizing key findings
 7. Extensive references section with ALL cited sources
 8. Appendices with relevant supplementary material
@@ -254,7 +332,7 @@ Format your response as a single JSON object with this structure:
   ]
 }
 
-Ensure all content is properly cited, factual, and grounded in the research provided. Include only real citations and references found during the research process.`;
+IMPORTANT: Ensure all content is properly cited, factual, and grounded in the research provided. Include only real citations and references found during the research process. DO NOT generate placeholder text - use all the detailed research that was provided to create substantial sections.`;
 
     console.log("Stage 4: Generating final comprehensive report...");
     const reportText = await callGemini(reportPrompt, false, 20000);
@@ -284,11 +362,21 @@ Ensure all content is properly cited, factual, and grounded in the research prov
       subtopics: topics.flatMap(t => t.subtopics),
       intermediateResults: {
         topicStructure,
-        researchSample: topicResearch[0]?.substring(0, 500) + "..."
+        researchSample: Object.keys(researchedContent).length > 0 
+          ? Object.values(researchedContent)[0].research[0]?.substring(0, 500) + "..."
+          : "No research sample available"
       }
     };
 
-    console.log(`Research completed successfully with ${topics.length} topics and ${results.subtopics.length} subtopics`);
+    // Add statistics about the report
+    const totalSections = report.sections.length;
+    const totalWords = report.sections.reduce(
+      (sum, section) => sum + (section.content?.split(/\s+/).length || 0), 0
+    );
+    
+    console.log(`Research completed successfully with ${topicResearchResults.length} topics researched in depth`);
+    console.log(`Final report contains ${totalSections} sections and approximately ${totalWords} words`);
+    
     return new Response(JSON.stringify(results), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
