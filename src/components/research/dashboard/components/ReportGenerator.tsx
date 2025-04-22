@@ -87,16 +87,31 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         clearInterval(interval);
         console.error("Report generation error:", err);
         onProgress(100);
-        onGenerationStep(`Error: ${err.message || "Unable to generate report"}`);
+        
+        // More informative error message
+        const errorMessage = err.message || "Unable to generate report";
+        const isGeminiApiError = errorMessage.includes("Gemini API") || 
+                                errorMessage.includes("abstract") || 
+                                errorMessage.includes("Edge Function");
+        
+        onGenerationStep(`Error: ${errorMessage}. ${
+          isGeminiApiError 
+            ? "This appears to be an issue with the Gemini API connection. Please check your API key in Supabase Edge Function Secrets."
+            : "Please check the console and Edge Function logs for more details."
+        }`);
+        
         setIsGenerating(false);
-        toast.error(err.message || "Failed to generate report from Gemini.");
+        toast.error(`Report generation failed: ${errorMessage}`, {
+          description: "Check your Gemini API key in Supabase Edge Function Secrets.",
+          duration: 5000
+        });
         
         // Create a basic error report so the UI can still display something
         onReportGenerated({
           title: "Error Generating Report",
           sections: [{
             title: "Error Details",
-            content: `We encountered an error while generating your research report: "${err.message}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets.`
+            content: `We encountered an error while generating your research report: "${errorMessage}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets. You may also need to verify that the API key has access to the Gemini model specified in the edge functions.`
           }],
           references: [],
           suggestedPdfs: [],

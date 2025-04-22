@@ -10,7 +10,7 @@ export interface Reference {
   journal: string;
   year: string;
   url: string;
-  doi?: string; // Adding optional doi property
+  doi?: string;
 }
 
 export interface SuggestedPdf {
@@ -80,6 +80,12 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     if (!abstractData) {
       console.error("No data returned from abstract generation");
       throw new Error("Failed to generate abstract: No data returned");
+    }
+    
+    // Check if there's an error coming back from the function
+    if (abstractData.error) {
+      console.error("Error from generate-abstract function:", abstractData.error);
+      throw new Error(`Gemini API error: ${abstractData.error}`);
     }
     
     // Even if there's an error generating the abstract, the function now returns a fallback one
@@ -155,8 +161,8 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
       ...fallbackReport,
       title: `Error Report for "${query}"`,
       sections: [{
-        title: "Error Information",
-        content: `We encountered an error while generating your research report: "${error.message}". This may be due to issues with the Gemini API connection or configuration. Please check that your API key is valid and try again.`
+        title: "Error Details",
+        content: `We encountered an error while generating your research report: "${error.message}". This may be due to issues with the Gemini API connection or configuration.\n\nTroubleshooting steps:\n1. Check that your Gemini API key is valid and correctly set up in the Supabase Edge Function Secrets.\n2. Verify that the API key has access to the Gemini model specified in the edge functions.\n3. Check the Edge Function logs for more detailed error information.`
       }]
     };
     
@@ -169,7 +175,10 @@ export function useGeminiReport() {
     mutationFn: (query: string) => generateGeminiReport(query),
     onError: (error: any) => {
       console.error("Mutation error:", error);
-      toast.error(error.message || "Failed to generate report from Gemini.");
+      toast.error(error.message || "Failed to generate report from Gemini.", {
+        description: "Check your Gemini API key in Supabase Edge Function Secrets.",
+        duration: 6000
+      });
     }
   });
 }

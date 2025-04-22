@@ -23,15 +23,7 @@ async function callGemini(prompt: string) {
         topP: 0.7,
         topK: 40,
       },
-      tools: [
-        {
-          google_search: {
-            dynamicRetrievalConfig: {
-              mode: "MODE_ALWAYS"
-            }
-          }
-        }
-      ],
+      // Removing search tools configuration as it's causing issues
       safetySettings: [
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
         { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
