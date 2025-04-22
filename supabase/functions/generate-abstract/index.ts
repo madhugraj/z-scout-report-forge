@@ -7,14 +7,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyATvHiL-3EA3Dt8zGZBNaAUYJkA-xcUYTU";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent";
 
 async function callGemini(prompt: string): Promise<string> {
-  if (!GEMINI_API_KEY) {
-    throw new Error("Missing Gemini API key");
-  }
-
   console.log("Calling Gemini with prompt:", prompt.substring(0, 100) + "...");
   
   try {
@@ -25,10 +21,17 @@ async function callGemini(prompt: string): Promise<string> {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 8000,
+          maxOutputTokens: 12000,
           topP: 0.7,
-          topK: 40
+          topK: 40,
         },
+        tools: [{
+          google_search: {
+            dynamicRetrievalConfig: {
+              mode: "MODE_ALWAYS"
+            }
+          }
+        }],
         safetySettings: [
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
           { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
@@ -101,6 +104,57 @@ Query: "${query}"
       });
     } catch (geminiError) {
       console.error("Error calling Gemini API:", geminiError);
+      
+      // Try with fallback API key if first key failed
+      if (GEMINI_API_KEY !== "AIzaSyATvHiL-3EA3Dt8zGZBNaAUYJkA-xcUYTU") {
+        console.log("Trying with fallback API key...");
+        try {
+          const fallbackApiKey = "AIzaSyATvHiL-3EA3Dt8zGZBNaAUYJkA-xcUYTU";
+          const fallbackUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent";
+          
+          const fallbackResponse = await fetch(`${fallbackUrl}?key=${fallbackApiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: abstractPrompt }] }],
+              generationConfig: {
+                temperature: 0.2,
+                maxOutputTokens: 12000,
+                topP: 0.7,
+                topK: 40,
+              },
+              tools: [{
+                google_search: {
+                  dynamicRetrievalConfig: {
+                    mode: "MODE_ALWAYS"
+                  }
+                }
+              }],
+              safetySettings: [
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
+              ]
+            }),
+          });
+          
+          const fallbackJson = await fallbackResponse.json();
+          if (!fallbackJson.candidates || !fallbackJson.candidates[0]?.content?.parts?.[0]?.text) {
+            throw new Error("Fallback API key also failed");
+          }
+          
+          const fallbackAbstract = fallbackJson.candidates[0].content.parts[0].text;
+          console.log("Successfully generated abstract with fallback key, length:", fallbackAbstract.length);
+          
+          return new Response(JSON.stringify({ abstract: fallbackAbstract }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        } catch (fallbackError) {
+          console.error("Fallback API key also failed:", fallbackError);
+        }
+      }
+      
       return new Response(JSON.stringify({ 
         error: `Error from Gemini API: ${geminiError.message}`,
         abstract: `We were unable to generate an abstract for "${query}" due to an API error. This may be due to temporary issues with the Gemini service or API key configuration.` 
