@@ -8,9 +8,11 @@ const corsHeaders = {
 };
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent";
+// Updated to use a valid model
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
 async function callGemini(prompt: string) {
+  console.log("Calling Gemini API with model gemini-1.5-flash");
   const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
   const response = await fetch(requestUrl, {
     method: "POST",
@@ -32,6 +34,13 @@ async function callGemini(prompt: string) {
       ]
     }),
   });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("Gemini API error:", errorData);
+    throw new Error(`Gemini API returned ${response.status}: ${JSON.stringify(errorData)}`);
+  }
+  
   const json = await response.json();
   return json.candidates?.[0]?.content?.parts?.[0]?.text || "";
 }
@@ -66,10 +75,29 @@ Instructions:
   "suggestedDatasets": [...]
 }`;
 
+    console.log("Sending prompt to Gemini API...");
     const reportText = await callGemini(reportPrompt + `\n\n<Abstract>\n${abstract}\n</Abstract>\n<Research>\n${Array.isArray(formattedInfo) ? formattedInfo.join("\n\n") : formattedInfo}\n</Research>`);
-    const match = reportText.match(/```json\s*([\s\S]+?)\s*```/);
-    const jsonStr = match ? match[1] : reportText;
-    const report = JSON.parse(jsonStr);
+    console.log("Received response from Gemini API");
+    
+    // Attempt to parse the JSON response
+    let report;
+    try {
+      const match = reportText.match(/```json\s*([\s\S]+?)\s*```/);
+      const jsonStr = match ? match[1] : reportText;
+      report = JSON.parse(jsonStr);
+    } catch (parseError) {
+      console.error("Failed to parse Gemini response as JSON:", parseError);
+      console.log("Raw response text:", reportText);
+      
+      // Provide a fallback response
+      return new Response(JSON.stringify({ 
+        error: "Failed to parse Gemini response", 
+        rawResponse: reportText.substring(0, 500) + "..." // Include part of the raw response for debugging
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
     
     console.log("Generated report with sections:", report.sections.length);
 

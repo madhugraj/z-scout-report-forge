@@ -7,25 +7,48 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "AIzaSyATvHiL-3EA3Dt8zGZBNaAUYJkA-xcUYTU";
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent";
+// Get the API key from environment variables or use a fallback
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-async function callGemini(prompt: string): Promise<string> {
-  console.log("Calling Gemini with prompt:", prompt.substring(0, 100) + "...");
-  
+// Updated to use a valid model
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
+    const { query } = await req.json();
+    
+    if (!GEMINI_API_KEY) {
+      return new Response(JSON.stringify({ error: "Missing Gemini API key" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const prompt = `Write a professional 200-300 word abstract from this research intent:\n"${query}"`;
+    
+    console.log("Calling Gemini API for abstract generation");
     const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: prompt }],
+          },
+        ],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 12000,
-          topP: 0.7,
+          maxOutputTokens: 1024,
+          topP: 0.8,
           topK: 40,
         },
-        // Removing all tools configuration completely as it's causing the error
         safetySettings: [
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
           { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
@@ -35,130 +58,38 @@ async function callGemini(prompt: string): Promise<string> {
       }),
     });
 
-    const json = await response.json();
-    console.log("Gemini API response structure:", Object.keys(json));
-
     if (!response.ok) {
-      console.error("Gemini API error:", json);
-      throw new Error(`Gemini API error: ${json.error?.message || JSON.stringify(json)}`);
+      const errorData = await response.json();
+      console.error(`Gemini API error (${response.status}):`, errorData);
+      throw new Error(`Gemini API returned ${response.status}: ${JSON.stringify(errorData)}`);
     }
 
-    if (!json.candidates || !json.candidates[0]?.content?.parts?.[0]?.text) {
-      console.error("Invalid Gemini response structure:", JSON.stringify(json, null, 2));
-      throw new Error("Gemini did not return a valid response structure");
+    const data = await response.json();
+    const abstract = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!abstract) {
+      console.error("No abstract text in Gemini response:", data);
+      throw new Error("No text content in Gemini response");
     }
 
-    const text = json.candidates[0].content.parts[0].text;
-    console.log("Gemini response text (first 100 chars):", text.substring(0, 100) + "...");
-    return text;
-  } catch (error) {
-    console.error("Error making Gemini API call:", error);
-    throw error;
-  }
-}
-
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const { query } = await req.json();
-    console.log("Received abstract generation request for query:", query);
-
-    if (!GEMINI_API_KEY) {
-      return new Response(JSON.stringify({ error: "Missing API key" }), {
-        status: 500,
-        headers: corsHeaders,
-      });
-    }
-
-    const abstractPrompt = `
-You are a domain-specific research assistant.
-
-Convert the following project intent into a detailed 200–300 word professional abstract suitable for an industry-grade feasibility or market report.
-
-Ensure your output covers:
-- Context and background
-- Key goals of the project
-- Challenges or considerations
-- Expected outcomes or deliverables
-
-Avoid bullet points and return only a continuous, coherent abstract.
-
-Query: "${query}"
-    `.trim();
-
-    try {
-      const abstract = await callGemini(abstractPrompt);
-      console.log("Successfully generated abstract of length:", abstract.length);
-      
-      return new Response(JSON.stringify({ abstract }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    } catch (geminiError) {
-      console.error("Error calling Gemini API:", geminiError);
-      
-      // Try with fallback API key if first key failed
-      if (GEMINI_API_KEY !== "AIzaSyATvHiL-3EA3Dt8zGZBNaAUYJkA-xcUYTU") {
-        console.log("Trying with fallback API key...");
-        try {
-          const fallbackApiKey = "AIzaSyATvHiL-3EA3Dt8zGZBNaAUYJkA-xcUYTU";
-          const fallbackUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent";
-          
-          const fallbackResponse = await fetch(`${fallbackUrl}?key=${fallbackApiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ role: "user", parts: [{ text: abstractPrompt }] }],
-              generationConfig: {
-                temperature: 0.2,
-                maxOutputTokens: 12000,
-                topP: 0.7,
-                topK: 40,
-              },
-              // Removing all tools configuration for fallback as well
-              safetySettings: [
-                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-              ]
-            }),
-          });
-          
-          const fallbackJson = await fallbackResponse.json();
-          if (!fallbackJson.candidates || !fallbackJson.candidates[0]?.content?.parts?.[0]?.text) {
-            throw new Error("Fallback API key also failed");
-          }
-          
-          const fallbackAbstract = fallbackJson.candidates[0].content.parts[0].text;
-          console.log("Successfully generated abstract with fallback key, length:", fallbackAbstract.length);
-          
-          return new Response(JSON.stringify({ abstract: fallbackAbstract }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" }
-          });
-        } catch (fallbackError) {
-          console.error("Fallback API key also failed:", fallbackError);
-        }
-      }
-      
-      return new Response(JSON.stringify({ 
-        error: `Error from Gemini API: ${geminiError.message}`,
-        abstract: `We were unable to generate an abstract for "${query}" due to an API error. This may be due to temporary issues with the Gemini service or API key configuration.` 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-  } catch (err) {
-    console.error("Abstract generation function error:", err);
-    return new Response(JSON.stringify({ 
-      error: err.message,
-      abstract: "An error occurred during abstract generation. Please check the logs for details."
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    console.log("Abstract generated successfully");
+    return new Response(JSON.stringify({ abstract }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  } catch (error) {
+    console.error("Error in abstract generation:", error);
+    // Create a fallback abstract for robustness
+    const fallbackAbstract = "This is a fallback abstract generated due to API issues. Please try again later or check your API key configuration. The abstract would normally contain a summary of your research query.";
+    
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        abstract: fallbackAbstract
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 });
