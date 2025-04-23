@@ -44,8 +44,8 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
   // Fix for the Google Search grounding - using correct parameter names according to API docs
   if (enableSearch) {
     console.log("Enabling Google Search grounding for research");
-    requestBody.tools = [{
-      googleSearchRetrieval: {} // Use empty object instead of fields that aren't recognized
+    requestBody.tools = [{ 
+      googleSearchRetrieval: {} 
     }];
   }
 
@@ -63,19 +63,36 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
           body: JSON.stringify(requestBody)
         });
         
-        if (response.ok) {
-          break;
-        }
-        
-        errorBody = await response.text();
-        console.warn(`Gemini API error (${response.status}): ${errorBody}. Retries left: ${retries-1}`);
-        retries--;
-        
-        // Add exponential backoff
-        if (retries > 0) {
-          const backoffTime = Math.pow(2, 4-retries) * 1000;
-          console.log(`Retrying in ${backoffTime}ms...`);
-          await new Promise(resolve => setTimeout(resolve, backoffTime));
+        // Detailed logging for API errors
+        if (!response.ok) {
+          const statusCode = response.status;
+          errorBody = await response.text();
+          
+          console.error(`Gemini API error (${statusCode}): ${errorBody}`);
+          
+          // Additional diagnostics for common error codes
+          if (statusCode === 400) {
+            console.error("Bad request error. Check API key format and request payload format.");
+          } else if (statusCode === 401) {
+            console.error("Authentication error. API key is invalid, revoked, or expired.");
+          } else if (statusCode === 403) {
+            console.error("Permission denied. API key may not have access to Gemini 1.5 Flash model or has been rate limited.");
+          } else if (statusCode === 429) {
+            console.error("Rate limit exceeded or quota exceeded. Check your Google AI Studio quota.");
+          } else if (statusCode >= 500) {
+            console.error("Gemini API server error. The service might be temporarily unavailable.");
+          }
+          
+          retries--;
+          
+          // Add exponential backoff
+          if (retries > 0) {
+            const backoffTime = Math.pow(2, 4-retries) * 1000;
+            console.log(`Retrying in ${backoffTime}ms...`);
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+          }
+        } else {
+          break; // Success - exit retry loop
         }
       } catch (fetchError) {
         console.error(`Fetch error: ${fetchError.message}. Retries left: ${retries-1}`);
@@ -89,8 +106,23 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
     }
 
     if (!response || !response.ok) {
-      console.error(`Gemini API failed after retries: ${errorBody || 'Unknown error'}`);
-      throw new Error(`Gemini API failed: ${response?.status || 'Unknown status'} - ${errorBody || 'Unknown error'}`);
+      // Enhanced error message with more specific information
+      const statusCode = response?.status || 'Unknown';
+      let errorMessage = errorBody || 'Unknown error';
+      
+      // Try to parse the error body as JSON for more details
+      try {
+        const errorJson = JSON.parse(errorBody || '{}');
+        if (errorJson.error && errorJson.error.message) {
+          errorMessage = errorJson.error.message;
+        }
+      } catch (e) {
+        // Use raw error body if not valid JSON
+      }
+      
+      console.error(`Gemini API failed after retries: Status: ${statusCode}, Error: ${errorMessage}`);
+      
+      throw new Error(`Gemini API error (${statusCode}): ${errorMessage}. Check your API key configuration and permissions.`);
     }
 
     const json = await response.json();
