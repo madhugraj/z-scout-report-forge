@@ -7,21 +7,28 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
   try {
     console.log("Starting comprehensive report generation for query:", query);
 
-    // Enhanced query with more specific academic research instructions
-    const enhancedQuery = `${query} - COMPREHENSIVE ANALYSIS: Produce a detailed academic research report with in-depth analysis of all topics and subtopics, extensive data, statistics, scholarly references, and proper citations. Include clear methodology and literature review sections.`;
+    // Enhanced query with explicit instructions for comprehensive topic coverage
+    const enhancedQuery = `${query} - COMPREHENSIVE ACADEMIC RESEARCH WITH COMPLETE TOPIC COVERAGE: Generate a detailed, authoritative research report with extensive coverage of ALL major topics and subtopics. Include in-depth analysis supported by specific data, statistics, scholarly references, and proper citations. Ensure comprehensive exploration of the full breadth and depth of the subject.`;
 
-    // Call our updated edge function with the specified model
+    // Call our updated edge function with enhanced parameters for more comprehensive results
     const { data, error } = await supabase.functions.invoke('generate-report-gemini', {
       body: { 
         query: enhancedQuery,
-        requestDepth: "comprehensive", 
-        pageTarget: "40-50",
+        requestDepth: "maximum", // Request maximum depth
+        pageTarget: "80-100", // Target more pages for comprehensive coverage
         generateFullReport: true,
         includeAllSubtopics: true,
+        forceDepth: true, // Force deeper research
+        forceBreadth: true, // NEW: Force broader topic coverage
         includeCitations: true,
         useAcademicFormat: true,
-        maxReferences: 75, // Increased reference count
-        includeDataPoints: true // Ensure data and statistics are included
+        maxReferences: 100, // Increased reference count
+        includeDataPoints: true,
+        expandSubtopicCoverage: true,
+        improveResearchDepth: true,
+        ensureCompleteCoverage: true, // NEW: Explicitly request complete topic coverage
+        minimumTopicsRequired: 12, // NEW: Set minimum topics to cover
+        minimumSubtopicsPerTopic: 10 // NEW: Set minimum subtopics per topic
       }
     });
 
@@ -57,29 +64,38 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     console.log(`Report statistics: ${sectionCount} sections, ${referenceCount} references, ${pdfCount} PDFs, ${imageCount} images, ${datasetCount} datasets, ~${Math.round(totalContentLength/1000)}K chars content`);
 
     // If the report is too small or has too few references, retry with stronger parameters
-    const isReportTooSmall = totalContentLength < 25000;
-    const hasTooFewReferences = referenceCount < 15;
-    const hasInsufficientSections = sectionCount < 8;
+    const isReportTooSmall = totalContentLength < 50000; // Increased minimum size
+    const hasTooFewReferences = referenceCount < 25; // Increased minimum references
+    const hasInsufficientSections = sectionCount < 15; // Increased minimum sections
+    const hasTooFewTopics = (data.intermediateResults?.topicStructure?.topics?.length || 0) < 10; // NEW: Check for topic coverage
     
-    if ((isReportTooSmall || hasTooFewReferences || hasInsufficientSections) && !data.retryAttempted) {
-      console.log(`Report quality insufficient (size: ${Math.round(totalContentLength/1000)}K chars, refs: ${referenceCount}, sections: ${sectionCount}), retrying with enhanced parameters...`);
+    const needsRetry = (isReportTooSmall || hasTooFewReferences || hasInsufficientSections || hasTooFewTopics) && !data.retryAttempted;
+    
+    if (needsRetry) {
+      console.log(`Report quality insufficient (size: ${Math.round(totalContentLength/1000)}K chars, refs: ${referenceCount}, sections: ${sectionCount}, topics: ${data.intermediateResults?.topicStructure?.topics?.length || 0}), retrying with maximum parameters...`);
       
-      // Try one more time with enhanced parameters if the first attempt was insufficient
+      // Try one more time with significantly enhanced parameters
       const { data: retryData, error: retryError } = await supabase.functions.invoke('generate-report-gemini', {
         body: { 
-          query: enhancedQuery,
-          requestDepth: "maximum", // Increase depth for retry
-          pageTarget: "60-80", // Larger page target 
+          query: `${enhancedQuery} ENSURE MAXIMUM DEPTH AND BREADTH IN ALL TOPICS AND SUBTOPICS.`,
+          requestDepth: "absolute-maximum", // Request absolute maximum depth
+          pageTarget: "120-150", // Target even more pages 
           generateFullReport: true,
           includeAllSubtopics: true,
-          forceDepth: true, // Force more comprehensive coverage
-          maxReferences: 100, // More references on retry
-          expandSubtopicCoverage: true, // Ensure broader coverage
-          improveResearchDepth: true, // Increase depth
+          forceDepth: true,
+          forceBreadth: true,
+          expandSubtopicCoverage: true,
+          improveResearchDepth: true,
+          maxReferences: 150, // Even more references
           includeCitations: true,
           useAcademicFormat: true,
           includeDataPoints: true,
-          retryAttempt: true
+          ensureCompleteCoverage: true,
+          minimumTopicsRequired: 15,
+          minimumSubtopicsPerTopic: 12,
+          retryAttempt: true,
+          increaseResearchBreadth: true, // NEW: Additional parameter for more breadth
+          prioritizeTopicCoverage: true // NEW: Prioritize covering all topics
         }
       });
       
@@ -89,13 +105,16 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
           sum + (section.content?.length || 0), 0) || 0;
         const retryReferenceCount = retryReport.references?.length || 0;
         const retryPdfCount = retryReport.suggestedPdfs?.length || 0;
+        const retrySectionCount = retryReport.sections?.length || 0;
           
-        console.log(`Retry generated ${retryReport.sections?.length} sections with ~${Math.round(retryContentLength/1000)}K chars and ${retryReferenceCount} references, ${retryPdfCount} PDFs`);
+        console.log(`Retry generated ${retrySectionCount} sections with ~${Math.round(retryContentLength/1000)}K chars and ${retryReferenceCount} references, ${retryPdfCount} PDFs`);
         
-        const isRetryBetter = retryContentLength > totalContentLength || retryReferenceCount > referenceCount;
+        const isRetryBetter = retryContentLength > totalContentLength * 1.2 || 
+                              retryReferenceCount > referenceCount * 1.2 || 
+                              retrySectionCount > sectionCount * 1.2;
         
         if (isRetryBetter) {
-          console.log(`Using retry report as it has ${isRetryBetter ? 'more content and/or references' : 'better quality'}`);
+          console.log(`Using retry report as it has significantly better quality metrics`);
           return {
             ...retryReport,
             sections: retryReport.sections || [],
@@ -111,7 +130,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
                 originalSections: sectionCount,
                 retrySize: retryContentLength,
                 retryRefs: retryReferenceCount,
-                retrySections: retryReport.sections?.length || 0,
+                retrySections: retrySectionCount,
                 contentImprovement: `${Math.round((retryContentLength - totalContentLength) / Math.max(1, totalContentLength) * 100)}%`,
                 refImprovement: `${Math.round((retryReferenceCount - referenceCount) / Math.max(1, referenceCount) * 100)}%`
               }

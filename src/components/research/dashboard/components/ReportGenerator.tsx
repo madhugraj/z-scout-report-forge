@@ -29,29 +29,29 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   const startGeneratingReport = (query: string) => {
     setIsGenerating(true);
     onProgress(0);
-    onGenerationStep("Initializing comprehensive research pipeline...");
+    onGenerationStep("Initializing enhanced comprehensive research pipeline...");
 
     const progressSteps = [
-      { threshold: 5, message: "Sending request to Gemini for academic research analysis..." },
-      { threshold: 8, message: "Generating comprehensive research abstract..." },
-      { threshold: 12, message: "Abstract generated! Analyzing research scope..." },
-      { threshold: 15, message: "Extracting main topics and subtopics for in-depth research..." },
-      { threshold: 20, message: "Building detailed topic and subtopic hierarchy..." },
-      { threshold: 25, message: "Enabling Google Search grounding for academic research..." },
-      { threshold: 30, message: "Topic structure established, beginning in-depth research..." },
-      { threshold: 35, message: "Researching Topics 1-3 with academic sources and citations..." },
-      { threshold: 40, message: "Researching Topics 4-6 with academic sources and citations..." },
-      { threshold: 45, message: "Researching Topics 7-10 with academic sources and citations..." },
-      { threshold: 50, message: "Gathering verified scholarly citations for each topic..." },
-      { threshold: 55, message: "Analyzing academic literature and primary sources..." },
-      { threshold: 60, message: "Validating and incorporating scholarly references..." },
-      { threshold: 65, message: "Extracting key data points from research literature..." },
-      { threshold: 70, message: "Identifying relevant datasets and research papers..." },
-      { threshold: 75, message: "Synthesizing research findings with proper citations..." },
-      { threshold: 80, message: "Structuring academic research report with citations..." },
-      { threshold: 85, message: "Optimizing content depth across all sections..." },
-      { threshold: 90, message: "Finalizing citations and academic references..." },
-      { threshold: 95, message: "Performing quality check on research report..." }
+      { threshold: 5, message: "Sending request to Gemini Pro for advanced academic research analysis..." },
+      { threshold: 8, message: "Generating detailed research abstract with expanded scope..." },
+      { threshold: 12, message: "Abstract generated! Analyzing comprehensive research domains..." },
+      { threshold: 15, message: "Extracting 12-15 main topics and 10-15 subtopics per topic for comprehensive coverage..." },
+      { threshold: 20, message: "Building detailed topic and subtopic hierarchy with enhanced breadth..." },
+      { threshold: 25, message: "Enabling advanced Google Search grounding for scholarly research..." },
+      { threshold: 30, message: "Comprehensive topic structure established, beginning in-depth research..." },
+      { threshold: 35, message: "Researching Topics 1-5 with scholarly sources and citations..." },
+      { threshold: 40, message: "Researching Topics 6-10 with scholarly sources and citations..." },
+      { threshold: 45, message: "Researching Topics 11-15 with scholarly sources and citations..." },
+      { threshold: 50, message: "Gathering extensive academic citations for all topics..." },
+      { threshold: 55, message: "Conducting deep analysis of academic literature and primary sources..." },
+      { threshold: 60, message: "Cross-referencing and validating scholarly references..." },
+      { threshold: 65, message: "Extracting comprehensive data points from research literature..." },
+      { threshold: 70, message: "Identifying relevant datasets, papers and visual resources..." },
+      { threshold: 75, message: "Synthesizing research findings with proper scholarly citations..." },
+      { threshold: 80, message: "Structuring comprehensive academic research report with complete topic coverage..." },
+      { threshold: 85, message: "Optimizing content depth and breadth across all sections..." },
+      { threshold: 90, message: "Finalizing citations and comprehensive academic references..." },
+      { threshold: 95, message: "Performing quality assurance on comprehensive research report..." }
     ];
     
     let currentProgress = 0;
@@ -94,8 +94,13 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
           (acc, section) => acc + (section.content?.split(/\s+/).length || 0), 0
         );
         const estimatedPages = Math.max(1, Math.round(totalWords / 300));
+        const totalReferences = result.references?.length || 0;
+        const totalTopics = result.sections?.filter(s => !s.title.toLowerCase().includes('introduction') && 
+                                                         !s.title.toLowerCase().includes('conclusion') &&
+                                                         !s.title.toLowerCase().includes('references') &&
+                                                         !s.title.toLowerCase().includes('appendix')).length || 0;
         
-        onGenerationStep(`Research report generation complete in ${duration}s! (${estimatedPages} pages, ${result.references.length} citations)`);
+        onGenerationStep(`Comprehensive research report generation complete in ${duration}s! (${estimatedPages} pages, ${totalReferences} citations, ${totalTopics} topic sections)`);
         setIsGenerating(false);
         
         // Check if the report has sufficient depth
@@ -111,14 +116,16 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         const contentSizeInPages = Math.round(totalContent / 3000);
         const citationCount = result.references.length;
         
-        console.log(`Generated report with ${numTopics} topics and ${numSubtopics} subtopics`);
+        console.log(`Generated comprehensive report with ${numTopics} topics and ${numSubtopics} subtopics`);
         console.log(`Report contains ${result.sections.length} sections, ${citationCount} references`);
         console.log(`Report content size: ~${Math.round(totalContent/1000)}K characters (~${contentSizeInPages} pages)`);
         
         onReportGenerated(result);
         
-        // Provide more accurate toast message
-        toast.success(`Research report generated with ${result.sections.length} sections and ${citationCount} citations across ${numTopics} topics!`);
+        // Provide more accurate toast message with improved metrics
+        toast.success(`Comprehensive research report generated with ${result.sections.length} sections and ${citationCount} citations across ${numTopics} major topics!`, {
+          duration: 5000
+        });
       },
       onError: (err: any) => {
         clearInterval(interval);
@@ -138,7 +145,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         
         // Create a basic error report so the UI can still display something
         onReportGenerated({
-          title: "Error Generating Research Report",
+          title: "Error Generating Comprehensive Research Report",
           sections: [{
             title: "Error Details",
             content: `We encountered an error while generating your research report: "${errorMessage}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets. You may also need to verify that the API key has access to the Gemini model specified in the edge functions.`
