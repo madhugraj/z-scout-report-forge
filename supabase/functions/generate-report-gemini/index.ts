@@ -1,4 +1,3 @@
-
 // Generate full report with Google grounding and comprehensive search
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -9,9 +8,9 @@ const corsHeaders = {
 };
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
-async function callGemini(prompt: string, enableSearch = true, maxOutputTokens = 16000) {
+async function callGemini(prompt, enableSearch = true, maxOutputTokens = 12000) {
   const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
   
   console.log(`Calling Gemini with prompt length: ${prompt.length} chars, search enabled: ${enableSearch}, maxOutputTokens: ${maxOutputTokens}`);
@@ -31,7 +30,7 @@ async function callGemini(prompt: string, enableSearch = true, maxOutputTokens =
       { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
     ]
   };
-  
+
   if (enableSearch) {
     requestBody.tools = [
       {
@@ -43,26 +42,27 @@ async function callGemini(prompt: string, enableSearch = true, maxOutputTokens =
       }
     ];
   }
-  
+
   const response = await fetch(requestUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify(requestBody)
   });
-  
+
   if (!response.ok) {
     const errorBody = await response.text();
     console.error(`Gemini API error (${response.status}): ${errorBody}`);
     throw new Error(`Gemini API returned status ${response.status}: ${errorBody}`);
   }
-  
+
   const json = await response.json();
-  if (!json.candidates || !json.candidates[0]?.content?.parts || !json.candidates[0]?.content?.parts[0]?.text) {
+  const result = json.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!result) {
     console.error("Unexpected response format from Gemini:", json);
     throw new Error("Unexpected response format from Gemini API");
   }
-  
-  return json.candidates[0].content.parts[0].text;
+
+  return result;
 }
 
 // Enhanced function to research a specific subtopic with search grounding
@@ -126,8 +126,8 @@ Include SPECIFIC URLS to key research papers, reports, and datasets mentioned.`;
     console.log(`Successfully researched subtopic "${subtopic}": ${research.length} chars`);
     return research;
   } catch (error) {
-    console.error(`Error researching subtopic "${subtopic}":`, error);
-    return `**Research Error**: Unable to retrieve comprehensive research for "${subtopic}". This may be due to API limitations or connection issues. The report will continue with other sections.`;
+    console.error(`Error researching subtopic \"${subtopic}\":`, error);
+    return `**Research Error**: Could not retrieve research for \"${subtopic}\" due to an error.`;
   }
 }
 
@@ -154,7 +154,7 @@ serve(async (req) => {
     if (!GEMINI_API_KEY) {
       return new Response(JSON.stringify({ error: "Missing API key" }), {
         status: 500,
-        headers: corsHeaders,
+        headers: corsHeaders
       });
     }
 
@@ -179,14 +179,9 @@ Your abstract will form the foundation for an extensive research report with mul
 
     console.log("Stage 1: Generating comprehensive abstract...");
     const abstract = await callGemini(abstractPrompt, false);
-    console.log("Abstract generated successfully:", abstract.substring(0, 100) + "...");
 
-    // Stage 2: Extract Extensive Topic Structure
-    const topicsPrompt = `
-Based on this research abstract:
-"""
-${abstract}
-"""
+    const topicsPrompt = `Based on this abstract: \"\"\"${abstract}\"\"\" Extract main topic, 10+ major topics and 10-15 subtopics each. Return ONLY valid JSON.`;
+    const topicsText = await callGemini(topicsPrompt, false);
 
 Extract:
 1. A clear, concise main topic (1 line)
@@ -224,21 +219,12 @@ ${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO
     
     let topicStructure;
     try {
-      const jsonMatch = topicStructureText.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
-      if (jsonMatch) {
-        topicStructure = JSON.parse(jsonMatch[1]);
-      } else {
-        topicStructure = JSON.parse(topicStructureText);
-      }
-    } catch (err) {
-      console.error("Failed to parse topic structure JSON:", err);
-      console.log("Raw topic structure response:", topicStructureText);
-      throw new Error("Failed to parse topic structure JSON");
+      const jsonMatch = topicsText.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
+      topicStructure = JSON.parse(jsonMatch ? jsonMatch[1] : topicsText);
+    } catch (e) {
+      console.error("Failed to parse topic structure:", e);
+      throw new Error("Topic structure JSON parsing failed");
     }
-    
-    const { mainTopic, topics } = topicStructure;
-    
-    console.log(`Extracted ${topics.length} major topics with subtopics`);
 
     // Skip research if not generating full report
     if (!generateFullReport) {
@@ -393,12 +379,12 @@ ${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO
     const reportPrompt = `
 You are a distinguished academic researcher creating a comprehensive, ${useAcademicFormat ? "scholarly" : "professional"} research report.
 
-Based on the provided abstract and detailed research, create a complete, well-structured research report with the following characteristics:
+    let content = Object.entries(researchedContent).map(([title, data]) => {
+      const sections = data.subtopics.map((sub, i) => `### ${sub}\n${data.research[i]}`).join("\n\n");
+      return `## ${title}\n\n${sections}`;
+    }).join("\n\n");
 
-Abstract:
-"""
-${abstract}
-"""
+    if (content.length > 30000) content = content.slice(0, 30000);
 
 Detailed Research Content:
 """
@@ -474,20 +460,13 @@ IMPORTANT: Ensure all content is properly cited, factual, and grounded in the re
     let report;
     try {
       const jsonMatch = reportText.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
-      const jsonStr = jsonMatch ? jsonMatch[1] : reportText;
-      report = JSON.parse(jsonStr);
-      
-      report.sections = report.sections || [];
-      report.references = report.references || [];
-      report.suggestedPdfs = report.suggestedPdfs || [];
-      report.suggestedImages = report.suggestedImages || [];
-      report.suggestedDatasets = report.suggestedDatasets || [];
-    } catch (err) {
-      console.error("Failed to parse final report JSON:", err);
-      throw new Error("Failed to parse final report JSON");
+      report = JSON.parse(jsonMatch ? jsonMatch[1] : reportText);
+    } catch (e) {
+      console.error("Failed to parse report JSON:", e);
+      throw new Error("Report JSON parsing failed");
     }
 
-    const results = {
+    const result = {
       report,
       abstract,
       mainTopic,
@@ -496,9 +475,7 @@ IMPORTANT: Ensure all content is properly cited, factual, and grounded in the re
       retryAttempted: retryAttempt,
       intermediateResults: {
         topicStructure,
-        researchSample: Object.keys(researchedContent).length > 0 
-          ? Object.values(researchedContent)[0].research[0]?.substring(0, 500) + "..."
-          : "No research sample available"
+        researchSample: researchedContent?.[topics[0].title]?.research?.[0]?.slice(0, 500) || "No sample"
       }
     };
 
@@ -522,14 +499,9 @@ IMPORTANT: Ensure all content is properly cited, factual, and grounded in the re
     return new Response(JSON.stringify(results), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
-
   } catch (err) {
-    console.error("Comprehensive research error:", err);
-    return new Response(JSON.stringify({ 
-      error: err.message,
-      stack: err.stack,
-      intermediateResults: err.intermediateResults || {} 
-    }), {
+    console.error("Error during research process:", err);
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
