@@ -8,11 +8,12 @@ const corsHeaders = {
 };
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-// Updated to use a valid model
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+// Using the stable flash model which is well-supported
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
 
 async function callGemini(prompt: string) {
-  console.log("Calling Gemini API with model gemini-1.5-flash");
+  console.log("Calling Gemini API with model gemini-1.5-flash-latest");
+  console.log(`Prompt length: ${prompt.length} characters`);
   const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
   const response = await fetch(requestUrl, {
     method: "POST",
@@ -20,12 +21,18 @@ async function callGemini(prompt: string) {
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 12000,
-        topP: 0.7,
+        temperature: 0.1, // Lower temperature for more deterministic responses
+        maxOutputTokens: 24000, // Increased token limit for more content
+        topP: 0.9,
         topK: 40,
       },
-      // Removing search tools configuration as it's causing issues
+      // Enable search tools for better research capabilities
+      tools: [{
+        googleSearchRetrieval: {
+          disableAttribution: false,
+          searchQueriesPerRequest: 8
+        }
+      }],
       safetySettings: [
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
         { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
@@ -36,13 +43,31 @@ async function callGemini(prompt: string) {
   });
   
   if (!response.ok) {
-    const errorData = await response.json();
+    const errorData = await response.text();
     console.error("Gemini API error:", errorData);
-    throw new Error(`Gemini API returned ${response.status}: ${JSON.stringify(errorData)}`);
+    throw new Error(`Gemini API returned ${response.status}: ${errorData}`);
   }
   
   const json = await response.json();
-  return json.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  if (!json.candidates || json.candidates.length === 0) {
+    console.error("No candidates returned from Gemini:", json);
+    throw new Error("No candidates returned from Gemini API");
+  }
+  
+  const candidate = json.candidates[0];
+  if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+    console.error("Invalid candidate structure from Gemini:", candidate);
+    throw new Error("Invalid candidate structure from Gemini API");
+  }
+  
+  const result = candidate.content.parts[0].text;
+  if (!result) {
+    console.error("Empty text content from Gemini:", json);
+    throw new Error("Empty text content from Gemini API");
+  }
+  
+  console.log(`Received response from Gemini (${result.length} characters)`);
+  return result;
 }
 
 serve(async (req) => {
@@ -61,28 +86,53 @@ serve(async (req) => {
 
 Instructions:
 - Use the abstract and research info provided.
-- Structure report with: Title, Executive Summary, Table of Contents, Sectioned Chapters, and Conclusion.
-- Include citations in Markdown format.
-- Identify referenced PDFs and assign unique referenceId.
-- From referenced PDFs, extract tables/images as suggestedImages.
+- Create a COMPLETE report with comprehensive content including:
+  * Title (descriptive and specific)
+  * Executive Summary (concise overview of key findings)
+  * Table of Contents (detailed with all sections and subsections)
+  * Introduction (context, significance, and scope)
+  * COMPLETE SECTIONS FOR EVERY MAJOR TOPIC with substantive content
+  * Conclusion (implications and future directions)
+  * References (at least 20-30 properly formatted citations)
+
+- For each section and subsection:
+  * Include SPECIFIC data, statistics, and research findings
+  * Each section must have substantial content (minimum 2-3 paragraphs)
+  * Use evidence-based writing with citations
+
+- Format ALL content in proper Markdown
+- Include citations in Markdown format
+- From referenced PDFs, extract tables/images as suggestedImages
 - Format output in JSON only:
 {
   "title": "...",
-  "sections": [...],
+  "sections": [
+    {"title": "Section Title", "content": "COMPLETE markdown content with all data and information"}
+  ],
   "references": [...],
   "suggestedPdfs": [...],
   "suggestedImages": [...],
   "suggestedDatasets": [...]
-}`;
+}
 
-    console.log("Sending prompt to Gemini API...");
+IMPORTANT: 
+- CREATE FULL SECTIONS FOR EACH TOPIC AND SUBTOPIC
+- INCLUDE SUBSTANTIAL CONTENT FOR EACH SECTION (not just headings)
+- Include SPECIFIC statistics, data points, and factual information
+- NEVER return a report with just section titles and minimal content`;
+
+    console.log("Sending comprehensive report prompt to Gemini API...");
     const reportText = await callGemini(reportPrompt + `\n\n<Abstract>\n${abstract}\n</Abstract>\n<Research>\n${Array.isArray(formattedInfo) ? formattedInfo.join("\n\n") : formattedInfo}\n</Research>`);
-    console.log("Received response from Gemini API");
+    console.log("Received response from Gemini API, parsing JSON");
     
-    // Attempt to parse the JSON response
+    // Parse the response - improved handling for various JSON formats
     let report;
     try {
-      const match = reportText.match(/```json\s*([\s\S]+?)\s*```/);
+      // Try to extract JSON from potential markdown formatting
+      const match = reportText.match(/```json\s*([\s\S]+?)\s*```/) || 
+                    reportText.match(/({[\s\S]+?})/) || 
+                    reportText.match(/({[\s\S]+$)/);
+      
       const jsonStr = match ? match[1] : reportText;
       report = JSON.parse(jsonStr);
       
@@ -93,33 +143,39 @@ Instructions:
       report.suggestedImages = report.suggestedImages || [];
       report.suggestedDatasets = report.suggestedDatasets || [];
       
+      // Log report statistics for debugging
+      console.log(`Report parsed successfully with ${report.sections.length} sections and ${report.references.length} references`);
+      
+      const totalWords = report.sections.reduce(
+        (acc, section) => acc + (section.content?.split(/\s+/).length || 0), 0
+      );
+      console.log(`Total content: ~${totalWords} words`);
+      
     } catch (parseError) {
       console.error("Failed to parse Gemini response as JSON:", parseError);
-      console.log("Raw response text:", reportText);
+      console.log("Raw response text (first 1000 chars):", reportText.substring(0, 1000));
       
-      // Provide a fallback response with empty arrays
+      // Provide a fallback response with more detailed error information
       return new Response(JSON.stringify({ 
         error: "Failed to parse Gemini response", 
         report: {
           title: "Error Generating Report",
           sections: [{
             title: "Error",
-            content: "Failed to parse Gemini response. Please try again."
+            content: "Failed to parse Gemini response. The API returned data in an unexpected format. Please try again or modify your query."
           }],
           references: [],
           suggestedPdfs: [],
           suggestedImages: [],
           suggestedDatasets: []
         },
-        rawResponse: reportText.substring(0, 500) + "..." // Include part of the raw response for debugging
+        rawResponsePreview: reportText.substring(0, 500) + "..." // Include part of the raw response for debugging
       }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
     
-    console.log("Generated report with sections:", report.sections.length);
-
     return new Response(JSON.stringify({ report }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
@@ -133,7 +189,8 @@ Instructions:
         title: "Error Generating Report",
         sections: [{
           title: "Error",
-          content: "An error occurred while generating the report: " + err.message
+          content: "An error occurred while generating the report: " + err.message + 
+                  "\n\nPlease check your query and try again. If the problem persists, verify that your Gemini API key has sufficient permissions and quota."
         }],
         references: [],
         suggestedPdfs: [],

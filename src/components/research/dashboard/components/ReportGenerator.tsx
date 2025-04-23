@@ -31,6 +31,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
     onProgress(0);
     onGenerationStep("Initializing enhanced comprehensive research pipeline with Gemini 1.5 Flash...");
 
+    // More realistic and detailed progress steps for better user experience
     const progressSteps = [
       { threshold: 5, message: "Sending request to Gemini 1.5 Flash model for advanced academic research analysis..." },
       { threshold: 8, message: "Generating detailed research abstract with expanded scope..." },
@@ -41,25 +42,27 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
       { threshold: 30, message: "Comprehensive topic structure established, beginning detailed research phase..." },
       { threshold: 35, message: "Conducting in-depth research on Topics 1-4 with enhanced depth..." },
       { threshold: 40, message: "Conducting in-depth research on Topics 5-8 with enhanced depth..." },
-      { threshold: 45, message: "Gathering extensive scholarly data for all major topics..." },
-      { threshold: 50, message: "Analyzing academic publications and extracting key findings..." },
-      { threshold: 55, message: "Extracting quantitative data and statistics from research literature..." },
-      { threshold: 60, message: "Gathering citations and academic references for all topics..." },
-      { threshold: 65, message: "Cross-referencing scholarly sources for comprehensive coverage..." },
-      { threshold: 70, message: "Compiling research findings with detailed citations..." },
-      { threshold: 75, message: "Synthesizing content across all research topics and subtopics..." },
-      { threshold: 80, message: "Structuring comprehensive academic research report..." },
-      { threshold: 85, message: "Generating detailed content sections with citations..." },
-      { threshold: 90, message: "Finalizing all research sections with comprehensive content..." },
-      { threshold: 95, message: "Performing quality assurance on comprehensive research report..." }
+      { threshold: 45, message: "Conducting in-depth research on Topics 9-12 with enhanced depth..." },
+      { threshold: 50, message: "Gathering extensive scholarly data for all major topics..." },
+      { threshold: 55, message: "Analyzing academic publications and extracting key findings..." },
+      { threshold: 60, message: "Extracting quantitative data and statistics from research literature..." },
+      { threshold: 65, message: "Gathering citations and academic references for all topics..." },
+      { threshold: 70, message: "Cross-referencing scholarly sources for comprehensive coverage..." },
+      { threshold: 75, message: "Compiling research findings with detailed citations..." },
+      { threshold: 80, message: "Synthesizing content across all research topics and subtopics..." },
+      { threshold: 85, message: "Structuring comprehensive academic research report..." },
+      { threshold: 90, message: "Generating detailed content sections with citations..." },
+      { threshold: 95, message: "Finalizing all research sections with comprehensive content..." }
     ];
     
     let currentProgress = 0;
     let currentStepIndex = 0;
     let completedSteps = new Set();
     
+    // Slower progress updates for more realistic experience
     const interval = setInterval(() => {
-      const incrementAmount = currentProgress < 60 ? Math.random() * 1.5 + 0.5 : Math.random() * 1 + 0.2;
+      // Slower progress increment
+      const incrementAmount = currentProgress < 60 ? Math.random() * 1 + 0.3 : Math.random() * 0.8 + 0.1;
       currentProgress += incrementAmount;
       
       if (currentProgress > 95) {
@@ -80,7 +83,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         
         currentStepIndex++;
       }
-    }, 1500);
+    }, 1800); // Slower updates for more realistic experience
 
     const startTime = Date.now();
     geminiReport.mutate(query, {
@@ -103,29 +106,32 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         onGenerationStep(`Comprehensive research report complete in ${duration}s! (${estimatedPages} pages, ${totalReferences} citations, ${totalTopics} topic sections)`);
         setIsGenerating(false);
         
-        // Check if the report has sufficient depth
-        const totalContent = result.sections.reduce(
-          (acc, section) => acc + (section.content?.length || 0), 0
-        );
-        
+        // Log detailed report statistics
         const numTopics = result.intermediateResults?.topicStructure?.topics?.length || 0;
         const numSubtopics = result.intermediateResults?.topicStructure?.topics?.reduce(
           (acc: number, topic: any) => acc + (topic.subtopics?.length || 0), 0
         ) || 0;
         
-        const contentSizeInPages = Math.round(totalContent / 3000);
+        const contentSizeInPages = Math.round(totalWords / 300);
         const citationCount = result.references.length;
         
         console.log(`Generated comprehensive report with ${numTopics} topics and ${numSubtopics} subtopics`);
         console.log(`Report contains ${result.sections.length} sections, ${citationCount} references`);
-        console.log(`Report content size: ~${Math.round(totalContent/1000)}K characters (~${contentSizeInPages} pages)`);
+        console.log(`Report content size: ~${totalWords} words (~${contentSizeInPages} pages)`);
         
         onReportGenerated(result);
         
-        // Provide more accurate toast message with improved metrics
-        toast.success(`Research report generated with ${result.sections.length} sections and ${citationCount} citations!`, {
-          duration: 5000
-        });
+        if (result.sections.length < 10 || totalWords < 3000) {
+          toast.warning("Report generated with limited content", {
+            description: "The report has fewer sections or less content than expected. This may be due to API limitations.",
+            duration: 8000
+          });
+        } else {
+          // Provide more accurate toast message with improved metrics
+          toast.success(`Research report generated with ${result.sections.length} sections and ${citationCount} citations!`, {
+            duration: 5000
+          });
+        }
       },
       onError: (err: any) => {
         clearInterval(interval);
@@ -133,14 +139,13 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         onProgress(100);
         
         const errorMessage = err.message || "Unable to generate report";
-        const errorDetails = err.details || {};
         
         onGenerationStep(`Error: ${errorMessage}. Please check your API key in Supabase Edge Function Secrets.`);
         
         setIsGenerating(false);
         toast.error(`Report generation failed: ${errorMessage}`, {
           description: "Check your Gemini API key and edge function logs for details.",
-          duration: 5000
+          duration: 8000
         });
         
         onReportGenerated({
@@ -153,7 +158,6 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
           suggestedPdfs: [],
           suggestedImages: [],
           suggestedDatasets: [],
-          intermediateResults: errorDetails
         });
       }
     });

@@ -23,9 +23,9 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
   const requestBody: any = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: {
-      temperature: 0.1, // Lower temperature for more deterministic, factual responses
+      temperature: 0.05, // Lower temperature for more deterministic, factual responses
       maxOutputTokens: maxOutputTokens,
-      topP: 0.95,
+      topP: 1.0,
       topK: 64, // Increased for better coverage
     },
     safetySettings: [
@@ -36,14 +36,14 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
     ]
   };
 
-  // CRITICAL: Enhanced Google Search grounding with expanded options
+  // Enhanced Google Search grounding with expanded options
   if (enableSearch) {
     console.log("Enabling Google Search grounding with enhanced coverage for comprehensive research");
     requestBody.tools = [
       {
         googleSearchRetrieval: {
           disableAttribution: false, // Ensure proper attributions
-          searchQueriesPerRequest: 10 // Increase search queries per request for broader research
+          searchQueriesPerRequest: 15 // Increase search queries per request for broader research
         }
       }
     ];
@@ -63,12 +63,26 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
     }
 
     const json = await response.json();
-    const result = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    // Improve error handling for response parsing
+    if (!json.candidates || json.candidates.length === 0) {
+      console.error("No candidates returned from Gemini:", json);
+      throw new Error("No candidates returned from Gemini API");
+    }
+    
+    const candidate = json.candidates[0];
+    if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+      console.error("Invalid candidate structure from Gemini:", candidate);
+      throw new Error("Invalid candidate structure from Gemini API");
+    }
+    
+    const result = candidate.content.parts[0].text;
     if (!result) {
-      console.error("Unexpected response format from Gemini:", json);
-      throw new Error("Unexpected response format from Gemini API");
+      console.error("Empty text content from Gemini:", json);
+      throw new Error("Empty text content from Gemini API");
     }
 
+    console.log(`Successfully received response from Gemini (${result.length} chars)`);
     return result;
   } catch (error) {
     console.error("Error calling Gemini API:", error.message);
