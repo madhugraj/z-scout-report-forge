@@ -71,7 +71,8 @@ async function researchSubtopic(mainTopic: string, topicTitle: string, subtopic:
   
   const subtopicPrompt = `
 You are a professional academic researcher conducting a thorough literature analysis on the specific subtopic: 
-"${subtopic}" (which is part of the broader topic "${topicTitle}" within the main research area "${mainTopic}").
+"${subtopic}" (which is part of the broader topic "${topicTitle}" within the main research area "${mainTopic}"). 
+you have to repeat this task for all the "${subtopic} and ${topicTitle}"
 
 Use Google Search to find and analyze AT LEAST 7-10 high-quality, authoritative sources specifically on this subtopic.
 Focus on finding:
@@ -273,7 +274,11 @@ Instructions:
     }
 
     const reportPrompt = `
+<<<<<<< HEAD
+You are a professional research analyst. Use the below content to write a cited detailed report for 40 -50 pages.
+=======
 You are a distinguished research analyst creating a comprehensive, academic-quality report.
+>>>>>>> 5860be8acb0a2f65219735924e83c46d19d21911
 
 Based on the provided abstract and detailed research, create a complete, well-structured research report with the following characteristics:
 
