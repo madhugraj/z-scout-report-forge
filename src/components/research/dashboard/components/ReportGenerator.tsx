@@ -38,19 +38,19 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
       { threshold: 15, message: "Extracting 12-15 main topics and 10-15 subtopics per topic for comprehensive coverage..." },
       { threshold: 20, message: "Building detailed topic and subtopic hierarchy with enhanced breadth..." },
       { threshold: 25, message: "Enabling advanced Google Search grounding for scholarly research..." },
-      { threshold: 30, message: "Comprehensive topic structure established, beginning in-depth research..." },
-      { threshold: 35, message: "Researching Topics 1-5 with scholarly sources and citations..." },
-      { threshold: 40, message: "Researching Topics 6-10 with scholarly sources and citations..." },
-      { threshold: 45, message: "Researching Topics 11-15 with scholarly sources and citations..." },
-      { threshold: 50, message: "Gathering extensive academic citations for all topics..." },
-      { threshold: 55, message: "Conducting deep analysis of academic literature and primary sources..." },
-      { threshold: 60, message: "Cross-referencing and validating scholarly references..." },
-      { threshold: 65, message: "Extracting comprehensive data points from research literature..." },
-      { threshold: 70, message: "Identifying relevant datasets, papers and visual resources..." },
-      { threshold: 75, message: "Synthesizing research findings with proper scholarly citations..." },
-      { threshold: 80, message: "Structuring comprehensive academic research report with complete topic coverage..." },
-      { threshold: 85, message: "Optimizing content depth and breadth across all sections..." },
-      { threshold: 90, message: "Finalizing citations and comprehensive academic references..." },
+      { threshold: 30, message: "Comprehensive topic structure established, beginning detailed research phase..." },
+      { threshold: 35, message: "Conducting in-depth research on Topics 1-4 with enhanced depth..." },
+      { threshold: 40, message: "Conducting in-depth research on Topics 5-8 with enhanced depth..." },
+      { threshold: 45, message: "Gathering extensive scholarly data for all major topics..." },
+      { threshold: 50, message: "Analyzing academic publications and extracting key findings..." },
+      { threshold: 55, message: "Extracting quantitative data and statistics from research literature..." },
+      { threshold: 60, message: "Gathering citations and academic references for all topics..." },
+      { threshold: 65, message: "Cross-referencing scholarly sources for comprehensive coverage..." },
+      { threshold: 70, message: "Compiling research findings with detailed citations..." },
+      { threshold: 75, message: "Synthesizing content across all research topics and subtopics..." },
+      { threshold: 80, message: "Structuring comprehensive academic research report..." },
+      { threshold: 85, message: "Generating detailed content sections with citations..." },
+      { threshold: 90, message: "Finalizing all research sections with comprehensive content..." },
       { threshold: 95, message: "Performing quality assurance on comprehensive research report..." }
     ];
     
@@ -100,7 +100,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
                                                          !s.title.toLowerCase().includes('references') &&
                                                          !s.title.toLowerCase().includes('appendix')).length || 0;
         
-        onGenerationStep(`Comprehensive research report generation complete in ${duration}s! (${estimatedPages} pages, ${totalReferences} citations, ${totalTopics} topic sections)`);
+        onGenerationStep(`Comprehensive research report complete in ${duration}s! (${estimatedPages} pages, ${totalReferences} citations, ${totalTopics} topic sections)`);
         setIsGenerating(false);
         
         // Check if the report has sufficient depth
@@ -123,7 +123,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         onReportGenerated(result);
         
         // Provide more accurate toast message with improved metrics
-        toast.success(`Comprehensive research report generated with ${result.sections.length} sections and ${citationCount} citations across ${numTopics} major topics!`, {
+        toast.success(`Research report generated with ${result.sections.length} sections and ${citationCount} citations!`, {
           duration: 5000
         });
       },
@@ -135,7 +135,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         const errorMessage = err.message || "Unable to generate report";
         const errorDetails = err.details || {};
         
-        onGenerationStep(`Error: ${errorMessage}. This appears to be an issue with the Gemini API. Please check your API key in Supabase Edge Function Secrets.`);
+        onGenerationStep(`Error: ${errorMessage}. Please check your API key in Supabase Edge Function Secrets.`);
         
         setIsGenerating(false);
         toast.error(`Report generation failed: ${errorMessage}`, {
@@ -143,21 +143,12 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
           duration: 5000
         });
         
-        // Create a basic error report so the UI can still display something
         onReportGenerated({
-          title: "Error Generating Comprehensive Research Report",
+          title: "Error Generating Research Report",
           sections: [{
             title: "Error Details",
-            content: `We encountered an error while generating your research report: "${errorMessage}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets. You may also need to verify that the API key has access to the Gemini model specified in the edge functions.`
-          }, 
-          ...(errorDetails.abstract ? [{
-            title: "Generated Abstract",
-            content: errorDetails.abstract
-          }] : []),
-          ...(errorDetails.mainTopic ? [{
-            title: "Main Topic",
-            content: errorDetails.mainTopic
-          }] : [])],
+            content: `We encountered an error while generating your research report: "${errorMessage}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets.`
+          }],
           references: [],
           suggestedPdfs: [],
           suggestedImages: [],

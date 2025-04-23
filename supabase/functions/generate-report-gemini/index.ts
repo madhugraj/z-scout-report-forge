@@ -22,7 +22,9 @@ serve(async (req) => {
       maxReferences = 50,
       includeDataPoints = true,
       expandSubtopicCoverage = false,
-      improveResearchDepth = false
+      improveResearchDepth = false,
+      minimumTopicsRequired = 10,
+      minimumSubtopicsPerTopic = 8
     } = await req.json();
     
     if (!GEMINI_API_KEY) {
@@ -64,8 +66,8 @@ ${abstract}
 
 Extract:
 1. A clear, concise main topic (1 line)
-2. A list of **AT LEAST 10-12 major topics** related to this research area. Each topic should be broad and substantive enough to form a major chapter in a comprehensive ${pageTarget}-page research report.
-3. For EACH major topic, provide **10 to 15 specific, focused subtopics** that warrant detailed investigation.
+2. A list of **AT LEAST ${minimumTopicsRequired}-${minimumTopicsRequired + 2} major topics** related to this research area. Each topic should be broad and substantive enough to form a major chapter in a comprehensive ${pageTarget}-page research report.
+3. For EACH major topic, provide **${minimumSubtopicsPerTopic} to ${minimumSubtopicsPerTopic + 5} specific, focused subtopics** that warrant detailed investigation.
 
 Return in this JSON format ONLY:
 {
@@ -73,13 +75,13 @@ Return in this JSON format ONLY:
   "topics": [
     {
       "title": "First Major Topic",
-      "subtopics": ["Subtopic 1.1", "Subtopic 1.2", ..., "Subtopic 1.15"]
+      "subtopics": ["Subtopic 1.1", "Subtopic 1.2", ..., "Subtopic 1.${minimumSubtopicsPerTopic + 5}"]
     },
     {
       "title": "Second Major Topic",
-      "subtopics": ["Subtopic 2.1", "Subtopic 2.2", ..., "Subtopic 2.15"]
+      "subtopics": ["Subtopic 2.1", "Subtopic 2.2", ..., "Subtopic 2.${minimumSubtopicsPerTopic + 5}"]
     },
-    ...and so on for at least 10-12 major topics
+    ...and so on for at least ${minimumTopicsRequired}-${minimumTopicsRequired + 2} major topics
   ]
 }
 
@@ -87,7 +89,7 @@ Instructions:
 - Ensure each major topic is distinct, substantive, and covers a unique, essential aspect of the research field.
 - Each subtopic should be specific enough for focused research and designed to generate detailed, evidence-based sections in a professional report.
 - Output valid JSON only, *no commentary or markdown*.
-- For maximum depth, err on the side of giving *more subtopics per topic (prefer 15 where possible)*.
+- For maximum depth, err on the side of giving *more subtopics per topic (prefer ${minimumSubtopicsPerTopic + 5} where possible)*.
 - IMPORTANT: The final report will be ${pageTarget} pages, so ensure ALL topics and subtopics are substantive enough to support this length.
 ${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO MAJOR SUBTOPICS OMITTED." : ""}
 `;
@@ -150,12 +152,12 @@ ${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO
     
     // Determine how many topics to research based on available time and capacity
     const maxTopicsToResearch = forceDepth || improveResearchDepth ? 
-      Math.min(12, topics.length) : 
-      Math.min(8, topics.length);
+      Math.min(Math.max(6, Math.min(topics.length, minimumTopicsRequired)), topics.length) : 
+      Math.min(Math.max(4, Math.min(topics.length, minimumTopicsRequired / 2)), topics.length);
       
     const maxSubtopicsPerTopic = forceDepth || improveResearchDepth ? 
-      Math.min(12, Math.max(...topics.map(t => t.subtopics.length))) : 
-      Math.min(6, Math.max(...topics.map(t => t.subtopics.length)));
+      Math.min(Math.max(6, Math.min(12, minimumSubtopicsPerTopic)), Math.max(...topics.map(t => t.subtopics.length))) : 
+      Math.min(Math.max(4, Math.min(8, minimumSubtopicsPerTopic / 2)), Math.max(...topics.map(t => t.subtopics.length)));
     
     const topicsToResearch = topics.slice(0, maxTopicsToResearch);
     console.log(`Will research ${maxTopicsToResearch} topics with up to ${maxSubtopicsPerTopic} subtopics each`);
@@ -223,7 +225,7 @@ ${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO
     });
     
     // If the research is very large, truncate it to avoid token limits
-    const maxResearchLength = requestDepth === "maximum" ? 70000 : 50000;
+    const maxResearchLength = requestDepth === "maximum" ? 100000 : 80000;
     if (researchContentForPrompt.length > maxResearchLength) {
       console.log(`Research content is large (${researchContentForPrompt.length} chars), truncating for final report generation`);
       researchContentForPrompt = researchContentForPrompt.substring(0, maxResearchLength) + "\n\n[Additional research content truncated due to size limitations]";
@@ -296,7 +298,13 @@ Format your response as a single JSON object with this structure:
   ]
 }
 
-IMPORTANT: Ensure all content is properly cited, factual, and grounded in the research provided. Include only real citations and references found during the research process. Use all the detailed research extensively to create substantial sections with evidence and specific data points.`;
+IMPORTANT: 
+1. CREATE FULL SECTIONS FOR EACH TOPIC AND SUBTOPIC based on the research content
+2. USE ALL THE DETAILED RESEARCH to create substantial body sections
+3. Include ALL the statistics, data points, and specific information from the research
+4. NEVER create a report with just section titles and minimal content
+5. The report should be at least ${pageTarget} pages equivalent in length
+6. Include at least ${maxReferences} properly formatted references`;
 
     console.log(`Stage 4: Generating final ${requestDepth} report with ${useAcademicFormat ? 'academic' : 'standard'} formatting...`);
     // Use a larger token limit for the final report
@@ -323,7 +331,7 @@ IMPORTANT: Ensure all content is properly cited, factual, and grounded in the re
       retryAttempted: retryAttempt,
       intermediateResults: {
         topicStructure,
-        researchSample: researchedContent?.[topics[0].title]?.research?.[0]?.slice(0, 500) || "No sample"
+        researchSample: researchedContent?.[topics[0].title]?.research?.[0]?.slice(0, 1000) || "No sample"
       }
     };
 

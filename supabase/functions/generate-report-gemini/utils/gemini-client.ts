@@ -9,7 +9,6 @@ export const corsHeaders = {
 // Get the API key from environment variables
 export const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-// Updated model name to use the correct Gemini model that's available
 // Using gemini-1.5-flash-latest which is available and supported
 export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
 
@@ -24,7 +23,7 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
   const requestBody: any = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: {
-      temperature: 0.2, // Lower temperature for more factual, structured responses
+      temperature: 0.1, // Lower temperature for more deterministic, factual responses
       maxOutputTokens: maxOutputTokens,
       topP: 0.95,
       topK: 64, // Increased for better coverage
@@ -37,13 +36,14 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
     ]
   };
 
-  // CRITICAL: Enable Google Search grounding with expanded options
+  // CRITICAL: Enhanced Google Search grounding with expanded options
   if (enableSearch) {
     console.log("Enabling Google Search grounding with enhanced coverage for comprehensive research");
     requestBody.tools = [
       {
         googleSearchRetrieval: {
-          disableAttribution: false // Ensure proper attributions for better references
+          disableAttribution: false, // Ensure proper attributions
+          searchQueriesPerRequest: 10 // Increase search queries per request for broader research
         }
       }
     ];
