@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import CitationPopover from '../CitationPopover';
 import { ReportSection, Reference, SuggestedImage, SuggestedPdf } from '@/hooks/useGeminiReport';
@@ -7,6 +6,9 @@ import { toast } from '@/components/ui/sonner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon, FileText, BarChart, Book, FileCheck, Database, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CitationRenderer from "./CitationRenderer";
+import TopicStructureSection from "./TopicStructureSection";
+import ReferencesSection from "./ReferencesSection";
 
 interface ResearchContentProps {
   sections: ReportSection[];
@@ -112,7 +114,9 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
         return (
           <ul key={idx} className="list-disc pl-6 mb-4 text-gray-700">
             {items.map((item, i) => (
-              <li key={i}>{processCitations(item, references)}</li>
+              <li key={i}>
+                <CitationRenderer text={item} references={references} />
+              </li>
             ))}
           </ul>
         );
@@ -123,7 +127,9 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
         return (
           <ol key={idx} className="list-decimal pl-6 mb-4 text-gray-700">
             {items.map((item, i) => (
-              <li key={i}>{processCitations(item, references)}</li>
+              <li key={i}>
+                <CitationRenderer text={item} references={references} />
+              </li>
             ))}
           </ol>
         );
@@ -148,7 +154,9 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
                   {dataRows.map((row, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       {row.map((cell, ci) => (
-                        <td key={ci} className="py-3 px-4 text-sm text-gray-700 border-b">{processCitations(cell, references)}</td>
+                        <td key={ci} className="py-3 px-4 text-sm text-gray-700 border-b">
+                          <CitationRenderer text={cell} references={references} />
+                        </td>
                       ))}
                     </tr>
                   ))}
@@ -157,98 +165,20 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
             </div>
           );
         } catch (e) {
-          return <p key={idx} className="text-gray-700 mb-4">{processCitations(block, references)}</p>;
+          return <p key={idx} className="text-gray-700 mb-4">
+            <CitationRenderer text={block} references={references} />
+          </p>;
         }
       }
 
       return (
-        <p key={idx} className="text-gray-700 mb-4">{processCitations(block, references)}</p>
+        <p key={idx} className="text-gray-700 mb-4">
+          <CitationRenderer text={block} references={references} />
+        </p>
       );
     });
   };
 
-  // Enhanced citation processor that better handles academic citations
-  const processCitations = (text: string, references: Reference[]) => {
-    // Handle multiple citation formats: [1], [Smith, 2021], (Smith et al., 2021)
-    const citationRegexes = [
-      { regex: /\[(\d+)\]/g, type: 'numeric' },
-      { regex: /\[([\w\s]+),?\s+(\d{4})\]/g, type: 'author-year-bracket' },
-      { regex: /\(([\w\s]+)(?:\set\sal\.?)?,?\s+(\d{4})\)/g, type: 'author-year-paren' }
-    ];
-    
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-    
-    // Find all matches from all regex patterns and sort them by position
-    const allMatches: {index: number; length: number; reference: Reference; type: string}[] = [];
-    
-    citationRegexes.forEach(({ regex, type }) => {
-      let match;
-      while ((match = regex.exec(text)) !== null) {
-        let reference: Reference | undefined;
-        
-        if (type === 'numeric') {
-          const citationNumber = parseInt(match[1], 10);
-          reference = references.find(ref => ref.id === citationNumber);
-        } else {
-          // Author-year citation
-          const authorName = match[1];
-          const year = match[2];
-          reference = references.find(ref => 
-            ref.authors.toLowerCase().includes(authorName.toLowerCase()) && 
-            ref.year.toString() === year
-          );
-        }
-        
-        // If reference found, add to matches
-        if (reference) {
-          allMatches.push({
-            index: match.index,
-            length: match[0].length,
-            reference,
-            type
-          });
-        }
-      }
-    });
-    
-    // Sort matches by position in text
-    allMatches.sort((a, b) => a.index - b.index);
-    
-    // Process matches in order
-    for (const match of allMatches) {
-      if (lastIndex < match.index) {
-        parts.push(text.substring(lastIndex, match.index));
-      }
-      
-      parts.push(
-        <CitationPopover
-          key={`citation-${match.index}`}
-          reference={{
-            id: match.reference.id,
-            title: match.reference.title,
-            authors: match.reference.authors,
-            year: match.reference.year,
-            journal: match.reference.journal,
-            url: match.reference.url,
-            doi: match.reference.doi
-          }}
-          index={match.reference.id - 1}
-          inline={true}
-        />
-      );
-      
-      lastIndex = match.index + match.length;
-    }
-
-    if (lastIndex < text.length) {
-      parts.push(text.substring(lastIndex));
-    }
-    
-    return parts;
-  };
-
-  // Calculate report statistics
   const totalWords = sections.reduce((count, section) => {
     const wordCount = section.content?.split(/\s+/).length || 0;
     return count + wordCount;
@@ -323,25 +253,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
       )}
 
       {showTopicStructure && intermediateResults?.topicStructure && (
-        <div className="mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
-          <h3 className="text-lg font-medium text-slate-700 mb-2">Complete Topic Structure</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {intermediateResults.topicStructure.topics.map((topic, index) => (
-              <div key={index} className="bg-white p-3 rounded border border-slate-200">
-                <h4 className="text-sm font-medium text-violet-700 mb-2">{topic.title}</h4>
-                <ul className="text-xs text-slate-600 list-disc pl-5 space-y-0.5">
-                  {topic.subtopics.map((subtopic, i) => (
-                    <li key={i}>{subtopic}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 text-xs text-slate-500">
-            <p>This structure shows the full scope of the research report with all topics and subtopics to be covered. 
-            The generated report should address all major topics and relevant subtopics with detailed analysis.</p>
-          </div>
-        </div>
+        <TopicStructureSection structure={intermediateResults.topicStructure} onClose={() => setShowTopicStructure(false)} />
       )}
 
       {showPdfs && suggestedPdfs && suggestedPdfs.length > 0 && (
@@ -474,33 +386,11 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
       ))}
 
       {showReferences && references.length > 0 && (
-        <div className="mt-12 border-t pt-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800">References</h2>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowReferences(!showReferences)}
-            >
-              {showReferences ? "Hide References" : "Show References"}
-            </Button>
-          </div>
-          <div className="space-y-4">
-            {references.map((reference, index) => (
-              <div key={index} className="text-gray-700 p-2 border-b border-gray-100">
-                <p className="text-sm">
-                  [{reference.id}] {reference.authors} ({reference.year}). <strong>{reference.title}</strong>. <em>{reference.journal}</em>.
-                  {reference.url && (
-                    <span> <a href={reference.url} className="text-violet-600 hover:underline" target="_blank" rel="noopener noreferrer">Link</a></span>
-                  )}
-                  {reference.doi && !reference.url && (
-                    <span> <a href={`https://doi.org/${reference.doi}`} className="text-violet-600 hover:underline" target="_blank" rel="noopener noreferrer">DOI: {reference.doi}</a></span>
-                  )}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ReferencesSection
+          references={references}
+          show={showReferences && references.length > 0}
+          onToggle={() => setShowReferences(!showReferences)}
+        />
       )}
     </div>
   );
