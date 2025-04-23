@@ -7,8 +7,8 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
   try {
     console.log("Starting comprehensive report generation for query:", query);
 
-    // First, enhance the query with specific instructions for depth
-    const enhancedQuery = `${query} - COMPREHENSIVE ANALYSIS: Produce a detailed 40-50 page research report with in-depth analysis of all topics and subtopics, extensive data, statistics, and academic references`;
+    // Enhanced query with more specific academic research instructions
+    const enhancedQuery = `${query} - COMPREHENSIVE ANALYSIS: Produce a detailed 40-50 page academic research report with in-depth analysis of all topics and subtopics, extensive data, statistics, scholarly references, and proper citations. Include clear methodology and literature review sections.`;
 
     const { data, error } = await supabase.functions.invoke('generate-report-gemini', {
       body: { 
@@ -16,7 +16,11 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
         requestDepth: "comprehensive", 
         pageTarget: "40-50",
         generateFullReport: true,
-        includeAllSubtopics: true
+        includeAllSubtopics: true,
+        includeCitations: true,
+        useAcademicFormat: true,
+        maxReferences: 75, // Increased reference count
+        includeDataPoints: true // Ensure data and statistics are included
       }
     });
 
@@ -40,17 +44,25 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
 
     const report = data.report;
 
-    // Log report statistics to help with debugging
+    // Log detailed report statistics for debugging
     const sectionCount = report.sections?.length || 0;
     const referenceCount = report.references?.length || 0;
     const totalContentLength = report.sections?.reduce((sum, section) => 
       sum + (section.content?.length || 0), 0) || 0;
+    const pdfCount = report.suggestedPdfs?.length || 0;
+    const imageCount = report.suggestedImages?.length || 0;
+    const datasetCount = report.suggestedDatasets?.length || 0;
     
-    console.log(`Report statistics: ${sectionCount} sections, ${referenceCount} references, ~${Math.round(totalContentLength/1000)}K chars content`);
+    console.log(`Report statistics: ${sectionCount} sections, ${referenceCount} references, ${pdfCount} PDFs, ${imageCount} images, ${datasetCount} datasets, ~${Math.round(totalContentLength/1000)}K chars content`);
 
-    // If the report is too small, we should retry with stronger parameters
-    if (totalContentLength < 10000 && !data.retryAttempted) {
-      console.log("Report content is too small, retrying with enhanced parameters...");
+    // If the report is too small or has too few references, retry with stronger parameters
+    const isReportTooSmall = totalContentLength < 25000;
+    const hasTooFewReferences = referenceCount < 15;
+    const hasInsufficientSections = sectionCount < 8;
+    
+    if ((isReportTooSmall || hasTooFewReferences || hasInsufficientSections) && !data.retryAttempted) {
+      console.log(`Report quality insufficient (size: ${Math.round(totalContentLength/1000)}K chars, refs: ${referenceCount}, sections: ${sectionCount}), retrying with enhanced parameters...`);
+      
       const { data: retryData, error: retryError } = await supabase.functions.invoke('generate-report-gemini', {
         body: { 
           query: enhancedQuery,
@@ -59,6 +71,12 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
           generateFullReport: true,
           includeAllSubtopics: true,
           forceDepth: true,
+          maxReferences: 100, // Even more references on retry
+          expandSubtopicCoverage: true, // New parameter to ensure broader coverage
+          improveResearchDepth: true, // New parameter to increase depth
+          includeCitations: true,
+          useAcademicFormat: true,
+          includeDataPoints: true,
           retryAttempt: true
         }
       });
@@ -67,11 +85,15 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
         const retryReport = retryData.report;
         const retryContentLength = retryReport.sections?.reduce((sum, section) => 
           sum + (section.content?.length || 0), 0) || 0;
+        const retryReferenceCount = retryReport.references?.length || 0;
+        const retryPdfCount = retryReport.suggestedPdfs?.length || 0;
           
-        console.log(`Retry generated ${retryReport.sections?.length} sections with ~${Math.round(retryContentLength/1000)}K chars`);
+        console.log(`Retry generated ${retryReport.sections?.length} sections with ~${Math.round(retryContentLength/1000)}K chars and ${retryReferenceCount} references, ${retryPdfCount} PDFs`);
         
-        if (retryContentLength > totalContentLength) {
-          console.log("Using retry report as it has more content");
+        const isRetryBetter = retryContentLength > totalContentLength || retryReferenceCount > referenceCount;
+        
+        if (isRetryBetter) {
+          console.log(`Using retry report as it has ${isRetryBetter ? 'more content and/or references' : 'better quality'}`);
           return {
             ...retryReport,
             sections: retryReport.sections || [],
@@ -83,8 +105,13 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
               ...data.intermediateResults,
               retryStats: {
                 originalSize: totalContentLength,
+                originalRefs: referenceCount,
+                originalSections: sectionCount,
                 retrySize: retryContentLength,
-                improvement: `${Math.round((retryContentLength - totalContentLength) / totalContentLength * 100)}%`
+                retryRefs: retryReferenceCount,
+                retrySections: retryReport.sections?.length || 0,
+                contentImprovement: `${Math.round((retryContentLength - totalContentLength) / Math.max(1, totalContentLength) * 100)}%`,
+                refImprovement: `${Math.round((retryReferenceCount - referenceCount) / Math.max(1, referenceCount) * 100)}%`
               }
             }
           };
@@ -92,6 +119,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
       }
     }
 
+    // Normalize and process the report structure to ensure all fields are present
     const processedReport = {
       ...report,
       sections: report.sections || [],
@@ -114,6 +142,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
 
     const details = error.details || {};
 
+    // Create a more informative error report
     const errorReport = {
       ...fallbackReport,
       title: `Error Report for "${query}"`,
@@ -124,7 +153,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
       intermediateResults: details
     } as GeminiReport;
 
-    // Optionally append additional info if present
+    // Append any partial results if available
     if (details.abstract) {
       errorReport.sections.push({
         title: "Generated Abstract",
@@ -136,6 +165,13 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
       errorReport.sections.push({
         title: "Extracted Topics",
         content: `**Main Topic**: ${details.mainTopic}\n\n**Subtopics**:\n${details.subtopics.map((sub: string) => `- ${sub}`).join('\n')}`
+      });
+    }
+
+    if (details.topicStructure) {
+      errorReport.sections.push({
+        title: "Topic Structure",
+        content: `**Research Structure**:\n\n${JSON.stringify(details.topicStructure, null, 2)}`
       });
     }
 

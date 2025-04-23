@@ -1,3 +1,4 @@
+
 // Generate full report with Google grounding and comprehensive search
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -18,7 +19,7 @@ async function callGemini(prompt: string, enableSearch = true, maxOutputTokens =
   const requestBody: any = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: {
-      temperature: 0.1, // Lower temperature for more detailed responses
+      temperature: 0.1, // Lower temperature for more structured, scholarly responses
       maxOutputTokens: maxOutputTokens,
       topP: 0.9,
       topK: 40,
@@ -64,47 +65,64 @@ async function callGemini(prompt: string, enableSearch = true, maxOutputTokens =
   return json.candidates[0].content.parts[0].text;
 }
 
-// Function to research a specific subtopic with search grounding
-async function researchSubtopic(mainTopic: string, topicTitle: string, subtopic: string, depth = "comprehensive") {
+// Enhanced function to research a specific subtopic with search grounding
+// Now with improved academic citation prompting and statistical data focus
+async function researchSubtopic(mainTopic: string, topicTitle: string, subtopic: string, depth = "comprehensive", includeCitations = true) {
   console.log(`Researching subtopic: "${subtopic}" under topic "${topicTitle}"`);
   
   const depthInstructions = depth === "maximum" ? 
-    "Produce an EXTREMELY DETAILED, journal-quality research section of 2500-3000 words." :
-    "Produce a comprehensive research section of at least 1500-2000 words.";
+    "Produce an EXTREMELY DETAILED, journal-quality research section of 3000-4000 words with extensive citations." :
+    "Produce a comprehensive research section of at least 2000-2500 words with thorough citations.";
   
+  const citationInstructions = includeCitations ?
+    `
+Include proper academic citations with the following guidelines:
+- Use standard academic in-text citations in [Author, Year] format
+- For direct quotes, include page numbers when available: [Author, Year, p. X]
+- When citing multiple sources, separate them with semicolons: [Author, Year; Author2, Year2]
+- When referencing specific data points or statistics, ALWAYS include the citation immediately after
+- Ensure every factual claim, statistic, or specific research finding has a proper citation
+- For major authors or seminal works in the field, mention author names directly in the text
+` : "";
+
   const subtopicPrompt = `
-You are a professional academic researcher conducting a thorough literature analysis on the specific subtopic: 
+You are an experienced academic researcher with expertise in "${mainTopic}" preparing a section for a prestigious peer-reviewed journal article on the specific subtopic: 
 "${subtopic}" (which is part of the broader topic "${topicTitle}" within the main research area "${mainTopic}").
 
-Use Google Search to find and analyze AT LEAST 10-15 high-quality, authoritative sources specifically on this subtopic.
-Focus on finding:
-- Recent peer-reviewed research papers
-- Official statistics and data
-- Expert analyses from authoritative organizations
-- Case studies and real-world applications
-- Historical development and context
+Use Google Search to find and analyze AT LEAST 15-20 high-quality, authoritative sources specifically on this subtopic, including:
+- Recent peer-reviewed research papers (especially from the last 5 years)
+- Meta-analyses and systematic reviews when available
+- Official statistics, datasets, and government reports
+- Expert analyses from authoritative organizations and research institutes
+- Historical development and foundational research on this subtopic
+- Real-world case studies and applications with measurable outcomes
 
-For each source you find:
-1. Extract key findings, methodologies, and insights
-2. Note statistics, data points, and quantitative evidence (include ACTUAL numbers, percentages, and metrics)
-3. Identify author credentials and institutional affiliations
-4. Evaluate the significance and limitations of the research
-5. Include direct quotes (with proper citation) when they provide unique value
+For each source you find, extract and incorporate:
+1. Key findings with specific numerical data (percentages, metrics, statistical significance)
+2. Precise methodologies including sample sizes, time periods, and geographic scope
+3. Author credentials, institutional affiliations, and funding sources when relevant
+4. Direct quotes that provide unique expert insight (with proper citation)
+5. Critical limitations acknowledged in the research
+6. Contradictory or competing findings across different studies
 
-${depthInstructions} Your section must include:
-- A comprehensive introduction to this specific subtopic
-- Detailed analysis of findings across multiple sources with STATISTICAL EVIDENCE
-- Proper in-text citations in [Author, Year] format
-- Tables or lists of key statistics/findings when relevant
-- Critical evaluation of the research landscape on this subtopic
-- Discussion of gaps or areas for further research
+${depthInstructions} Your section MUST include:
+- A nuanced introduction to this specific subtopic with its scholarly context
+- Detailed analysis with primary source quotes and paraphrasing
+- NUMEROUS SPECIFIC STATISTICS AND DATA POINTS (with actual numbers, not just general trends)
+- At least 3-4 tables, lists or structured presentations of key findings
+- Critical evaluation of the current research landscape on this subtopic
+- Identification of research gaps or methodological issues
+- Future research directions
 
-This is for a DETAILED academic research report of 40-50 PAGES, so your analysis must be substantive, evidence-based, and extraordinarily detailed. 
-Do not summarize or provide a general overview - this needs to be EXHAUSTIVE scholarly research with actual statistics, numbers, and quantitative data.`;
+${citationInstructions}
+
+This is for a DETAILED academic research report of ${depth === "maximum" ? "60-80" : "40-50"} PAGES, so your analysis must be substantive, evidence-based, and extraordinarily detailed. 
+Do not summarize or provide a general overview - this needs to be EXHAUSTIVE scholarly research with actual statistics, numbers, and quantitative data.
+Include SPECIFIC URLS to key research papers, reports, and datasets mentioned.`;
 
   try {
     // Always enable search for subtopic research to get grounded information
-    const research = await callGemini(subtopicPrompt, true, depth === "maximum" ? 20000 : 12000);
+    const research = await callGemini(subtopicPrompt, true, depth === "maximum" ? 20000 : 16000);
     console.log(`Successfully researched subtopic "${subtopic}": ${research.length} chars`);
     return research;
   } catch (error) {
@@ -117,7 +135,22 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { query, requestDepth = "comprehensive", pageTarget = "40-50", generateFullReport = true, includeAllSubtopics = true, forceDepth = false, retryAttempt = false } = await req.json();
+    const { 
+      query, 
+      requestDepth = "comprehensive", 
+      pageTarget = "40-50", 
+      generateFullReport = true, 
+      includeAllSubtopics = true, 
+      forceDepth = false, 
+      retryAttempt = false,
+      includeCitations = true,
+      useAcademicFormat = true,
+      maxReferences = 50,
+      includeDataPoints = true,
+      expandSubtopicCoverage = false,
+      improveResearchDepth = false
+    } = await req.json();
+    
     if (!GEMINI_API_KEY) {
       return new Response(JSON.stringify({ error: "Missing API key" }), {
         status: 500,
@@ -127,18 +160,20 @@ serve(async (req) => {
 
     console.log(`Starting ${requestDepth} research process for query:`, query);
     console.log(`Target: ${pageTarget} pages, Full report: ${generateFullReport}, Include all subtopics: ${includeAllSubtopics}, Force depth: ${forceDepth}`);
+    console.log(`Academic format: ${useAcademicFormat}, Citations: ${includeCitations}, Max references: ${maxReferences}`);
 
     // Stage 1: Generate Comprehensive Abstract
     const abstractPrompt = `
-Generate a comprehensive, professional 400-500 word abstract for a detailed research report on this topic:
+Generate a comprehensive, professional 500-600 word abstract for a detailed research report on this topic:
 "${query}"
 
 The abstract should:
-- Provide a clear overview of the research scope
-- Highlight the significance and relevance of the topic
-- Mention key methodologies, findings, and implications
-- Use academic/professional language appropriate for the domain
+- Provide a clear overview of the research scope and significance
+- Highlight key methodological approaches and academic relevance
+- Identify major themes, findings, and implications
+- Use formal academic language appropriate for scholarly publication
 - Be thorough enough to guide a comprehensive research report of ${pageTarget} pages
+${useAcademicFormat ? "- Follow formal academic writing conventions throughout" : ""}
 
 Your abstract will form the foundation for an extensive research report with multiple major topics and subtopics.`;
 
@@ -180,6 +215,7 @@ Instructions:
 - Output valid JSON only, *no commentary or markdown*.
 - For maximum depth, err on the side of giving *more subtopics per topic (prefer 15 where possible)*.
 - IMPORTANT: The final report will be ${pageTarget} pages, so ensure ALL topics and subtopics are substantive enough to support this length.
+${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO MAJOR SUBTOPICS OMITTED." : ""}
 `;
 
     console.log("Stage 2: Extracting extensive topic structure...");
@@ -236,16 +272,22 @@ Instructions:
     const researchedContent = {};
     
     // Determine how many topics to research based on available time and capacity
-    const maxTopicsToResearch = forceDepth ? Math.min(10, topics.length) : Math.min(6, topics.length);
-    const maxSubtopicsPerTopic = forceDepth ? Math.min(10, Math.max(...topics.map(t => t.subtopics.length))) : 5;
+    // Expand coverage when specifically requested
+    const maxTopicsToResearch = forceDepth || improveResearchDepth ? 
+      Math.min(12, topics.length) : 
+      Math.min(8, topics.length);
+      
+    const maxSubtopicsPerTopic = forceDepth || improveResearchDepth ? 
+      Math.min(12, Math.max(...topics.map(t => t.subtopics.length))) : 
+      Math.min(6, Math.max(...topics.map(t => t.subtopics.length)));
     
     const topicsToResearch = topics.slice(0, maxTopicsToResearch);
     console.log(`Will research ${maxTopicsToResearch} topics with up to ${maxSubtopicsPerTopic} subtopics each`);
     
-    // Function to select which subtopics to research
+    // Function to select which subtopics to research - improved to ensure better coverage
     const getBalancedSubtopics = (topic) => {
       // If we want to include all subtopics or are forcing depth, take as many as possible
-      if (includeAllSubtopics || forceDepth) {
+      if (includeAllSubtopics || forceDepth || improveResearchDepth) {
         return topic.subtopics.slice(0, maxSubtopicsPerTopic);
       }
       
@@ -256,26 +298,31 @@ Instructions:
       // Always take the first subtopic
       subtopics.push(topic.subtopics[0]);
       
-      // Add middle subtopic if there are at least 3
+      // Add 1-2 from beginning section
+      if (len >= 5) {
+        subtopics.push(topic.subtopics[1]);
+        if (len >= 9) subtopics.push(topic.subtopics[2]);
+      }
+      
+      // Add middle subtopics
       if (len >= 3) {
-        subtopics.push(topic.subtopics[Math.floor(len / 2)]);
-      }
-      
-      // Add last subtopic if there are at least 2
-      if (len >= 2) {
-        subtopics.push(topic.subtopics[len - 1]);
-      }
-      
-      // Add more if we need to
-      let i = 1;
-      while (subtopics.length < Math.min(maxSubtopicsPerTopic, len) && i < len - 1) {
-        if (!subtopics.includes(topic.subtopics[i])) {
-          subtopics.push(topic.subtopics[i]);
+        const mid = Math.floor(len / 2);
+        subtopics.push(topic.subtopics[mid]);
+        if (len >= 7) {
+          subtopics.push(topic.subtopics[mid-1]);
+          if (len >= 11) subtopics.push(topic.subtopics[mid+1]);
         }
-        i++;
       }
       
-      return subtopics;
+      // Add subtopics from latter part
+      if (len >= 4) {
+        subtopics.push(topic.subtopics[len-2]);
+        subtopics.push(topic.subtopics[len-1]); // Always include last
+        if (len >= 8) subtopics.push(topic.subtopics[len-3]);
+      }
+      
+      // Remove duplicates
+      return [...new Set(subtopics)];
     };
     
     // Research each topic and its subtopics in parallel for efficiency
@@ -288,7 +335,7 @@ Instructions:
       
       // Research each subtopic in this topic (in parallel for efficiency)
       const subtopicResearchPromises = subtopics.map(subtopic => 
-        researchSubtopic(mainTopic, topicTitle, subtopic, requestDepth)
+        researchSubtopic(mainTopic, topicTitle, subtopic, requestDepth, includeCitations)
       );
       
       // Wait for all subtopic research to complete
@@ -302,7 +349,8 @@ Instructions:
       
       return {
         topic: topicTitle,
-        numberOfSubtopicsResearched: subtopics.length
+        numberOfSubtopicsResearched: subtopics.length,
+        totalResearchSize: subtopicResearchResults.reduce((sum, r) => sum + r.length, 0)
       };
     });
     
@@ -313,7 +361,12 @@ Instructions:
     const totalSubtopicsResearched = topicResearchResults.reduce(
       (sum, result) => sum + result.numberOfSubtopicsResearched, 0
     );
+    const totalResearchSize = topicResearchResults.reduce(
+      (sum, result) => sum + result.totalResearchSize, 0
+    );
+    
     console.log(`Research completed for ${topicResearchResults.length} topics and ${totalSubtopicsResearched} subtopics`);
+    console.log(`Total research content: ~${Math.round(totalResearchSize/1000)}K characters`);
 
     // Stage 4: Generate Final Comprehensive Report using the research
     // Prepare the research content for the final report generation
@@ -329,14 +382,16 @@ Instructions:
     });
     
     // If the research is very large, truncate it to avoid token limits
-    const maxResearchLength = 40000; // Larger limit for more research data
+    // But allow for larger research data when generating maximum depth reports
+    const maxResearchLength = requestDepth === "maximum" ? 70000 : 50000;
     if (researchContentForPrompt.length > maxResearchLength) {
       console.log(`Research content is large (${researchContentForPrompt.length} chars), truncating for final report generation`);
       researchContentForPrompt = researchContentForPrompt.substring(0, maxResearchLength) + "\n\n[Additional research content truncated due to size limitations]";
     }
 
+    // Enhanced report generation prompt with improved academic formatting and citation requirements
     const reportPrompt = `
-You are a distinguished research analyst creating a comprehensive, academic-quality report.
+You are a distinguished academic researcher creating a comprehensive, ${useAcademicFormat ? "scholarly" : "professional"} research report.
 
 Based on the provided abstract and detailed research, create a complete, well-structured research report with the following characteristics:
 
@@ -356,33 +411,44 @@ Topic Structure:
 ${topics.map(t => `- ${t.title}`).join('\n')}
 
 Your report MUST include:
-1. An informative, specific title
-2. An executive summary
-3. A table of contents
-4. Introduction section contextualizing the research
+1. An informative, specific title that clearly represents the academic scope
+2. An executive summary that highlights key findings and implications
+3. A detailed table of contents with hierarchical structure
+4. Introduction section contextualizing the research within the academic literature
 5. Main body organized by the major topics and subtopics WITH ALL THE DETAILED RESEARCH CONTENT
-6. Conclusion summarizing key findings
-7. Extensive references section with ALL cited sources (at least 30-50 references)
+6. Conclusion synthesizing key findings and identifying future research directions
+7. Extensive references section with ALL cited sources (${maxReferences} references minimum)
 8. Appendices with relevant supplementary material
+
+${useAcademicFormat ? `
+The report should follow formal academic conventions:
+- Use scholarly language and third-person perspective
+- Include proper in-text citations for ALL factual claims
+- Maintain consistent citation format throughout
+- Present balanced viewpoints with evidence
+- Organize content logically with clear transitions
+- Include specific data tables and statistics where relevant
+` : ""}
 
 The report should be ${pageTarget} pages in length with extremely detailed content and analysis.
 ${requestDepth === "maximum" ? "IMPORTANT: This must be an exhaustive, journal-quality report with exceptional depth and detail." : ""}
+${includeDataPoints ? "CRITICAL: Include SPECIFIC statistics, numbers, percentages and data points throughout the report." : ""}
 
 Additionally, extract and include:
-- At least 10-15 specific PDF documents mentioned in the research (with title, author, URL where available)
-- At least 5-10 data visualizations or images mentioned (with detailed captions and source information)
-- At least 5 datasets mentioned in the research
+- At least 15-20 specific PDF documents mentioned in the research (with title, author, URL where available) - INCLUDE REAL URLS WHEN MENTIONED IN RESEARCH
+- At least 8-12 data visualizations or images mentioned (with detailed captions and source information)
+- At least 8 datasets mentioned in the research (with access information where available)
 
 Format your response as a single JSON object with this structure:
 {
   "title": "Specific and descriptive title",
   "sections": [
-    {"title": "Section Title", "content": "Fully formatted markdown content"},
+    {"title": "Section Title", "content": "Fully formatted markdown content with citations"},
     ...more sections
   ],
   "references": [
     {"id": 1, "title": "Source Title", "authors": "Author Names", "year": "Year", "journal": "Journal/Publisher", "url": "URL", "doi": "DOI if available"},
-    ...more references
+    ...more references (${maxReferences}+ minimum)
   ],
   "suggestedPdfs": [
     {"title": "PDF Title", "author": "Author", "description": "Brief description", "relevance": "Relevance to research", "url": "URL if available"},
@@ -398,11 +464,11 @@ Format your response as a single JSON object with this structure:
   ]
 }
 
-IMPORTANT: Ensure all content is properly cited, factual, and grounded in the research provided. Include only real citations and references found during the research process. DO NOT generate placeholder text - use all the detailed research that was provided to create substantial sections.`;
+IMPORTANT: Ensure all content is properly cited, factual, and grounded in the research provided. Include only real citations and references found during the research process. DO NOT generate placeholder text - use all the detailed research that was provided to create substantial sections with extensive evidence and specific data points.`;
 
-    console.log(`Stage 4: Generating final ${requestDepth} report...`);
+    console.log(`Stage 4: Generating final ${requestDepth} report with ${useAcademicFormat ? 'academic' : 'standard'} formatting...`);
     // Use a larger token limit for the final report
-    const reportText = await callGemini(reportPrompt, false, requestDepth === "maximum" ? 30000 : 25000);
+    const reportText = await callGemini(reportPrompt, false, requestDepth === "maximum" ? 32000 : 28000);
     console.log(`Final report generated (${reportText.length} chars), parsing JSON...`);
     
     let report;
@@ -444,10 +510,14 @@ IMPORTANT: Ensure all content is properly cited, factual, and grounded in the re
     const totalChars = report.sections.reduce(
       (sum, section) => sum + (section.content?.length || 0), 0
     );
-    const estimatedPages = Math.round(totalWords / 400); // ~400 words per page
+    const totalRefs = report.references.length;
+    const totalPdfs = report.suggestedPdfs.length;
+    const standardEstimatedPages = Math.round(totalWords / 400); // ~400 words per page
+    const academicEstimatedPages = Math.round(totalWords / 250); // ~250 words per academic page
     
     console.log(`Research completed successfully with ${topicResearchResults.length} topics researched in depth`);
-    console.log(`Final report contains ${totalSections} sections, ~${totalWords} words, ~${Math.round(totalChars/1000)}K chars (est. ${estimatedPages} pages)`);
+    console.log(`Final report contains ${totalSections} sections, ~${totalWords} words, ~${Math.round(totalChars/1000)}K chars`);
+    console.log(`References: ${totalRefs}, PDFs: ${totalPdfs}, estimated pages: ${standardEstimatedPages} (standard) / ${academicEstimatedPages} (academic)`);
     
     return new Response(JSON.stringify(results), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }

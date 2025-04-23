@@ -1,14 +1,18 @@
+
 import React, { useState } from 'react';
 import CitationPopover from '../CitationPopover';
-import { ReportSection, Reference, SuggestedImage } from '@/hooks/useGeminiReport';
+import { ReportSection, Reference, SuggestedImage, SuggestedPdf } from '@/hooks/useGeminiReport';
 import ImagePopover from '../ImagePopover';
 import { toast } from '@/components/ui/sonner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon, FileText, BarChart } from 'lucide-react';
+import { InfoIcon, FileText, BarChart, Book, FileCheck, Database, Link } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ResearchContentProps {
   sections: ReportSection[];
   references: Reference[];
+  suggestedPdfs?: SuggestedPdf[];
+  suggestedImages?: SuggestedImage[];
   intermediateResults?: {
     abstract?: string;
     mainTopic?: string;
@@ -21,18 +25,32 @@ interface ResearchContentProps {
         subtopics: string[];
       }>;
     };
+    retryStats?: {
+      originalSize: number;
+      originalRefs: number;
+      originalSections: number;
+      retrySize: number;
+      retryRefs: number;
+      retrySections: number;
+      contentImprovement: string;
+      refImprovement: string;
+    };
   };
 }
 
 const ResearchContent: React.FC<ResearchContentProps> = ({ 
   sections, 
   references,
+  suggestedPdfs,
+  suggestedImages,
   intermediateResults 
 }) => {
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [sectionImages, setSectionImages] = useState<{[key: number]: SuggestedImage[]}>({});
   const [showRawData, setShowRawData] = useState(false);
   const [showTopicStructure, setShowTopicStructure] = useState(false);
+  const [showReferences, setShowReferences] = useState(true);
+  const [showPdfs, setShowPdfs] = useState(false);
 
   const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
     e.preventDefault();
@@ -149,44 +167,78 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
     });
   };
 
+  // Enhanced citation processor that better handles academic citations
   const processCitations = (text: string, references: Reference[]) => {
-    const citationRegex = /\[(\d+)\]/g;
+    // Handle multiple citation formats: [1], [Smith, 2021], (Smith et al., 2021)
+    const citationRegexes = [
+      { regex: /\[(\d+)\]/g, type: 'numeric' },
+      { regex: /\[([\w\s]+),?\s+(\d{4})\]/g, type: 'author-year-bracket' },
+      { regex: /\(([\w\s]+)(?:\set\sal\.?)?,?\s+(\d{4})\)/g, type: 'author-year-paren' }
+    ];
+    
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
-    let match: RegExpExecArray | null;
-
-    while ((match = citationRegex.exec(text)) !== null) {
+    
+    // Find all matches from all regex patterns and sort them by position
+    const allMatches: {index: number; length: number; reference: Reference; type: string}[] = [];
+    
+    citationRegexes.forEach(({ regex, type }) => {
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        let reference: Reference | undefined;
+        
+        if (type === 'numeric') {
+          const citationNumber = parseInt(match[1], 10);
+          reference = references.find(ref => ref.id === citationNumber);
+        } else {
+          // Author-year citation
+          const authorName = match[1];
+          const year = match[2];
+          reference = references.find(ref => 
+            ref.authors.toLowerCase().includes(authorName.toLowerCase()) && 
+            ref.year.toString() === year
+          );
+        }
+        
+        // If reference found, add to matches
+        if (reference) {
+          allMatches.push({
+            index: match.index,
+            length: match[0].length,
+            reference,
+            type
+          });
+        }
+      }
+    });
+    
+    // Sort matches by position in text
+    allMatches.sort((a, b) => a.index - b.index);
+    
+    // Process matches in order
+    for (const match of allMatches) {
       if (lastIndex < match.index) {
         parts.push(text.substring(lastIndex, match.index));
       }
       
-      const citationNumber = parseInt(match[1], 10);
-      const reference = references.find(ref => ref.id === citationNumber) || {
-        title: "Reference",
-        authors: "Unknown",
-        journal: "Unknown",
-        year: "Unknown",
-        url: "",
-        doi: ""
-      };
-
       parts.push(
         <CitationPopover
           key={`citation-${match.index}`}
           reference={{
-            id: citationNumber,
-            title: reference.title,
-            authors: reference.authors,
-            year: reference.year,
-            journal: reference.journal,
-            url: reference.url,
-            doi: reference.doi
+            id: match.reference.id,
+            title: match.reference.title,
+            authors: match.reference.authors,
+            year: match.reference.year,
+            journal: match.reference.journal,
+            url: match.reference.url,
+            doi: match.reference.doi
           }}
-          index={citationNumber - 1}
+          index={match.reference.id - 1}
           inline={true}
         />
       );
-      lastIndex = match.index + match[0].length;
+      
+      lastIndex = match.index + match.length;
     }
 
     if (lastIndex < text.length) {
@@ -196,12 +248,14 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
     return parts;
   };
 
+  // Calculate report statistics
   const totalWords = sections.reduce((count, section) => {
     const wordCount = section.content?.split(/\s+/).length || 0;
     return count + wordCount;
   }, 0);
   
   const estimatedPages = Math.max(1, Math.round(totalWords / 400)); // ~400 words per page
+  const academicPages = Math.max(1, Math.round(totalWords / 250)); // ~250 words for academic format
 
   if (sections.length === 0) {
     return (
@@ -219,7 +273,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
           <div>
             <h3 className="text-sm font-medium text-violet-700">Comprehensive Research Report</h3>
             <p className="text-xs text-violet-600">
-              {sections.length} sections • {references.length} references • ~{totalWords.toLocaleString()} words • ~{estimatedPages} pages
+              {sections.length} sections • {references.length} references • ~{totalWords.toLocaleString()} words • ~{estimatedPages} pages (standard) / ~{academicPages} pages (academic)
             </p>
           </div>
         </div>
@@ -241,8 +295,32 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
               {showTopicStructure ? "Hide" : "Show"} Topic Structure
             </button>
           )}
+          
+          {suggestedPdfs && suggestedPdfs.length > 0 && (
+            <button 
+              onClick={() => setShowPdfs(!showPdfs)}
+              className="flex items-center gap-1 text-violet-600 hover:text-violet-700 text-xs font-medium bg-violet-100 px-2 py-1 rounded-md"
+            >
+              <Book size={14} />
+              {showPdfs ? "Hide" : "Show"} PDF Resources
+            </button>
+          )}
         </div>
       </div>
+
+      {intermediateResults?.retryStats && (
+        <div className="mb-6 bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+          <div className="flex items-center gap-2">
+            <FileCheck className="text-emerald-600" size={16} />
+            <h3 className="text-sm font-medium text-emerald-700">Enhanced Report Generated</h3>
+          </div>
+          <p className="text-xs text-emerald-600 mt-1">
+            The initial report was enhanced through a retry process that improved content by {intermediateResults.retryStats.contentImprovement} and 
+            references by {intermediateResults.retryStats.refImprovement}. The final report contains {intermediateResults.retryStats.retrySections} sections 
+            instead of the initial {intermediateResults.retryStats.originalSections}.
+          </p>
+        </div>
+      )}
 
       {showTopicStructure && intermediateResults?.topicStructure && (
         <div className="mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
@@ -263,6 +341,49 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
             <p>This structure shows the full scope of the research report with all topics and subtopics to be covered. 
             The generated report should address all major topics and relevant subtopics with detailed analysis.</p>
           </div>
+        </div>
+      )}
+
+      {showPdfs && suggestedPdfs && suggestedPdfs.length > 0 && (
+        <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-medium text-blue-700 flex items-center gap-2">
+              <Database size={16} />
+              Recommended Research Resources
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {suggestedPdfs.slice(0, 8).map((pdf, index) => (
+              <div key={index} className="bg-white p-3 rounded border border-blue-200 flex flex-col">
+                <h4 className="text-sm font-medium text-blue-700 mb-1">{pdf.title}</h4>
+                <p className="text-xs text-gray-600 mb-1">By {pdf.author || "Various Authors"}</p>
+                <p className="text-xs text-gray-500 mb-2 flex-grow">{pdf.description}</p>
+                <div className="flex items-center justify-between mt-auto">
+                  <span className="text-xs text-violet-600">{pdf.relevance}</span>
+                  {pdf.url && (
+                    <a 
+                      href={pdf.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs flex items-center gap-1 text-blue-600 hover:underline"
+                    >
+                      <Link size={12} /> View Source
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          {suggestedPdfs.length > 8 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-3"
+              onClick={() => setShowPdfs(false)}
+            >
+              Show fewer resources
+            </Button>
+          )}
         </div>
       )}
 
@@ -352,12 +473,21 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
         </div>
       ))}
 
-      {references.length > 0 && (
+      {showReferences && references.length > 0 && (
         <div className="mt-12 border-t pt-8">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">References</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800">References</h2>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowReferences(!showReferences)}
+            >
+              {showReferences ? "Hide References" : "Show References"}
+            </Button>
+          </div>
           <div className="space-y-4">
             {references.map((reference, index) => (
-              <div key={index} className="text-gray-700">
+              <div key={index} className="text-gray-700 p-2 border-b border-gray-100">
                 <p className="text-sm">
                   [{reference.id}] {reference.authors} ({reference.year}). <strong>{reference.title}</strong>. <em>{reference.journal}</em>.
                   {reference.url && (
