@@ -3,6 +3,7 @@ import React from 'react';
 import { SuggestedImage } from '@/hooks/useGeminiReport';
 import ImagePopover from '../ImagePopover';
 import SectionContentRenderer from './SectionContentRenderer';
+import { AlertCircleIcon } from 'lucide-react';
 
 interface ResearchSectionProps {
   title: string;
@@ -25,14 +26,20 @@ const ResearchSection: React.FC<ResearchSectionProps> = ({
   onDragLeave,
   onDrop
 }) => {
+  // Check if this is an error section
+  const isErrorSection = title.includes('Error') && content.includes('error');
+  
   return (
     <div
-      className={`mb-8 ${isDropTarget ? 'border-2 border-dashed border-violet-400 bg-violet-50/20 rounded-lg p-4' : ''}`}
+      className={`mb-8 ${isDropTarget ? 'border-2 border-dashed border-violet-400 bg-violet-50/20 rounded-lg p-4' : ''} ${isErrorSection ? 'border border-red-200 bg-red-50/20 rounded-lg p-4' : ''}`}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
-      <h2 className="text-2xl font-semibold text-gray-800 mb-4">{title}</h2>
+      <h2 className={`text-2xl font-semibold ${isErrorSection ? 'text-red-700 flex items-center gap-2' : 'text-gray-800'} mb-4`}>
+        {isErrorSection && <AlertCircleIcon className="h-6 w-6" />}
+        {title}
+      </h2>
       <SectionContentRenderer content={content} references={references} />
       
       {sectionImages && sectionImages.length > 0 && (

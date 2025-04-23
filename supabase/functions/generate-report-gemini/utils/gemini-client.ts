@@ -41,17 +41,12 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
     ]
   };
 
-  // Enhanced Google Search grounding with expanded options
+  // Fix for the Google Search grounding - using correct parameter names according to API docs
   if (enableSearch) {
-    console.log("Enabling Google Search grounding with enhanced coverage for comprehensive research");
-    requestBody.tools = [
-      {
-        googleSearchRetrieval: {
-          disableAttribution: false, // Ensure proper attributions
-          searchQueriesPerRequest: 15 // Increase search queries per request for broader research
-        }
-      }
-    ];
+    console.log("Enabling Google Search grounding for research");
+    requestBody.tools = [{
+      googleSearchRetrieval: {} // Use empty object instead of fields that aren't recognized
+    }];
   }
 
   try {
