@@ -28,7 +28,22 @@ serve(async (req) => {
       });
     }
 
-    const prompt = `Write a professional 200-300 word abstract from this research intent:\n"${query}"`;
+    // Enhanced prompt for more detailed, academic-style abstract
+    const prompt = `
+Write a professional, comprehensive 500-600 word abstract for an in-depth academic research report on:
+"${query}"
+
+The abstract should:
+- Provide a clear overview of the research scope, significance, and methodology
+- Outline key themes, findings, and academic implications
+- Use formal scholarly language with appropriate academic terminology
+- Follow academic writing conventions with proper structure
+- Include references to research methodologies and key theoretical frameworks
+- Highlight the importance of this research in the broader academic context
+- Mention potential applications and future research directions
+- Be thorough enough to guide a comprehensive 40-50 page academic research report
+
+This abstract will form the foundation for a detailed, multi-section research report with extensive citations and academic references.`;
     
     console.log("Calling Gemini API for abstract generation");
     const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
@@ -49,6 +64,12 @@ serve(async (req) => {
           topP: 0.8,
           topK: 40,
         },
+        // Enable Google Search for more academically accurate abstract
+        tools: [
+          {
+            googleSearchRetrieval: {}
+          }
+        ],
         safetySettings: [
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
           { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },

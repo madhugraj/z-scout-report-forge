@@ -1,3 +1,4 @@
+
 // Generate full report with Google grounding and comprehensive search
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -31,14 +32,12 @@ async function callGemini(prompt, enableSearch = true, maxOutputTokens = 12000) 
     ]
   };
 
+  // CRITICAL: This is what enables Google Search grounding - always ensure this is properly enabled
   if (enableSearch) {
+    console.log("Enabling Google Search grounding for detailed research");
     requestBody.tools = [
       {
-        google_search: {
-          dynamicRetrievalConfig: {
-            mode: "MODE_ALWAYS"
-          }
-        }
+        googleSearchRetrieval: {} // Updated to the correct format for Gemini 2.0
       }
     ];
   }
@@ -66,8 +65,7 @@ async function callGemini(prompt, enableSearch = true, maxOutputTokens = 12000) 
 }
 
 // Enhanced function to research a specific subtopic with search grounding
-// Now with improved academic citation prompting and statistical data focus
-async function researchSubtopic(mainTopic: string, topicTitle: string, subtopic: string, depth = "comprehensive", includeCitations = true) {
+async function researchSubtopic(mainTopic, topicTitle, subtopic, depth = "comprehensive", includeCitations = true) {
   console.log(`Researching subtopic: "${subtopic}" under topic "${topicTitle}"`);
   
   const depthInstructions = depth === "maximum" ? 
@@ -116,18 +114,18 @@ ${depthInstructions} Your section MUST include:
 
 ${citationInstructions}
 
-This is for a DETAILED academic research report of ${depth === "maximum" ? "60-80" : "40-50"} PAGES, so your analysis must be substantive, evidence-based, and extraordinarily detailed. 
+This is for a DETAILED academic research report, so your analysis must be substantive, evidence-based, and extraordinarily detailed. 
 Do not summarize or provide a general overview - this needs to be EXHAUSTIVE scholarly research with actual statistics, numbers, and quantitative data.
 Include SPECIFIC URLS to key research papers, reports, and datasets mentioned.`;
 
   try {
-    // Always enable search for subtopic research to get grounded information
+    // CRITICAL: This is key - always enable search for subtopic research to get grounded information with citations
     const research = await callGemini(subtopicPrompt, true, depth === "maximum" ? 20000 : 16000);
     console.log(`Successfully researched subtopic "${subtopic}": ${research.length} chars`);
     return research;
   } catch (error) {
-    console.error(`Error researching subtopic \"${subtopic}\":`, error);
-    return `**Research Error**: Could not retrieve research for \"${subtopic}\" due to an error.`;
+    console.error(`Error researching subtopic "${subtopic}":`, error);
+    return `**Research Error**: Could not retrieve research for "${subtopic}" due to an error.`;
   }
 }
 
@@ -180,8 +178,13 @@ Your abstract will form the foundation for an extensive research report with mul
     console.log("Stage 1: Generating comprehensive abstract...");
     const abstract = await callGemini(abstractPrompt, false);
 
-    const topicsPrompt = `Based on this abstract: \"\"\"${abstract}\"\"\" Extract main topic, 10+ major topics and 10-15 subtopics each. Return ONLY valid JSON.`;
-    const topicsText = await callGemini(topicsPrompt, false);
+    // Stage 2: Extract Topic Structure
+    console.log("Stage 2: Extracting topic structure...");
+    const topicsPrompt = `
+Based on this abstract:
+"""
+${abstract}
+"""
 
 Extract:
 1. A clear, concise main topic (1 line)
@@ -213,16 +216,28 @@ Instructions:
 ${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO MAJOR SUBTOPICS OMITTED." : ""}
 `;
 
-    console.log("Stage 2: Extracting extensive topic structure...");
     const topicStructureText = await callGemini(topicsPrompt, false);
     console.log("Topic structure extracted, parsing JSON...");
     
     let topicStructure;
+    let mainTopic;
+    let topics = [];
+    
     try {
-      const jsonMatch = topicsText.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
-      topicStructure = JSON.parse(jsonMatch ? jsonMatch[1] : topicsText);
+      // Try to parse the JSON response - handle potential formatting issues
+      const jsonMatch = topicStructureText.match(/```(?:json)?\s*([\s\S]+?)\s*```/) || 
+                        topicStructureText.match(/({[\s\S]+})/);
+      
+      const jsonText = jsonMatch ? jsonMatch[1] : topicStructureText;
+      topicStructure = JSON.parse(jsonText);
+      
+      mainTopic = topicStructure.mainTopic;
+      topics = topicStructure.topics || [];
+      
+      console.log(`Successfully parsed topic structure: Main topic: "${mainTopic}", ${topics.length} topics extracted`);
     } catch (e) {
       console.error("Failed to parse topic structure:", e);
+      console.log("Raw topic structure text:", topicStructureText);
       throw new Error("Topic structure JSON parsing failed");
     }
 
@@ -379,13 +394,6 @@ ${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO
     const reportPrompt = `
 You are a distinguished academic researcher creating a comprehensive, ${useAcademicFormat ? "scholarly" : "professional"} research report.
 
-    let content = Object.entries(researchedContent).map(([title, data]) => {
-      const sections = data.subtopics.map((sub, i) => `### ${sub}\n${data.research[i]}`).join("\n\n");
-      return `## ${title}\n\n${sections}`;
-    }).join("\n\n");
-
-    if (content.length > 30000) content = content.slice(0, 30000);
-
 Detailed Research Content:
 """
 ${researchContentForPrompt}
@@ -396,28 +404,27 @@ Main Topic: "${mainTopic}"
 Topic Structure:
 ${topics.map(t => `- ${t.title}`).join('\n')}
 
-Your report MUST include:
+Your task is to compile this research into a comprehensive, well-structured report with the following elements:
+
 1. An informative, specific title that clearly represents the academic scope
-2. An executive summary that highlights key findings and implications
+2. An executive summary that highlights key findings and implications 
 3. A detailed table of contents with hierarchical structure
 4. Introduction section contextualizing the research within the academic literature
 5. Main body organized by the major topics and subtopics WITH ALL THE DETAILED RESEARCH CONTENT
-6. Conclusion synthesizing key findings and identifying future research directions
+6. Conclusion synthesizing key findings and identifying future research directions  
 7. Extensive references section with ALL cited sources (${maxReferences} references minimum)
 8. Appendices with relevant supplementary material
 
 ${useAcademicFormat ? `
-The report should follow formal academic conventions:
+The report MUST follow formal academic conventions:
 - Use scholarly language and third-person perspective
 - Include proper in-text citations for ALL factual claims
-- Maintain consistent citation format throughout
+- Maintain consistent citation format throughout 
 - Present balanced viewpoints with evidence
 - Organize content logically with clear transitions
-- Include specific data tables and statistics where relevant
+- Include specific data tables and statistics throughout
 ` : ""}
 
-The report should be ${pageTarget} pages in length with extremely detailed content and analysis.
-${requestDepth === "maximum" ? "IMPORTANT: This must be an exhaustive, journal-quality report with exceptional depth and detail." : ""}
 ${includeDataPoints ? "CRITICAL: Include SPECIFIC statistics, numbers, percentages and data points throughout the report." : ""}
 
 Additionally, extract and include:
@@ -450,7 +457,7 @@ Format your response as a single JSON object with this structure:
   ]
 }
 
-IMPORTANT: Ensure all content is properly cited, factual, and grounded in the research provided. Include only real citations and references found during the research process. DO NOT generate placeholder text - use all the detailed research that was provided to create substantial sections with extensive evidence and specific data points.`;
+IMPORTANT: Ensure all content is properly cited, factual, and grounded in the research provided. Include only real citations and references found during the research process. Use all the detailed research extensively to create substantial sections with evidence and specific data points.`;
 
     console.log(`Stage 4: Generating final ${requestDepth} report with ${useAcademicFormat ? 'academic' : 'standard'} formatting...`);
     // Use a larger token limit for the final report
@@ -459,10 +466,12 @@ IMPORTANT: Ensure all content is properly cited, factual, and grounded in the re
     
     let report;
     try {
-      const jsonMatch = reportText.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
+      const jsonMatch = reportText.match(/```(?:json)?\s*([\s\S]+?)\s*```/) || 
+                        reportText.match(/({[\s\S]+})/);
       report = JSON.parse(jsonMatch ? jsonMatch[1] : reportText);
     } catch (e) {
       console.error("Failed to parse report JSON:", e);
+      console.log("Raw report text (first 500 chars):", reportText.substring(0, 500));
       throw new Error("Report JSON parsing failed");
     }
 
@@ -488,7 +497,7 @@ IMPORTANT: Ensure all content is properly cited, factual, and grounded in the re
       (sum, section) => sum + (section.content?.length || 0), 0
     );
     const totalRefs = report.references.length;
-    const totalPdfs = report.suggestedPdfs.length;
+    const totalPdfs = report.suggestedPdfs?.length || 0;
     const standardEstimatedPages = Math.round(totalWords / 400); // ~400 words per page
     const academicEstimatedPages = Math.round(totalWords / 250); // ~250 words per academic page
     
@@ -496,7 +505,7 @@ IMPORTANT: Ensure all content is properly cited, factual, and grounded in the re
     console.log(`Final report contains ${totalSections} sections, ~${totalWords} words, ~${Math.round(totalChars/1000)}K chars`);
     console.log(`References: ${totalRefs}, PDFs: ${totalPdfs}, estimated pages: ${standardEstimatedPages} (standard) / ${academicEstimatedPages} (academic)`);
     
-    return new Response(JSON.stringify(results), {
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   } catch (err) {

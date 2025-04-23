@@ -85,6 +85,12 @@ Format with proper headings, bullet points, and citations where appropriate.
               topP: 0.8,
               topK: 40,
             },
+            // Enable Google Search for grounded information with proper citations
+            tools: [
+              {
+                googleSearchRetrieval: {}
+              }
+            ],
             safetySettings: [
               { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
               { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },

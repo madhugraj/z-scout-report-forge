@@ -8,7 +8,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     console.log("Starting comprehensive report generation for query:", query);
 
     // Enhanced query with more specific academic research instructions
-    const enhancedQuery = `${query} - COMPREHENSIVE ANALYSIS: Produce a detailed 40-50 page academic research report with in-depth analysis of all topics and subtopics, extensive data, statistics, scholarly references, and proper citations. Include clear methodology and literature review sections.`;
+    const enhancedQuery = `${query} - COMPREHENSIVE ANALYSIS: Produce a detailed academic research report with in-depth analysis of all topics and subtopics, extensive data, statistics, scholarly references, and proper citations. Include clear methodology and literature review sections.`;
 
     const { data, error } = await supabase.functions.invoke('generate-report-gemini', {
       body: { 
@@ -66,14 +66,14 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
       const { data: retryData, error: retryError } = await supabase.functions.invoke('generate-report-gemini', {
         body: { 
           query: enhancedQuery,
-          requestDepth: "maximum",
-          pageTarget: "60-80", 
+          requestDepth: "maximum", // Increase depth for retry
+          pageTarget: "60-80", // Larger page target 
           generateFullReport: true,
           includeAllSubtopics: true,
-          forceDepth: true,
-          maxReferences: 100, // Even more references on retry
-          expandSubtopicCoverage: true, // New parameter to ensure broader coverage
-          improveResearchDepth: true, // New parameter to increase depth
+          forceDepth: true, // Force more comprehensive coverage
+          maxReferences: 100, // More references on retry
+          expandSubtopicCoverage: true, // Ensure broader coverage
+          improveResearchDepth: true, // Increase depth
           includeCitations: true,
           useAcademicFormat: true,
           includeDataPoints: true,
