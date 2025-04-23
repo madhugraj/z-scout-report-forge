@@ -10,8 +10,8 @@ const corsHeaders = {
 // Get the API key from environment variables or use a fallback
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-// Updated to use a valid model
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+// Updated to use the specified model
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

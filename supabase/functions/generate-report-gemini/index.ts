@@ -2,132 +2,8 @@
 // Generate full report with Google grounding and comprehensive search
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
-
-async function callGemini(prompt, enableSearch = true, maxOutputTokens = 12000) {
-  const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
-  
-  console.log(`Calling Gemini with prompt length: ${prompt.length} chars, search enabled: ${enableSearch}, maxOutputTokens: ${maxOutputTokens}`);
-  
-  const requestBody: any = {
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: {
-      temperature: 0.1, // Lower temperature for more structured, scholarly responses
-      maxOutputTokens: maxOutputTokens,
-      topP: 0.9,
-      topK: 40,
-    },
-    safetySettings: [
-      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-      { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-      { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-    ]
-  };
-
-  // CRITICAL: This is what enables Google Search grounding - always ensure this is properly enabled
-  if (enableSearch) {
-    console.log("Enabling Google Search grounding for detailed research");
-    requestBody.tools = [
-      {
-        googleSearchRetrieval: {} // Updated to the correct format for Gemini 2.0
-      }
-    ];
-  }
-
-  const response = await fetch(requestUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody)
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(`Gemini API error (${response.status}): ${errorBody}`);
-    throw new Error(`Gemini API returned status ${response.status}: ${errorBody}`);
-  }
-
-  const json = await response.json();
-  const result = json.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!result) {
-    console.error("Unexpected response format from Gemini:", json);
-    throw new Error("Unexpected response format from Gemini API");
-  }
-
-  return result;
-}
-
-// Enhanced function to research a specific subtopic with search grounding
-async function researchSubtopic(mainTopic, topicTitle, subtopic, depth = "comprehensive", includeCitations = true) {
-  console.log(`Researching subtopic: "${subtopic}" under topic "${topicTitle}"`);
-  
-  const depthInstructions = depth === "maximum" ? 
-    "Produce an EXTREMELY DETAILED, journal-quality research section of 3000-4000 words with extensive citations." :
-    "Produce a comprehensive research section of at least 2000-2500 words with thorough citations.";
-  
-  const citationInstructions = includeCitations ?
-    `
-Include proper academic citations with the following guidelines:
-- Use standard academic in-text citations in [Author, Year] format
-- For direct quotes, include page numbers when available: [Author, Year, p. X]
-- When citing multiple sources, separate them with semicolons: [Author, Year; Author2, Year2]
-- When referencing specific data points or statistics, ALWAYS include the citation immediately after
-- Ensure every factual claim, statistic, or specific research finding has a proper citation
-- For major authors or seminal works in the field, mention author names directly in the text
-` : "";
-
-  const subtopicPrompt = `
-You are an experienced academic researcher with expertise in "${mainTopic}" preparing a section for a prestigious peer-reviewed journal article on the specific subtopic: 
-"${subtopic}" (which is part of the broader topic "${topicTitle}" within the main research area "${mainTopic}").
-
-Use Google Search to find and analyze AT LEAST 15-20 high-quality, authoritative sources specifically on this subtopic, including:
-- Recent peer-reviewed research papers (especially from the last 5 years)
-- Meta-analyses and systematic reviews when available
-- Official statistics, datasets, and government reports
-- Expert analyses from authoritative organizations and research institutes
-- Historical development and foundational research on this subtopic
-- Real-world case studies and applications with measurable outcomes
-
-For each source you find, extract and incorporate:
-1. Key findings with specific numerical data (percentages, metrics, statistical significance)
-2. Precise methodologies including sample sizes, time periods, and geographic scope
-3. Author credentials, institutional affiliations, and funding sources when relevant
-4. Direct quotes that provide unique expert insight (with proper citation)
-5. Critical limitations acknowledged in the research
-6. Contradictory or competing findings across different studies
-
-${depthInstructions} Your section MUST include:
-- A nuanced introduction to this specific subtopic with its scholarly context
-- Detailed analysis with primary source quotes and paraphrasing
-- NUMEROUS SPECIFIC STATISTICS AND DATA POINTS (with actual numbers, not just general trends)
-- At least 3-4 tables, lists or structured presentations of key findings
-- Critical evaluation of the current research landscape on this subtopic
-- Identification of research gaps or methodological issues
-- Future research directions
-
-${citationInstructions}
-
-This is for a DETAILED academic research report, so your analysis must be substantive, evidence-based, and extraordinarily detailed. 
-Do not summarize or provide a general overview - this needs to be EXHAUSTIVE scholarly research with actual statistics, numbers, and quantitative data.
-Include SPECIFIC URLS to key research papers, reports, and datasets mentioned.`;
-
-  try {
-    // CRITICAL: This is key - always enable search for subtopic research to get grounded information with citations
-    const research = await callGemini(subtopicPrompt, true, depth === "maximum" ? 20000 : 16000);
-    console.log(`Successfully researched subtopic "${subtopic}": ${research.length} chars`);
-    return research;
-  } catch (error) {
-    console.error(`Error researching subtopic "${subtopic}":`, error);
-    return `**Research Error**: Could not retrieve research for "${subtopic}" due to an error.`;
-  }
-}
+import { corsHeaders, callGemini, GEMINI_API_KEY } from "./utils/gemini-client.ts";
+import { researchSubtopic, getBalancedSubtopics } from "./utils/topic-research.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -273,7 +149,6 @@ ${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO
     const researchedContent = {};
     
     // Determine how many topics to research based on available time and capacity
-    // Expand coverage when specifically requested
     const maxTopicsToResearch = forceDepth || improveResearchDepth ? 
       Math.min(12, topics.length) : 
       Math.min(8, topics.length);
@@ -285,54 +160,19 @@ ${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO
     const topicsToResearch = topics.slice(0, maxTopicsToResearch);
     console.log(`Will research ${maxTopicsToResearch} topics with up to ${maxSubtopicsPerTopic} subtopics each`);
     
-    // Function to select which subtopics to research - improved to ensure better coverage
-    const getBalancedSubtopics = (topic) => {
-      // If we want to include all subtopics or are forcing depth, take as many as possible
-      if (includeAllSubtopics || forceDepth || improveResearchDepth) {
-        return topic.subtopics.slice(0, maxSubtopicsPerTopic);
-      }
-      
-      // Otherwise, take a strategic sample from beginning, middle, and end
-      const subtopics = [];
-      const len = topic.subtopics.length;
-      
-      // Always take the first subtopic
-      subtopics.push(topic.subtopics[0]);
-      
-      // Add 1-2 from beginning section
-      if (len >= 5) {
-        subtopics.push(topic.subtopics[1]);
-        if (len >= 9) subtopics.push(topic.subtopics[2]);
-      }
-      
-      // Add middle subtopics
-      if (len >= 3) {
-        const mid = Math.floor(len / 2);
-        subtopics.push(topic.subtopics[mid]);
-        if (len >= 7) {
-          subtopics.push(topic.subtopics[mid-1]);
-          if (len >= 11) subtopics.push(topic.subtopics[mid+1]);
-        }
-      }
-      
-      // Add subtopics from latter part
-      if (len >= 4) {
-        subtopics.push(topic.subtopics[len-2]);
-        subtopics.push(topic.subtopics[len-1]); // Always include last
-        if (len >= 8) subtopics.push(topic.subtopics[len-3]);
-      }
-      
-      // Remove duplicates
-      return [...new Set(subtopics)];
-    };
-    
     // Research each topic and its subtopics in parallel for efficiency
     const topicResearchPromises = topicsToResearch.map(async (topic) => {
       const topicTitle = topic.title;
       console.log(`Researching major topic: ${topicTitle}`);
       
       // Get a balanced selection of subtopics
-      const subtopics = getBalancedSubtopics(topic);
+      const subtopics = getBalancedSubtopics(
+        topic, 
+        maxSubtopicsPerTopic, 
+        includeAllSubtopics, 
+        forceDepth, 
+        improveResearchDepth
+      );
       
       // Research each subtopic in this topic (in parallel for efficiency)
       const subtopicResearchPromises = subtopics.map(subtopic => 
@@ -383,14 +223,13 @@ ${expandSubtopicCoverage ? "- Ensure comprehensive coverage of the field with NO
     });
     
     // If the research is very large, truncate it to avoid token limits
-    // But allow for larger research data when generating maximum depth reports
     const maxResearchLength = requestDepth === "maximum" ? 70000 : 50000;
     if (researchContentForPrompt.length > maxResearchLength) {
       console.log(`Research content is large (${researchContentForPrompt.length} chars), truncating for final report generation`);
       researchContentForPrompt = researchContentForPrompt.substring(0, maxResearchLength) + "\n\n[Additional research content truncated due to size limitations]";
     }
 
-    // Enhanced report generation prompt with improved academic formatting and citation requirements
+    // Enhanced report generation prompt
     const reportPrompt = `
 You are a distinguished academic researcher creating a comprehensive, ${useAcademicFormat ? "scholarly" : "professional"} research report.
 

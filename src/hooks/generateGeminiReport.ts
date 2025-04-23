@@ -10,6 +10,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     // Enhanced query with more specific academic research instructions
     const enhancedQuery = `${query} - COMPREHENSIVE ANALYSIS: Produce a detailed academic research report with in-depth analysis of all topics and subtopics, extensive data, statistics, scholarly references, and proper citations. Include clear methodology and literature review sections.`;
 
+    // Call our updated edge function with the specified model
     const { data, error } = await supabase.functions.invoke('generate-report-gemini', {
       body: { 
         query: enhancedQuery,
@@ -63,6 +64,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     if ((isReportTooSmall || hasTooFewReferences || hasInsufficientSections) && !data.retryAttempted) {
       console.log(`Report quality insufficient (size: ${Math.round(totalContentLength/1000)}K chars, refs: ${referenceCount}, sections: ${sectionCount}), retrying with enhanced parameters...`);
       
+      // Try one more time with enhanced parameters if the first attempt was insufficient
       const { data: retryData, error: retryError } = await supabase.functions.invoke('generate-report-gemini', {
         body: { 
           query: enhancedQuery,
