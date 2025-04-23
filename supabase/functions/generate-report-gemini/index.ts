@@ -72,7 +72,7 @@ async function researchSubtopic(mainTopic: string, topicTitle: string, subtopic:
   const subtopicPrompt = `
 You are a professional academic researcher conducting a thorough literature analysis on the specific subtopic: 
 "${subtopic}" (which is part of the broader topic "${topicTitle}" within the main research area "${mainTopic}"). 
-you have to repeat this task for all the "${subtopic} and ${topicTitle}"
+"
 
 Use Google Search to find and analyze AT LEAST 7-10 high-quality, authoritative sources specifically on this subtopic.
 Focus on finding:
@@ -97,8 +97,10 @@ Format your response as a thoroughly researched, academic-quality section (at le
 - Critical evaluation of the research landscape on this subtopic
 - Discussion of gaps or areas for further research
 
-This is for a comprehensive research report, so your analysis must be substantive, evidence-based, and nuanced.
-Do not summarize or provide a general overview - this needs to be detailed scholarly research.`;
+you have to repeat this task for all the "${subtopic} and ${topicTitle}
+
+This is for a Detailed research report, so your analysis must be substantive, evidence-based, and nuanced.
+Do not summarize or provide a general overview - this needs to be detailed scholarly research. The report should range for 40 -50 PAGES`;
 
   try {
     // Always enable search for subtopic research to get grounded information
