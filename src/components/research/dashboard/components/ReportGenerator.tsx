@@ -29,10 +29,10 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   const startGeneratingReport = (query: string) => {
     setIsGenerating(true);
     onProgress(0);
-    onGenerationStep("Initializing enhanced comprehensive research pipeline...");
+    onGenerationStep("Initializing enhanced comprehensive research pipeline with Gemini 1.5 Flash...");
 
     const progressSteps = [
-      { threshold: 5, message: "Sending request to Gemini Pro for advanced academic research analysis..." },
+      { threshold: 5, message: "Sending request to Gemini 1.5 Flash model for advanced academic research analysis..." },
       { threshold: 8, message: "Generating detailed research abstract with expanded scope..." },
       { threshold: 12, message: "Abstract generated! Analyzing comprehensive research domains..." },
       { threshold: 15, message: "Extracting 12-15 main topics and 10-15 subtopics per topic for comprehensive coverage..." },

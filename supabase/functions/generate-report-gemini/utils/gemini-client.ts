@@ -9,8 +9,9 @@ export const corsHeaders = {
 // Get the API key from environment variables
 export const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-// Unified model name for consistency - using the most capable model available
-export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro:generateContent";
+// Updated model name to use the correct Gemini model that's available
+// Using gemini-1.5-flash-latest which is available and supported
+export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
 
 /**
  * Make a call to the Gemini API with enhanced options for more comprehensive results
@@ -18,7 +19,7 @@ export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/mode
 export async function callGemini(prompt: string, enableSearch = true, maxOutputTokens = 30000) {
   const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
   
-  console.log(`Calling Gemini Pro model with prompt length: ${prompt.length} chars, search enabled: ${enableSearch}, maxOutputTokens: ${maxOutputTokens}`);
+  console.log(`Calling Gemini 1.5 Flash model with prompt length: ${prompt.length} chars, search enabled: ${enableSearch}, maxOutputTokens: ${maxOutputTokens}`);
   
   const requestBody: any = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
