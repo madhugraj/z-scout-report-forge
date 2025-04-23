@@ -2,9 +2,20 @@
 import { supabase } from "@/integrations/supabase/client";
 import fallbackReport from "./fallbackGeminiReport";
 import { GeminiReport } from "./types/geminiReportTypes";
+import { toast } from "@/components/ui/sonner";
 
 export async function generateGeminiReport(query: string): Promise<GeminiReport> {
   try {
+    // Check if Gemini API key is configured
+    const { data: apiKeyTest, error: apiKeyError } = await supabase.functions.invoke('test-gemini-key', {
+      body: { test: true }
+    });
+    
+    if (apiKeyError || (apiKeyTest && apiKeyTest.error)) {
+      console.error("Gemini API key validation error:", apiKeyError || apiKeyTest?.error);
+      throw new Error("Gemini API key is not configured or invalid. Please check your Supabase Edge Function Secrets.");
+    }
+    
     console.log("Starting comprehensive report generation for query:", query);
 
     // Enhanced query with explicit instructions for comprehensive topic coverage
@@ -19,21 +30,38 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
         generateFullReport: true,
         includeAllSubtopics: true,
         forceDepth: true, // Force deeper research
-        forceBreadth: true, // NEW: Force broader topic coverage
+        forceBreadth: true, // Force broader topic coverage
         includeCitations: true,
         useAcademicFormat: true,
         maxReferences: 100, // Increased reference count
         includeDataPoints: true,
         expandSubtopicCoverage: true,
         improveResearchDepth: true,
-        ensureCompleteCoverage: true, // NEW: Explicitly request complete topic coverage
-        minimumTopicsRequired: 12, // NEW: Set minimum topics to cover
-        minimumSubtopicsPerTopic: 10 // NEW: Set minimum subtopics per topic
+        ensureCompleteCoverage: true, // Explicitly request complete topic coverage
+        minimumTopicsRequired: 12, // Set minimum topics to cover
+        minimumSubtopicsPerTopic: 10, // Set minimum subtopics per topic
+        retryOnFailure: true // Enable automatic retries on the server side
       }
     });
 
     if (error) {
       console.error("Error invoking generate-report-gemini function:", error);
+      
+      // More detailed error information to help with debugging
+      const errorDetails = {
+        message: error.message,
+        code: error.code,
+        name: error.name,
+        stack: error.stack,
+        details: "See Edge Function logs for more information"
+      };
+      
+      console.error("Error details:", errorDetails);
+      toast.error("Failed to generate report", { 
+        description: "Check the Gemini API key in Supabase Edge Function Secrets.",
+        duration: 10000
+      });
+      
       throw new Error(`Failed to generate report: ${error.message}`);
     }
 
@@ -67,12 +95,16 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     const isReportTooSmall = totalContentLength < 50000; // Increased minimum size
     const hasTooFewReferences = referenceCount < 25; // Increased minimum references
     const hasInsufficientSections = sectionCount < 15; // Increased minimum sections
-    const hasTooFewTopics = (data.intermediateResults?.topicStructure?.topics?.length || 0) < 10; // NEW: Check for topic coverage
+    const hasTooFewTopics = (data.intermediateResults?.topicStructure?.topics?.length || 0) < 10; // Check for topic coverage
     
     const needsRetry = (isReportTooSmall || hasTooFewReferences || hasInsufficientSections || hasTooFewTopics) && !data.retryAttempted;
     
     if (needsRetry) {
       console.log(`Report quality insufficient (size: ${Math.round(totalContentLength/1000)}K chars, refs: ${referenceCount}, sections: ${sectionCount}, topics: ${data.intermediateResults?.topicStructure?.topics?.length || 0}), retrying with maximum parameters...`);
+      
+      toast.info("Initial report was insufficient, generating enhanced report...", {
+        duration: 5000
+      });
       
       // Try one more time with significantly enhanced parameters
       const { data: retryData, error: retryError } = await supabase.functions.invoke('generate-report-gemini', {
@@ -94,12 +126,17 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
           minimumTopicsRequired: 15,
           minimumSubtopicsPerTopic: 12,
           retryAttempt: true,
-          increaseResearchBreadth: true, // NEW: Additional parameter for more breadth
-          prioritizeTopicCoverage: true // NEW: Prioritize covering all topics
+          increaseResearchBreadth: true, // Additional parameter for more breadth
+          prioritizeTopicCoverage: true, // Prioritize covering all topics
+          useEnhancedPrompt: true, // Use an enhanced prompt with more detailed instructions
+          bypassTokenLimit: true // Try to bypass token limits by chunking report generation
         }
       });
       
-      if (!retryError && retryData?.report) {
+      if (retryError) {
+        console.error("Error in retry attempt:", retryError);
+        // Continue with the original report even if retry fails
+      } else if (retryData?.report) {
         const retryReport = retryData.report;
         const retryContentLength = retryReport.sections?.reduce((sum, section) => 
           sum + (section.content?.length || 0), 0) || 0;
@@ -115,6 +152,8 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
         
         if (isRetryBetter) {
           console.log(`Using retry report as it has significantly better quality metrics`);
+          toast.success("Enhanced report generated successfully", { duration: 3000 });
+          
           return {
             ...retryReport,
             sections: retryReport.sections || [],
@@ -163,13 +202,13 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
 
     const details = error.details || {};
 
-    // Create a more informative error report
+    // Create a more informative error report with better troubleshooting guidance
     const errorReport = {
       ...fallbackReport,
       title: `Error Report for "${query}"`,
       sections: [{
         title: "Error Details",
-        content: `We encountered an error while generating your research report: "${error.message}". This may be due to issues with the Gemini API connection or configuration.\n\nTroubleshooting steps:\n1. Check that your Gemini API key is valid and correctly set up in the Supabase Edge Function Secrets.\n2. Verify that the API key has access to the Gemini model specified in the edge functions.\n3. Check the Edge Function logs for more detailed error information.`
+        content: `We encountered an error while generating your research report: "${error.message}". This may be due to issues with the Gemini API connection or configuration.\n\nTroubleshooting steps:\n1. Check that your Gemini API key is valid and correctly set up in the Supabase Edge Function Secrets.\n2. Verify that the API key has access to the Gemini model specified in the edge functions.\n3. Check the Edge Function logs for more detailed error information.\n\nIf you continue to experience issues, try modifying your query to be more specific or shorter, or try again later as the Gemini API may be experiencing temporary limitations.`
       }],
       intermediateResults: details
     } as GeminiReport;

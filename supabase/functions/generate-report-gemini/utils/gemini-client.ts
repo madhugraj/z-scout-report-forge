@@ -1,5 +1,5 @@
 
-// Gemini API client utility
+// Gemini API client utility with improved error handling
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +16,11 @@ export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/mode
  * Make a call to the Gemini API with enhanced options for more comprehensive results
  */
 export async function callGemini(prompt: string, enableSearch = true, maxOutputTokens = 30000) {
+  if (!GEMINI_API_KEY) {
+    console.error("Missing GEMINI_API_KEY environment variable");
+    throw new Error("Gemini API key is not configured. Please set the GEMINI_API_KEY secret in the Supabase Edge Function Secrets.");
+  }
+
   const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
   
   console.log(`Calling Gemini 1.5 Flash model with prompt length: ${prompt.length} chars, search enabled: ${enableSearch}, maxOutputTokens: ${maxOutputTokens}`);
@@ -50,16 +55,47 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
   }
 
   try {
-    const response = await fetch(requestUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody)
-    });
+    // Add retry mechanism for API resilience
+    let retries = 3;
+    let response = null;
+    let errorBody = null;
+    
+    while (retries > 0) {
+      try {
+        response = await fetch(requestUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (response.ok) {
+          break;
+        }
+        
+        errorBody = await response.text();
+        console.warn(`Gemini API error (${response.status}): ${errorBody}. Retries left: ${retries-1}`);
+        retries--;
+        
+        // Add exponential backoff
+        if (retries > 0) {
+          const backoffTime = Math.pow(2, 4-retries) * 1000;
+          console.log(`Retrying in ${backoffTime}ms...`);
+          await new Promise(resolve => setTimeout(resolve, backoffTime));
+        }
+      } catch (fetchError) {
+        console.error(`Fetch error: ${fetchError.message}. Retries left: ${retries-1}`);
+        retries--;
+        
+        if (retries > 0) {
+          const backoffTime = Math.pow(2, 4-retries) * 1000;
+          await new Promise(resolve => setTimeout(resolve, backoffTime));
+        }
+      }
+    }
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error(`Gemini API error (${response.status}): ${errorBody}`);
-      throw new Error(`Gemini API returned status ${response.status}: ${errorBody}`);
+    if (!response || !response.ok) {
+      console.error(`Gemini API failed after retries: ${errorBody || 'Unknown error'}`);
+      throw new Error(`Gemini API failed: ${response?.status || 'Unknown status'} - ${errorBody || 'Unknown error'}`);
     }
 
     const json = await response.json();
