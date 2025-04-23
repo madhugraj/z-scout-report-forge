@@ -4,7 +4,7 @@ import { ReportSection, Reference, SuggestedImage } from '@/hooks/useGeminiRepor
 import ImagePopover from '../ImagePopover';
 import { toast } from '@/components/ui/sonner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, FileText, BarChart } from 'lucide-react';
 
 interface ResearchContentProps {
   sections: ReportSection[];
@@ -14,6 +14,13 @@ interface ResearchContentProps {
     mainTopic?: string;
     subtopics?: string[];
     researchData?: string[];
+    topicStructure?: {
+      mainTopic: string;
+      topics: Array<{
+        title: string;
+        subtopics: string[];
+      }>;
+    };
   };
 }
 
@@ -25,6 +32,7 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [sectionImages, setSectionImages] = useState<{[key: number]: SuggestedImage[]}>({});
   const [showRawData, setShowRawData] = useState(false);
+  const [showTopicStructure, setShowTopicStructure] = useState(false);
 
   const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, sectionIndex: number) => {
     e.preventDefault();
@@ -188,6 +196,13 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
     return parts;
   };
 
+  const totalWords = sections.reduce((count, section) => {
+    const wordCount = section.content?.split(/\s+/).length || 0;
+    return count + wordCount;
+  }, 0);
+  
+  const estimatedPages = Math.max(1, Math.round(totalWords / 400)); // ~400 words per page
+
   if (sections.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[300px] bg-gray-50 p-6 rounded-lg text-gray-500">
@@ -198,59 +213,113 @@ const ResearchContent: React.FC<ResearchContentProps> = ({
 
   return (
     <div className="research-content">
-      {intermediateResults && (
-        <div className="mb-6">
+      <div className="mb-6 bg-violet-50 p-4 rounded-lg border border-violet-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <FileText className="text-violet-600" size={20} />
+          <div>
+            <h3 className="text-sm font-medium text-violet-700">Comprehensive Research Report</h3>
+            <p className="text-xs text-violet-600">
+              {sections.length} sections • {references.length} references • ~{totalWords.toLocaleString()} words • ~{estimatedPages} pages
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
           <button 
             onClick={() => setShowRawData(!showRawData)}
-            className="flex items-center gap-2 text-violet-600 hover:text-violet-700 mb-2 text-sm font-medium bg-violet-50 px-3 py-1 rounded-md"
+            className="flex items-center gap-1 text-violet-600 hover:text-violet-700 text-xs font-medium bg-violet-100 px-2 py-1 rounded-md"
           >
-            <InfoIcon size={16} />
-            {showRawData ? "Hide" : "Show"} Agent Outputs
+            <InfoIcon size={14} />
+            {showRawData ? "Hide" : "Show"} Agent Data
           </button>
           
-          {showRawData && (
-            <div className="space-y-4 bg-slate-50 p-4 rounded-lg mb-6 border border-slate-200">
-              <h3 className="text-lg font-medium text-slate-700">Agent Outputs</h3>
-              
-              {intermediateResults.abstract && (
-                <div className="bg-white p-3 rounded border border-slate-200">
-                  <h4 className="text-sm font-medium text-slate-700 mb-1">Abstract Generator</h4>
-                  <div className="text-sm text-slate-600 max-h-32 overflow-y-auto">
-                    {intermediateResults.abstract.split('\n').map((line, i) => (
-                      <p key={i} className="mb-1">{line}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {intermediateResults.mainTopic && intermediateResults.subtopics && (
-                <div className="bg-white p-3 rounded border border-slate-200">
-                  <h4 className="text-sm font-medium text-slate-700 mb-1">Topic Extractor</h4>
-                  <div className="text-sm text-slate-600">
-                    <p className="font-medium">Main Topic:</p>
-                    <p className="mb-2">{intermediateResults.mainTopic}</p>
-                    <p className="font-medium">Subtopics:</p>
-                    <ul className="list-disc pl-5">
-                      {intermediateResults.subtopics.map((topic, i) => (
-                        <li key={i}>{topic}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-              
-              {intermediateResults.researchData && intermediateResults.researchData.length > 0 && (
-                <div className="bg-white p-3 rounded border border-slate-200">
-                  <h4 className="text-sm font-medium text-slate-700 mb-1">Research Agent ({intermediateResults.researchData.length} topics)</h4>
-                  <div className="text-xs text-slate-600 max-h-32 overflow-y-auto">
-                    <p className="italic">First research output excerpt:</p>
-                    {intermediateResults.researchData[0].substring(0, 150) + "..."}
-                  </div>
-                </div>
-              )}
+          {intermediateResults?.topicStructure && (
+            <button 
+              onClick={() => setShowTopicStructure(!showTopicStructure)}
+              className="flex items-center gap-1 text-violet-600 hover:text-violet-700 text-xs font-medium bg-violet-100 px-2 py-1 rounded-md"
+            >
+              <BarChart size={14} />
+              {showTopicStructure ? "Hide" : "Show"} Topic Structure
+            </button>
+          )}
+        </div>
+      </div>
+
+      {showTopicStructure && intermediateResults?.topicStructure && (
+        <div className="mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
+          <h3 className="text-lg font-medium text-slate-700 mb-2">Complete Topic Structure</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {intermediateResults.topicStructure.topics.map((topic, index) => (
+              <div key={index} className="bg-white p-3 rounded border border-slate-200">
+                <h4 className="text-sm font-medium text-violet-700 mb-2">{topic.title}</h4>
+                <ul className="text-xs text-slate-600 list-disc pl-5 space-y-0.5">
+                  {topic.subtopics.map((subtopic, i) => (
+                    <li key={i}>{subtopic}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 text-xs text-slate-500">
+            <p>This structure shows the full scope of the research report with all topics and subtopics to be covered. 
+            The generated report should address all major topics and relevant subtopics with detailed analysis.</p>
+          </div>
+        </div>
+      )}
+
+      {showRawData && intermediateResults && (
+        <div className="mb-6 space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+          <h3 className="text-lg font-medium text-slate-700">Agent Outputs</h3>
+          
+          {intermediateResults.abstract && (
+            <div className="bg-white p-3 rounded border border-slate-200">
+              <h4 className="text-sm font-medium text-slate-700 mb-1">Abstract Generator</h4>
+              <div className="text-sm text-slate-600 max-h-32 overflow-y-auto">
+                {intermediateResults.abstract.split('\n').map((line, i) => (
+                  <p key={i} className="mb-1">{line}</p>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {intermediateResults.mainTopic && intermediateResults.subtopics && (
+            <div className="bg-white p-3 rounded border border-slate-200">
+              <h4 className="text-sm font-medium text-slate-700 mb-1">Topic Extractor</h4>
+              <div className="text-sm text-slate-600">
+                <p className="font-medium">Main Topic:</p>
+                <p className="mb-2">{intermediateResults.mainTopic}</p>
+                <p className="font-medium">Subtopics:</p>
+                <ul className="list-disc pl-5">
+                  {intermediateResults.subtopics.map((topic, i) => (
+                    <li key={i}>{topic}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+          
+          {intermediateResults.researchData && intermediateResults.researchData.length > 0 && (
+            <div className="bg-white p-3 rounded border border-slate-200">
+              <h4 className="text-sm font-medium text-slate-700 mb-1">Research Agent ({intermediateResults.researchData.length} topics)</h4>
+              <div className="text-xs text-slate-600 max-h-32 overflow-y-auto">
+                <p className="italic">First research output excerpt:</p>
+                {intermediateResults.researchData[0].substring(0, 150) + "..."}
+              </div>
             </div>
           )}
         </div>
+      )}
+
+      {sections.length > 0 && sections.length < 5 && (
+        <Alert className="mb-6 bg-amber-50 border-amber-200">
+          <AlertTitle className="text-amber-800 flex items-center gap-2">
+            <InfoIcon className="h-4 w-4" />
+            Limited Report Content
+          </AlertTitle>
+          <AlertDescription className="text-amber-700">
+            The generated report appears to have limited coverage of the expected topics. This may be due to API limitations or model constraints. 
+            To get more comprehensive results, try regenerating the report or modifying your query to be more specific.
+          </AlertDescription>
+        </Alert>
       )}
 
       {sections.map((section, index) => (

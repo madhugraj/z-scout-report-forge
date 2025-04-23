@@ -5,10 +5,19 @@ import { GeminiReport } from "./types/geminiReportTypes";
 
 export async function generateGeminiReport(query: string): Promise<GeminiReport> {
   try {
-    console.log("Starting report generation for query:", query);
+    console.log("Starting comprehensive report generation for query:", query);
+
+    // First, enhance the query with specific instructions for depth
+    const enhancedQuery = `${query} - COMPREHENSIVE ANALYSIS: Produce a detailed 40-50 page research report with in-depth analysis of all topics and subtopics, extensive data, statistics, and academic references`;
 
     const { data, error } = await supabase.functions.invoke('generate-report-gemini', {
-      body: { query }
+      body: { 
+        query: enhancedQuery,
+        requestDepth: "comprehensive", 
+        pageTarget: "40-50",
+        generateFullReport: true,
+        includeAllSubtopics: true
+      }
     });
 
     if (error) {
@@ -30,6 +39,58 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     }
 
     const report = data.report;
+
+    // Log report statistics to help with debugging
+    const sectionCount = report.sections?.length || 0;
+    const referenceCount = report.references?.length || 0;
+    const totalContentLength = report.sections?.reduce((sum, section) => 
+      sum + (section.content?.length || 0), 0) || 0;
+    
+    console.log(`Report statistics: ${sectionCount} sections, ${referenceCount} references, ~${Math.round(totalContentLength/1000)}K chars content`);
+
+    // If the report is too small, we should retry with stronger parameters
+    if (totalContentLength < 10000 && !data.retryAttempted) {
+      console.log("Report content is too small, retrying with enhanced parameters...");
+      const { data: retryData, error: retryError } = await supabase.functions.invoke('generate-report-gemini', {
+        body: { 
+          query: enhancedQuery,
+          requestDepth: "maximum",
+          pageTarget: "60-80", 
+          generateFullReport: true,
+          includeAllSubtopics: true,
+          forceDepth: true,
+          retryAttempt: true
+        }
+      });
+      
+      if (!retryError && retryData?.report) {
+        const retryReport = retryData.report;
+        const retryContentLength = retryReport.sections?.reduce((sum, section) => 
+          sum + (section.content?.length || 0), 0) || 0;
+          
+        console.log(`Retry generated ${retryReport.sections?.length} sections with ~${Math.round(retryContentLength/1000)}K chars`);
+        
+        if (retryContentLength > totalContentLength) {
+          console.log("Using retry report as it has more content");
+          return {
+            ...retryReport,
+            sections: retryReport.sections || [],
+            references: retryReport.references || [],
+            suggestedPdfs: retryReport.suggestedPdfs || [],
+            suggestedImages: retryReport.suggestedImages || [],
+            suggestedDatasets: retryReport.suggestedDatasets || [],
+            intermediateResults: {
+              ...data.intermediateResults,
+              retryStats: {
+                originalSize: totalContentLength,
+                retrySize: retryContentLength,
+                improvement: `${Math.round((retryContentLength - totalContentLength) / totalContentLength * 100)}%`
+              }
+            }
+          };
+        }
+      }
+    }
 
     const processedReport = {
       ...report,

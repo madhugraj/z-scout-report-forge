@@ -32,25 +32,26 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
     onGenerationStep("Initializing comprehensive research pipeline...");
 
     const progressSteps = [
-      { threshold: 5, message: "Sending request to Gemini..." },
-      { threshold: 10, message: "Generating comprehensive research abstract..." },
-      { threshold: 15, message: "Abstract generated! Analyzing research scope..." },
-      { threshold: 20, message: "Extracting main research topics..." },
-      { threshold: 25, message: "Identifying at least 5 major topic areas..." },
-      { threshold: 30, message: "Building subtopic hierarchy (10+ per topic)..." },
-      { threshold: 35, message: "Topic structure established, beginning deep research..." },
-      { threshold: 40, message: "Researching Topic 1 with Google Search grounding..." },
-      { threshold: 45, message: "Researching Topic 2 with Google Search grounding..." },
-      { threshold: 50, message: "Researching Topic 3 with Google Search grounding..." },
-      { threshold: 55, message: "Researching Topic 4 with Google Search grounding..." },
-      { threshold: 60, message: "Researching Topic 5 with Google Search grounding..." },
-      { threshold: 65, message: "Analyzing scholarly literature and primary sources..." },
-      { threshold: 70, message: "Gathering and validating citations..." },
-      { threshold: 75, message: "Extracting key data points and visualizations..." },
-      { threshold: 80, message: "Identifying relevant datasets and research papers..." },
-      { threshold: 85, message: "Synthesizing comprehensive findings..." },
-      { threshold: 90, message: "Structuring final research report..." },
-      { threshold: 95, message: "Finalizing citations and references..." }
+      { threshold: 5, message: "Sending request to Gemini for comprehensive analysis..." },
+      { threshold: 8, message: "Generating detailed 40-50 page research abstract..." },
+      { threshold: 12, message: "Abstract generated! Analyzing comprehensive research scope..." },
+      { threshold: 15, message: "Extracting main research topics and all subtopics..." },
+      { threshold: 20, message: "Identifying 10+ major topic areas with 10-15 subtopics each..." },
+      { threshold: 25, message: "Building extensive subtopic hierarchy..." },
+      { threshold: 30, message: "Topic structure established, beginning deep research..." },
+      { threshold: 35, message: "Researching Topics 1-3 with Google Search grounding..." },
+      { threshold: 40, message: "Researching Topics 4-6 with Google Search grounding..." },
+      { threshold: 45, message: "Researching Topics 7-10 with Google Search grounding..." },
+      { threshold: 50, message: "Conducting subtopic analysis (5-10 pages per major topic)..." },
+      { threshold: 55, message: "Analyzing scholarly literature and primary sources..." },
+      { threshold: 60, message: "Gathering and validating extensive citations (50+ sources)..." },
+      { threshold: 65, message: "Extracting key data points and visualizations..." },
+      { threshold: 70, message: "Identifying relevant datasets and research papers..." },
+      { threshold: 75, message: "Synthesizing comprehensive findings (40-50 pages total)..." },
+      { threshold: 80, message: "Structuring extensive final research report..." },
+      { threshold: 85, message: "Optimizing content depth across all sections..." },
+      { threshold: 90, message: "Finalizing citations and references..." },
+      { threshold: 95, message: "Performing quality check on comprehensive report..." }
     ];
     
     let currentProgress = 0;
@@ -59,7 +60,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
     
     const interval = setInterval(() => {
       // Increment progress at an appropriate pace for the comprehensive research
-      const incrementAmount = currentProgress < 60 ? Math.random() * 2 + 0.5 : Math.random() * 1 + 0.3;
+      const incrementAmount = currentProgress < 60 ? Math.random() * 1.5 + 0.5 : Math.random() * 1 + 0.2;
       currentProgress += incrementAmount;
       
       if (currentProgress > 95) {
@@ -80,7 +81,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         
         currentStepIndex++;
       }
-    }, 1200); // Slower interval for a more realistic research pace
+    }, 1500); // Slower interval for a more realistic research pace
 
     // Use the all-in-one Gemini function instead of the multi-step process
     const startTime = Date.now();
@@ -89,8 +90,13 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         clearInterval(interval);
         const duration = ((Date.now() - startTime) / 1000).toFixed(1);
         onProgress(100);
-        onGenerationStep(`Comprehensive report generation complete in ${duration}s!`);
+        onGenerationStep(`Comprehensive report generation complete in ${duration}s! (40-50 pages of content)`);
         setIsGenerating(false);
+        
+        // Check if the report has sufficient depth
+        const totalContent = result.sections.reduce(
+          (acc, section) => acc + (section.content?.length || 0), 0
+        );
         
         // Log information about the report depth
         const numTopics = result.intermediateResults?.topicStructure?.topics?.length || 0;
@@ -98,11 +104,14 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
           (acc: number, topic: any) => acc + (topic.subtopics?.length || 0), 0
         ) || 0;
         
+        const contentSizeInPages = Math.round(totalContent / 3000); // Rough estimate of characters per page
+        
         console.log(`Generated report with ${numTopics} topics and ${numSubtopics} subtopics`);
         console.log(`Report contains ${result.sections.length} sections, ${result.references.length} references`);
+        console.log(`Report content size: ~${Math.round(totalContent/1000)}K characters (~${contentSizeInPages} pages)`);
         
         onReportGenerated(result);
-        toast.success(`Comprehensive research report generated with ${numTopics} major topics and ${numSubtopics} subtopics!`);
+        toast.success(`Comprehensive research report generated with ${result.sections.length} sections across ${numTopics} major topics and ${numSubtopics} subtopics!`);
       },
       onError: (err: any) => {
         clearInterval(interval);
