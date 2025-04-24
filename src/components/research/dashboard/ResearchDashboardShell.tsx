@@ -28,17 +28,11 @@ const ResearchDashboardShell: React.FC = () => {
   });
 
   useEffect(() => {
-    // Allow using the dashboard even without a query for testing
-    if (!state.query && !state.files?.length && !state.urls?.length) {
-      // If no query is provided, don't start report generation automatically
-      // Instead, let the user start with the chat interface
-      console.log("No query provided, showing chat interface for query development");
-      return;
+    // Do not auto-start report generation even if query is provided
+    // We'll let the chat interface handle this now
+    if (state.query) {
+      console.log("Query provided but waiting for user confirmation through chat interface:", state.query);
     }
-    
-    // Start report generation when component mounts
-    setIsGenerating(true);
-    // eslint-disable-next-line
   }, [state, navigate]);
 
   const handleReportGenerated = (newReport: GeminiReport) => {
@@ -77,24 +71,28 @@ const ResearchDashboardShell: React.FC = () => {
 
   // Handle generating report from the chat interface
   const handleGenerateReportFromChat = (query: string) => {
-    console.log("Generating report from chat with query:", query);
+    console.log("Starting report generation from chat with query:", query);
+    
     // Update state with the new query
     navigate(location.pathname, { 
       state: { ...state, query },
       replace: true 
     });
     
+    // Start the generation process
     setIsGenerating(true);
   };
 
   return (
     <>
-      <ReportGenerator
-        onProgress={setProgress}
-        onGenerationStep={(step) => setGenerationSteps(prev => [...prev, step])}
-        onReportGenerated={handleReportGenerated}
-        query={state.query || ""}
-      />
+      {isGenerating && (
+        <ReportGenerator
+          onProgress={setProgress}
+          onGenerationStep={(step) => setGenerationSteps(prev => [...prev, step])}
+          onReportGenerated={handleReportGenerated}
+          query={state.query || ""}
+        />
+      )}
       
       <ViewStateManager
         activeView={activeView}

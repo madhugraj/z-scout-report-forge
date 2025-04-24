@@ -5,7 +5,7 @@ const apiKeyRotator = {
   currentIndex: 0,
   lastCallTimestamps: new Map<string, number[]>(),
   rateLimitWindow: 60000, // 1 minute window
-  maxCallsPerWindow: 40, // Reduced from 50 to be more conservative
+  maxCallsPerWindow: 40, // Keep at 40 as per API limitations
   
   // Track keys currently in cooldown due to rate limiting
   cooldownKeys: new Map<string, number>(),
@@ -91,7 +91,7 @@ export async function callGeminiWithRetry(url: string, requestBody: any, retries
   let lastError: Error | null = null;
   let apiKey: string | null = null;
   
-  // Fix topK parameter if present and too large
+  // Fix topK parameter if present and too large (maximum allowed is 40)
   if (requestBody.generationConfig?.topK && requestBody.generationConfig.topK > 40) {
     console.log(`Adjusting topK from ${requestBody.generationConfig.topK} to 40 (maximum allowed)`);
     requestBody.generationConfig.topK = 40;

@@ -10,7 +10,7 @@ export const corsHeaders = {
 export const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 export const GEMINI_API_KEY_2 = Deno.env.get("GEMINI_API_KEY_2");
 
-// Updated to use gemini-1.5-pro-002 as requested
+// Using gemini-1.5-pro-002 model as specified
 export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent";
 
 // Track rate limit information
@@ -73,7 +73,7 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
       temperature: 0.05, // Lower temperature for more deterministic, factual responses
       maxOutputTokens: maxOutputTokens,
       topP: 1.0,
-      topK: 40, // Reduced to stay within API limits (max is 40)
+      topK: 40, // Keep at 40 (the maximum allowed by API)
     },
     safetySettings: [
       { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },

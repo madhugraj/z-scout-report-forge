@@ -43,7 +43,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  // New function to test the Gemini API key
+  // Function to test the Gemini API key
   const testGeminiApiKey = async () => {
     try {
       setTestingApi(true);
@@ -96,6 +96,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               size="sm"
               className="bg-[#2A2F3C]/30 text-gray-300 border border-gray-700 hover:bg-[#2A2F3C]/80 hover:text-white"
               onClick={() => handleSuggestedPrompt(prompt)}
+              disabled={isLoading || testingApi}
             >
               {prompt}
             </Button>
@@ -116,7 +117,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               disabled={isLoading || testingApi}
             >
               <Sparkles className="h-4 w-4" />
-              Generate Comprehensive Research Report
+              Prepare Research Report
             </Button>
             
             <Button

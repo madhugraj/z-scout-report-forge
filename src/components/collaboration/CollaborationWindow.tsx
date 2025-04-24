@@ -63,6 +63,8 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   const [editTitle, setEditTitle] = useState(false);
   const [editText, setEditText] = useState('');
   const [editorMode, setEditorMode] = useState<'minimal' | 'advanced'>('minimal');
+  const [confirmingReport, setConfirmingReport] = useState(false);
+  const [reportQuery, setReportQuery] = useState('');
 
   // Use the research chat hook
   const { 
@@ -114,7 +116,26 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       }
     }
 
-    // Send to the research chat
+    // If we're confirming a report, process the confirmation
+    if (confirmingReport) {
+      if (message.toLowerCase().includes('yes') || message.toLowerCase().includes('confirm') || 
+          message.toLowerCase().includes('generate') || message.toLowerCase().includes('proceed')) {
+        
+        // User confirmed, start report generation
+        handleStartReportGeneration();
+        setConfirmingReport(false);
+        
+        // Add confirmation message to chat
+        sendMessage("I confirm that I want to generate the report.");
+      } else {
+        // User didn't confirm
+        setConfirmingReport(false);
+        sendMessage("I'm not ready to generate the report yet.");
+      }
+      return;
+    }
+
+    // Regular message sending
     sendMessage(message);
   };
 
@@ -122,19 +143,40 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     try {
       const query = await generateReport();
       
-      if (query && onGenerateReport) {
-        // Navigate to the dashboard with the report
-        onGenerateReport(query);
+      if (query) {
+        // Store the query but don't start generation yet
+        setReportQuery(query);
+        setConfirmingReport(true);
         
-        toast.success('Starting comprehensive report generation', {
-          description: 'This may take 1-2 minutes. We\'ll notify you when it\'s ready.',
-          duration: 5000
-        });
+        // Add a confirmation message
+        const confirmationMessage: Message = {
+          id: Date.now().toString(),
+          sender: 'Research AI',
+          text: `I'm ready to generate a comprehensive report on "${query}". Is this the topic you want me to research? Please confirm or provide any additional instructions.`,
+          timestamp: new Date(),
+          isAI: true
+        };
+        
+        // Note: Using the chat hook's internal message handling instead of managing local messages
+        sendMessage(`I'm ready to generate a comprehensive report on "${query}". Please confirm to proceed.`);
       }
     } catch (err) {
-      console.error('Error generating report:', err);
-      toast.error('Failed to start report generation');
+      console.error('Error preparing report:', err);
+      toast.error('Failed to prepare report generation');
+      setConfirmingReport(false);
     }
+  };
+  
+  const handleStartReportGeneration = () => {
+    if (!reportQuery || !onGenerateReport) return;
+    
+    // Start the actual report generation
+    onGenerateReport(reportQuery);
+    
+    toast.success('Starting comprehensive report generation', {
+      description: 'This may take 1-2 minutes. We\'ll notify you when it\'s ready.',
+      duration: 5000
+    });
   };
 
   const formatTime = (date: Date) => {
@@ -212,10 +254,12 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
               <ChatInput 
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
-                placeholder="Describe your research topic or ask a question..."
-                suggestedPrompts={suggestedPrompts}
+                placeholder={confirmingReport 
+                  ? "Type 'yes' to confirm report generation or provide additional instructions..." 
+                  : "Describe your research topic or ask a question..."}
+                suggestedPrompts={!confirmingReport ? suggestedPrompts : []}
                 onGenerateReport={handleGenerateReport}
-                showGenerateButton={readyForReport} 
+                showGenerateButton={readyForReport && !confirmingReport} 
               />
             </>
           )}
