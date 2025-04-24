@@ -3,7 +3,7 @@ import React from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import PDFViewerDialog from "../../../PDFViewerDialog";
 import EncryptionDialog from "../../../EncryptionDialog";
-import CollaborationWindow from "../../../CollaborationWindow";
+import CollaborationWindow from "../../../collaboration/CollaborationWindow";
 import DashboardSidebar from "../DashboardSidebar";
 import ReportGenerationProgress from "../ReportGenerationProgress";
 import DashboardContentSwitcher from "../DashboardContentSwitcher";
@@ -27,6 +27,7 @@ interface ViewStateManagerProps {
   onClosePdfViewer: () => void;
   onCloseEncryptionDialog: () => void;
   onSelectPdfForView: (pdf: { title: string; url: string } | null) => void;
+  onGenerateReportFromChat?: (query: string) => void;
 }
 
 const ViewStateManager: React.FC<ViewStateManagerProps> = ({
@@ -47,6 +48,7 @@ const ViewStateManager: React.FC<ViewStateManagerProps> = ({
   onClosePdfViewer,
   onCloseEncryptionDialog,
   onSelectPdfForView,
+  onGenerateReportFromChat
 }) => {
   return (
     <div className="flex h-screen bg-gradient-to-br from-[#1A1F2C] via-[#1E2330] to-[#1A1F2C] text-white overflow-hidden">
@@ -89,6 +91,7 @@ const ViewStateManager: React.FC<ViewStateManagerProps> = ({
                 <CollaborationWindow 
                   reportSections={report.sections} 
                   isFloating={false}
+                  onGenerateReport={onGenerateReportFromChat}
                 />
               </ResizablePanel>
             </>

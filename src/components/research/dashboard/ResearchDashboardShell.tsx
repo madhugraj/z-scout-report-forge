@@ -14,7 +14,7 @@ const ResearchDashboardShell: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeSideView, setActiveSideView] = useState<'pdf-viewer' | 'images' | 'tables' | null>(null);
-  const [showCollaborator, setShowCollaborator] = useState<boolean>(false);
+  const [showCollaborator, setShowCollaborator] = useState<boolean>(true); // Show collaborator by default
   const [selectedPdfForView, setSelectedPdfForView] = useState<{title: string; url: string} | null>(null);
   const [showEncryptionDialog, setShowEncryptionDialog] = useState(false);
   const [generationSteps, setGenerationSteps] = useState<string[]>([]);
@@ -30,14 +30,9 @@ const ResearchDashboardShell: React.FC = () => {
   useEffect(() => {
     // Allow using the dashboard even without a query for testing
     if (!state.query && !state.files?.length && !state.urls?.length) {
-      // If no query is provided, use a default one
-      const defaultQuery = "Impact of climate change on global agricultural systems";
-      console.log("No query provided, using default query:", defaultQuery);
-      // Update the location state with the default query
-      navigate(location.pathname, { 
-        state: { ...state, query: defaultQuery },
-        replace: true 
-      });
+      // If no query is provided, don't start report generation automatically
+      // Instead, let the user start with the chat interface
+      console.log("No query provided, showing chat interface for query development");
       return;
     }
     
@@ -80,13 +75,25 @@ const ResearchDashboardShell: React.FC = () => {
     setShowCollaborator(prev => !prev);
   };
 
+  // Handle generating report from the chat interface
+  const handleGenerateReportFromChat = (query: string) => {
+    console.log("Generating report from chat with query:", query);
+    // Update state with the new query
+    navigate(location.pathname, { 
+      state: { ...state, query },
+      replace: true 
+    });
+    
+    setIsGenerating(true);
+  };
+
   return (
     <>
       <ReportGenerator
         onProgress={setProgress}
         onGenerationStep={(step) => setGenerationSteps(prev => [...prev, step])}
         onReportGenerated={handleReportGenerated}
-        query={state.query || "Impact of climate change on global agricultural systems"}
+        query={state.query || ""}
       />
       
       <ViewStateManager
@@ -107,6 +114,7 @@ const ResearchDashboardShell: React.FC = () => {
         onClosePdfViewer={() => setSelectedPdfForView(null)}
         onCloseEncryptionDialog={() => setShowEncryptionDialog(false)}
         onSelectPdfForView={setSelectedPdfForView}
+        onGenerateReportFromChat={handleGenerateReportFromChat}
       />
     </>
   );

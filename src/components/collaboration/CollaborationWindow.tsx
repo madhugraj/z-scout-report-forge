@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import CollaborationHeader from './CollaborationHeader';
@@ -8,6 +9,8 @@ import InviteDialog from './InviteDialog';
 import ChatInput from './ChatInput';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { useResearchChat } from '@/hooks/useResearchChat';
+import { useNavigate } from 'react-router-dom';
 
 interface CollaboratorInfo {
   name: string;
@@ -22,6 +25,10 @@ interface Message {
   text: string;
   timestamp: Date;
   isAI?: boolean;
+  functionCall?: {
+    name: string;
+    arguments: any;
+  };
 }
 
 interface CollaborationWindowProps {
@@ -30,6 +37,7 @@ interface CollaborationWindowProps {
   reportSections?: {title: string; content: string}[];
   onClose?: () => void;
   isFloating?: boolean;
+  onGenerateReport?: (query: string) => void;
 }
 
 const CollaborationWindow: React.FC<CollaborationWindowProps> = ({ 
@@ -37,9 +45,10 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   currentUser = 'You',
   reportSections = [],
   onClose,
-  isFloating = false
+  isFloating = false,
+  onGenerateReport
 }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const navigate = useNavigate();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [collaborators, setCollaborators] = useState<CollaboratorInfo[]>([
@@ -54,6 +63,16 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   const [editTitle, setEditTitle] = useState(false);
   const [editText, setEditText] = useState('');
   const [editorMode, setEditorMode] = useState<'minimal' | 'advanced'>('minimal');
+
+  // Use the research chat hook
+  const { 
+    messages, 
+    isLoading, 
+    sendMessage, 
+    readyForReport,
+    generateReport,
+    researchData 
+  } = useResearchChat();
 
   const handleInvite = () => {
     if (!inviteEmail.trim()) {
@@ -95,25 +114,27 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       }
     }
 
-    const newMessage = {
-      id: Date.now().toString(),
-      sender: 'You',
-      text: message,
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, newMessage]);
+    // Send to the research chat
+    sendMessage(message);
+  };
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage = {
-        id: (Date.now() + 1).toString(),
-        sender: 'Research AI',
-        text: 'I\'ve analyzed your comment. Would you like me to help you research this topic further or make edits to the report?',
-        timestamp: new Date(),
-        isAI: true
-      };
-      setMessages(prev => [...prev, aiMessage]);
-    }, 1500);
+  const handleGenerateReport = async () => {
+    try {
+      const query = await generateReport();
+      
+      if (query && onGenerateReport) {
+        // Navigate to the dashboard with the report
+        onGenerateReport(query);
+        
+        toast.success('Starting comprehensive report generation', {
+          description: 'This may take 1-2 minutes. We\'ll notify you when it\'s ready.',
+          duration: 5000
+        });
+      }
+    } catch (err) {
+      console.error('Error generating report:', err);
+      toast.error('Failed to start report generation');
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -134,6 +155,13 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       setEditText('');
     }
   };
+
+  // Suggested research prompts
+  const suggestedPrompts = [
+    "I'm interested in researching climate change adaptation in coastal cities",
+    "Help me formulate a research question about AI ethics in healthcare",
+    "I want to explore the impact of remote work on employee productivity"
+  ];
 
   return (
     <div className={`flex flex-col ${isFloating ? 'h-full rounded-lg border border-gray-700 shadow-lg overflow-hidden' : 'h-full'}`}>
@@ -181,7 +209,14 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
                 messages={messages} 
                 formatTime={formatTime} 
               />
-              <ChatInput onSendMessage={handleSendMessage} />
+              <ChatInput 
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading}
+                placeholder="Describe your research topic or ask a question..."
+                suggestedPrompts={suggestedPrompts}
+                onGenerateReport={handleGenerateReport}
+                showGenerateButton={readyForReport} 
+              />
             </>
           )}
         </div>

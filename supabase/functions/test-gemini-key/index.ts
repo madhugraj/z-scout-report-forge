@@ -38,8 +38,25 @@ serve(async (req) => {
     // Make a simple test call to the Gemini API using gemini-1.5-pro-002
     const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent?key=${GEMINI_API_KEY}`;
     
+    // Include function calling capabilities in test
     const testBody = {
       contents: [{ role: "user", parts: [{ text: "Hello, this is a test prompt. Please respond with 'API key is valid'." }] }],
+      tools: [{
+        functionDeclarations: [{
+          name: "testFunction",
+          description: "This is a test function for API validation",
+          parameters: {
+            type: "object",
+            properties: {
+              response: {
+                type: "string",
+                description: "Test response"
+              }
+            },
+            required: ["response"]
+          }
+        }]
+      }],
       generationConfig: {
         maxOutputTokens: 20,
         temperature: 0.0,
@@ -85,7 +102,7 @@ serve(async (req) => {
           error: "Gemini API key is invalid or API is unavailable",
           status: statusCode,
           details: detailedError,
-          resolution: "Please check your API key or try again later if the service is experiencing issues. Make sure your API key has access to the gemini-1.5-pro-002 model."
+          resolution: "Please check your API key or try again later if the service is experiencing issues. Make sure your API key has access to the gemini-1.5-pro-002 model and supports function calling."
         }),
         { 
           status: 400,
@@ -100,10 +117,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Gemini API key is valid for gemini-1.5-pro-002 model",
+        message: "Gemini API key is valid for gemini-1.5-pro-002 model with function calling support",
         modelInfo: {
           model: "gemini-1.5-pro-002",
-          capabilities: ["text generation", "web search grounding", "image analysis"]
+          capabilities: ["text generation", "web search grounding", "image analysis", "function calling"]
         }
       }),
       { 
