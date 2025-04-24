@@ -1,6 +1,6 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { callGeminiWithRetry } from "./utils/geminiApiHandler.ts";
 
 // Define CORS headers for cross-origin requests
 const corsHeaders = {
@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Define function schema for the Gemini function calling
+// Function schemas remain the same
 const functionSchemas = [
   {
     name: "researchQuestion",
@@ -85,18 +85,11 @@ const functionSchemas = [
   }
 ];
 
-// Handler function to invoke the Gemini API
 async function callGeminiWithFunctionCall(message: string, history: Array<any>) {
-  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+  const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent";
   
-  if (!GEMINI_API_KEY) {
-    console.error("Missing GEMINI_API_KEY environment variable");
-    throw new Error("Gemini API key is not configured. Please set the GEMINI_API_KEY secret in the Supabase Edge Function Secrets.");
-  }
-
   try {
     console.log("Calling Gemini API with function calling capabilities...");
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent?key=${GEMINI_API_KEY}`;
     
     // Build messages with history
     const messages = history.map(msg => {
@@ -142,25 +135,13 @@ async function callGeminiWithFunctionCall(message: string, history: Array<any>) 
       generationConfig: {
         temperature: 0.2,
         topP: 0.95,
-        topK: 64,
         maxOutputTokens: 8000
       }
     };
 
     console.log("Sending request to Gemini API...");
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Gemini API error (${response.status}): ${errorText}`);
-      throw new Error(`Gemini API error (${response.status}): ${errorText}`);
-    }
-
-    const responseData = await response.json();
+    const responseData = await callGeminiWithRetry(GEMINI_URL, payload);
+    
     console.log("Received response from Gemini API:", JSON.stringify(responseData).substring(0, 300) + "...");
     
     // Parse the response for function calls
@@ -183,7 +164,7 @@ async function callGeminiWithFunctionCall(message: string, history: Array<any>) 
       console.log(`Function call detected: ${functionCall.name}`);
       return {
         role: "assistant",
-        content: null, // No direct text content when function is called
+        content: null,
         functionCall: functionCall
       };
     }
@@ -196,12 +177,17 @@ async function callGeminiWithFunctionCall(message: string, history: Array<any>) 
     };
     
   } catch (error) {
+    // Enhanced error logging for better debugging
     console.error("Error calling Gemini API:", error);
+    
+    if (error.message.includes("rate limit") || error.message.includes("quota exceeded")) {
+      throw new Error("API rate limit reached. Please try again in a minute.");
+    }
+    
     throw error;
   }
 }
 
-// Main edge function handler
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -227,7 +213,7 @@ serve(async (req) => {
       }
     }
     
-    // Get response from Gemini
+    // Get response from Gemini with enhanced error handling
     const response = await callGeminiWithFunctionCall(message, updatedHistory);
     
     // Add response to history for context

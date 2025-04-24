@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -49,6 +48,7 @@ export function useResearchChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [history, setHistory] = useState<ChatHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [researchData, setResearchData] = useState<{
     researchQuestion?: ResearchQuestion;
     recommendedSources?: RecommendedSource[];
@@ -56,13 +56,11 @@ export function useResearchChat() {
   }>({});
   const [readyForReport, setReadyForReport] = useState(false);
 
-  // Function to handle user messages and get AI responses
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
 
     setIsLoading(true);
     
-    // Add user message to UI
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       sender: 'You',
@@ -73,23 +71,30 @@ export function useResearchChat() {
     setMessages(prev => [...prev, userMessage]);
     
     try {
-      // Call the research-chat edge function
       const { data, error } = await supabase.functions.invoke('research-chat', {
         body: { message, history }
       });
       
       if (error) {
         console.error('Error calling research-chat function:', error);
-        toast.error('Failed to get AI response');
+        
+        if (error.message.includes('rate limit') || error.message.includes('quota exceeded')) {
+          toast.error('API rate limit reached', {
+            description: 'Please wait a moment before sending another message.',
+            duration: 5000
+          });
+        } else {
+          toast.error('Failed to get AI response');
+        }
         return;
       }
       
+      setRetryCount(0);
+      
       const { response, history: newHistory } = data;
       
-      // Update history state
       setHistory(newHistory);
       
-      // Handle function call if present
       if (response.functionCall) {
         const functionCallMessage: ChatMessage = {
           id: Date.now().toString(),
@@ -102,10 +107,8 @@ export function useResearchChat() {
         
         setMessages(prev => [...prev, functionCallMessage]);
         
-        // Process function call results
         await processFunctionCallResult(response.functionCall);
       } else if (response.content) {
-        // Normal text response
         const aiMessage: ChatMessage = {
           id: Date.now().toString(),
           sender: 'Research AI',
@@ -119,18 +122,33 @@ export function useResearchChat() {
       
     } catch (err) {
       console.error('Error processing message:', err);
-      toast.error('An error occurred while processing your message');
+      
+      if (retryCount < 3) {
+        const backoffTime = Math.pow(2, retryCount) * 1000;
+        toast.info('Retrying in ' + (backoffTime / 1000) + ' seconds...', {
+          duration: backoffTime
+        });
+        
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          handleSendMessage(message);
+        }, backoffTime);
+      } else {
+        toast.error('Unable to get a response after multiple attempts', {
+          description: 'Please try again later',
+          duration: 8000
+        });
+        setRetryCount(0);
+      }
     } finally {
       setIsLoading(false);
     }
   };
-  
-  // Process function calls and their results
+
   const processFunctionCallResult = async (functionCall: { name: string, arguments: any }) => {
     const { name, arguments: args } = functionCall;
     
     try {
-      // Parse function arguments
       const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
       
       switch(name) {
@@ -140,10 +158,8 @@ export function useResearchChat() {
             researchQuestion: parsedArgs
           }));
           
-          // Function result to send back to AI
           await sendFunctionResultToAI(name, { success: true, data: parsedArgs });
           
-          // Add a UI message explaining the research question
           const researchQuestionMessage: ChatMessage = {
             id: Date.now().toString(),
             sender: 'Research AI',
@@ -166,7 +182,6 @@ export function useResearchChat() {
           
           await sendFunctionResultToAI(name, { success: true, data: parsedArgs });
           
-          // Add a UI message explaining the sources
           const sourcesMessage: ChatMessage = {
             id: Date.now().toString(),
             sender: 'Research AI',
@@ -190,7 +205,6 @@ export function useResearchChat() {
           
           await sendFunctionResultToAI(name, { success: true, data: parsedArgs });
           
-          // Add a UI message explaining the scope
           const scopeMessage: ChatMessage = {
             id: Date.now().toString(),
             sender: 'Research AI',
@@ -207,11 +221,9 @@ export function useResearchChat() {
           
           setMessages(prev => [...prev, scopeMessage]);
           
-          // Check if we have enough data to generate a report
           if (researchData.researchQuestion && researchData.recommendedSources) {
             setReadyForReport(true);
             
-            // Add a message suggesting report generation
             const readyMessage: ChatMessage = {
               id: Date.now().toString(),
               sender: 'Research AI',
@@ -230,14 +242,12 @@ export function useResearchChat() {
       toast.error(`Error processing research analysis`);
     }
   };
-  
-  // Send function results back to AI
+
   const sendFunctionResultToAI = async (name: string, results: any) => {
     try {
-      // Get the last message (which should be the function call)
       const { data, error } = await supabase.functions.invoke('research-chat', {
         body: { 
-          message: "", // Empty message since we're just sending function results
+          message: "", 
           history, 
           functionResults: results
         }
@@ -248,15 +258,13 @@ export function useResearchChat() {
         return;
       }
       
-      // Update history
       setHistory(data.history);
       
     } catch (err) {
       console.error('Error sending function results:', err);
     }
   };
-  
-  // Generate the final report
+
   const generateReport = async () => {
     if (!researchData.researchQuestion) {
       toast.error('Research question is required before generating a report');
@@ -273,12 +281,9 @@ export function useResearchChat() {
     
     setMessages(prev => [...prev, confirmMessage]);
     
-    // Here we would call the existing report generation function...
-    // For now, we'll just return the query for the existing report generation pipeline
-    
     return researchData.researchQuestion.mainQuestion;
   };
-  
+
   return {
     messages,
     isLoading,
