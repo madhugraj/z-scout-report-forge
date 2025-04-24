@@ -1,4 +1,3 @@
-
 // Generate full report with Google grounding and comprehensive search
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -141,7 +140,7 @@ Instructions:
     // Step 3: Generate the full report directly using the topic structure
     // This is a major change - instead of researching each topic separately,
     // we'll have Gemini generate a complete report in one go based on the topic structure
-    console.log("Step 3: Generating full comprehensive report...");
+    console.log("Step 3: Generating full comprehensive report with gemini-1.5-pro-002 model...");
     
     // Format the topic structure for the prompt
     const topicStructureForPrompt = topics.map(topic => {

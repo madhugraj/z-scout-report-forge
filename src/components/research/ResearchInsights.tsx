@@ -52,7 +52,7 @@ Gemini API Troubleshooting Guide:
 1. API Key Issues:
    - Verify your Gemini API key is valid and not expired
    - Check that your API key has sufficient quota
-   - Ensure your API key has access to the Gemini 1.5 Flash model
+   - Ensure your API key has access to the Gemini 1.5 Pro model
    - Make sure the key is correctly set in Supabase Edge Function Secrets
 
 2. Technical Issues:
@@ -95,12 +95,12 @@ For more help, visit the Google AI Studio documentation: https://ai.google.dev/t
           <AlertTitle className="text-red-800">Error Generating Report</AlertTitle>
           <AlertDescription className="text-red-700">
             There was an error with the Gemini API. Please check that your API key is correctly configured
-            in the Supabase Edge Function Secrets and has access to the Gemini-1.5-Flash model.
+            in the Supabase Edge Function Secrets and has access to the Gemini-1.5-Pro model.
             <br /><br />
             <strong>Possible solutions:</strong>
             <ul className="list-disc pl-5 mt-2 space-y-1">
               <li>Verify your Gemini API key is valid and has sufficient quota</li>
-              <li>Check that the API key has access to the Gemini 1.5 Flash model</li>
+              <li>Check that the API key has access to the Gemini 1.5 Pro model (gemini-1.5-pro-002)</li>
               <li>Try a different or shorter research query</li>
               <li>Check the Edge Function logs for detailed error information</li>
             </ul>

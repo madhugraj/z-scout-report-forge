@@ -8,11 +8,11 @@ const corsHeaders = {
 };
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-// Using the stable flash model which is well-supported
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
+// Updated to use gemini-1.5-pro-002 model as requested
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent";
 
 async function callGemini(prompt: string) {
-  console.log("Calling Gemini API with model gemini-1.5-flash-latest");
+  console.log("Calling Gemini API with model gemini-1.5-pro-002");
   console.log(`Prompt length: ${prompt.length} characters`);
   const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
   const response = await fetch(requestUrl, {
@@ -190,7 +190,7 @@ IMPORTANT:
         sections: [{
           title: "Error",
           content: "An error occurred while generating the report: " + err.message + 
-                  "\n\nPlease check your query and try again. If the problem persists, verify that your Gemini API key has sufficient permissions and quota."
+                  "\n\nPlease check your query and try again. If the problem persists, verify that your Gemini API key has sufficient permissions and quota for the gemini-1.5-pro-002 model."
         }],
         references: [],
         suggestedPdfs: [],

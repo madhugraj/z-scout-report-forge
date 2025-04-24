@@ -29,11 +29,11 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   const startGeneratingReport = (query: string) => {
     setIsGenerating(true);
     onProgress(0);
-    onGenerationStep("Initializing enhanced comprehensive research pipeline with Gemini 1.5 Flash...");
+    onGenerationStep("Initializing enhanced comprehensive research pipeline with Gemini 1.5 Pro...");
 
     // More realistic and detailed progress steps for better user experience
     const progressSteps = [
-      { threshold: 5, message: "Sending request to Gemini 1.5 Flash model for advanced academic research analysis..." },
+      { threshold: 5, message: "Sending request to Gemini 1.5 Pro model for advanced academic research analysis..." },
       { threshold: 8, message: "Generating detailed research abstract with expanded scope..." },
       { threshold: 12, message: "Abstract generated! Analyzing comprehensive research domains..." },
       { threshold: 15, message: "Extracting 12-15 main topics and 10-15 subtopics per topic for comprehensive coverage..." },
@@ -144,7 +144,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         
         setIsGenerating(false);
         toast.error(`Report generation failed: ${errorMessage}`, {
-          description: "Check your Gemini API key and edge function logs for details.",
+          description: "Check your Gemini API key and ensure it has access to the gemini-1.5-pro-002 model.",
           duration: 8000
         });
         
@@ -152,7 +152,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
           title: "Error Generating Research Report",
           sections: [{
             title: "Error Details",
-            content: `We encountered an error while generating your research report: "${errorMessage}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets.`
+            content: `We encountered an error while generating your research report: "${errorMessage}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets and has access to the gemini-1.5-pro-002 model.`
           }],
           references: [],
           suggestedPdfs: [],

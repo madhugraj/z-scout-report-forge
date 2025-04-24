@@ -41,7 +41,7 @@ const ResearchSection: React.FC<ResearchSectionProps> = ({
     navigator.clipboard.writeText(`
 Gemini API Troubleshooting:
 1. Verify your Gemini API key is valid and has sufficient quota
-2. Check that the API key has access to the Gemini 1.5 Flash model
+2. Check that the API key has access to the Gemini 1.5 Pro model
 3. Make sure the API key is correctly set in Supabase Edge Function Secrets
 4. Check the Edge Function logs for detailed error information
 5. Try a different or shorter research query
@@ -72,7 +72,7 @@ Gemini API Troubleshooting:
           </div>
           <p className="text-sm text-blue-600 mb-4">
             To resolve this error, check your Edge Function logs and verify your Gemini API key configuration.
-            The most common issues are related to API key validity, permissions, or quota limits.
+            The most common issues are related to API key validity, permissions, or quota limits for the gemini-1.5-pro-002 model.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button 

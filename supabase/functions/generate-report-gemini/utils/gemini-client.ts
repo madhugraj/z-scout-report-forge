@@ -9,8 +9,8 @@ export const corsHeaders = {
 // Get the API key from environment variables
 export const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-// Using gemini-1.5-flash-latest which is available and supported
-export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
+// Updated to use gemini-1.5-pro-002 as requested
+export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent";
 
 /**
  * Make a call to the Gemini API with enhanced options for more comprehensive results
@@ -23,7 +23,7 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
 
   const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
   
-  console.log(`Calling Gemini 1.5 Flash model with prompt length: ${prompt.length} chars, search enabled: ${enableSearch}, maxOutputTokens: ${maxOutputTokens}`);
+  console.log(`Calling Gemini 1.5 Pro model with prompt length: ${prompt.length} chars, search enabled: ${enableSearch}, maxOutputTokens: ${maxOutputTokens}`);
   
   const requestBody: any = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -76,7 +76,7 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
           } else if (statusCode === 401) {
             console.error("Authentication error. API key is invalid, revoked, or expired.");
           } else if (statusCode === 403) {
-            console.error("Permission denied. API key may not have access to Gemini 1.5 Flash model or has been rate limited.");
+            console.error("Permission denied. API key may not have access to Gemini 1.5 Pro model or has been rate limited.");
           } else if (statusCode === 429) {
             console.error("Rate limit exceeded or quota exceeded. Check your Google AI Studio quota.");
           } else if (statusCode >= 500) {

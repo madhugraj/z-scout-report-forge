@@ -31,8 +31,8 @@ serve(async (req) => {
       );
     }
 
-    // Make a simple test call to the Gemini API
-    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+    // Make a simple test call to the Gemini API - updated to use gemini-1.5-pro-002
+    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent?key=${GEMINI_API_KEY}`;
     
     const testBody = {
       contents: [{ role: "user", parts: [{ text: "Hello, this is a test prompt. Please respond with 'API key is valid'." }] }],
@@ -56,7 +56,7 @@ serve(async (req) => {
           error: "Gemini API key is invalid or API is unavailable",
           status: response.status,
           details: errorBody,
-          resolution: "Please check your API key or try again later if the service is experiencing issues."
+          resolution: "Please check your API key or try again later if the service is experiencing issues. Make sure your API key has access to the gemini-1.5-pro-002 model."
         }),
         { 
           status: 400,
@@ -68,7 +68,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Gemini API key is valid"
+        message: "Gemini API key is valid for gemini-1.5-pro-002 model"
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" }
