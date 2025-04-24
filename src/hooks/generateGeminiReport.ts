@@ -6,17 +6,28 @@ import { toast } from "@/components/ui/sonner";
 
 export async function generateGeminiReport(query: string): Promise<GeminiReport> {
   try {
-    // Check if Gemini API key is configured
+    // First, explicitly test if the Gemini API key is configured and valid
+    console.log("Testing Gemini API key before attempting report generation");
     const { data: apiKeyTest, error: apiKeyError } = await supabase.functions.invoke('test-gemini-key', {
       body: { test: true }
     });
     
-    if (apiKeyError || (apiKeyTest && apiKeyTest.error)) {
-      console.error("Gemini API key validation error:", apiKeyError || apiKeyTest?.error);
-      throw new Error("Gemini API key is not configured or invalid. Please check your Supabase Edge Function Secrets.");
+    if (apiKeyError) {
+      console.error("Failed to test Gemini API key:", apiKeyError);
+      throw new Error(`Gemini API key test failed: ${apiKeyError.message}. Please check Edge Function logs and verify your API key.`);
     }
     
-    console.log("Starting comprehensive report generation for query:", query);
+    if (apiKeyTest && apiKeyTest.error) {
+      console.error("Gemini API key is invalid:", apiKeyTest.error, apiKeyTest.details);
+      throw new Error(`Invalid Gemini API key: ${apiKeyTest.error}. ${apiKeyTest.resolution || ''}`);
+    }
+    
+    if (!apiKeyTest || !apiKeyTest.success) {
+      console.error("Unknown error while testing Gemini API key:", apiKeyTest);
+      throw new Error("Failed to verify Gemini API key. Please check Edge Function logs for details.");
+    }
+    
+    console.log("Gemini API key is valid. Proceeding with report generation for query:", query);
 
     // Enhanced query with explicit instructions for comprehensive topic coverage
     const enhancedQuery = `${query} - COMPREHENSIVE ACADEMIC RESEARCH WITH COMPLETE TOPIC COVERAGE: Generate a detailed, authoritative research report with extensive coverage of ALL major topics and subtopics. Include in-depth analysis supported by specific data, statistics, scholarly references, and proper citations. Ensure comprehensive exploration of the full breadth and depth of the subject.`;
@@ -58,7 +69,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
       
       console.error("Error details:", errorDetails);
       toast.error("Failed to generate report", { 
-        description: "Check the Gemini API key in Supabase Edge Function Secrets.",
+        description: `Error code: ${error.code}. Check the Gemini API key in Supabase Edge Function Secrets.`,
         duration: 10000
       });
       
@@ -67,7 +78,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
 
     if (!data) {
       console.error("No data returned from generate-report-gemini function");
-      throw new Error("Failed to generate report: No data returned");
+      throw new Error("Failed to generate report: No data returned from edge function");
     }
 
     if (data.error) {
@@ -76,6 +87,12 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
         new Error(`Gemini API error: ${data.error}`),
         { details: data.intermediateResults || {} }
       );
+    }
+
+    // Check if we actually got a proper report structure
+    if (!data.report || !data.report.sections || !Array.isArray(data.report.sections) || data.report.sections.length === 0) {
+      console.error("Invalid or empty report structure received:", data);
+      throw new Error("Invalid report structure received from Gemini API");
     }
 
     const report = data.report;
@@ -200,6 +217,32 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
   } catch (error: any) {
     console.error("Error in report generation pipeline:", error);
 
+    // If the error is related to the edge function, provide a clearer error message
+    if (error.message && error.message.includes('Edge Function returned a non-2xx status code')) {
+      console.error("Edge Function returned an error status. This typically indicates an issue with the API key configuration or model access.");
+      
+      // Try to extract the status code for more specific guidance
+      const statusMatch = error.message.match(/status code (\d+)/i);
+      const statusCode = statusMatch ? statusMatch[1] : 'unknown';
+      
+      let errorGuide = '';
+      if (statusCode === '400') {
+        errorGuide = 'This typically indicates a problem with the request format or the API key format.';
+      } else if (statusCode === '401' || statusCode === '403') {
+        errorGuide = 'This typically indicates an authentication problem. Your API key may be invalid or doesn\'t have permission to access the gemini-1.5-pro-002 model.';
+      } else if (statusCode === '404') {
+        errorGuide = 'This typically indicates that the requested model (gemini-1.5-pro-002) was not found. Verify your API key has access to this model.';
+      } else if (statusCode === '429') {
+        errorGuide = 'You have exceeded your rate limit or quota. Check your Google AI Studio quota settings.';
+      } else if (statusCode.startsWith('5')) {
+        errorGuide = 'There is a server-side issue with the Gemini API. Please try again later.';
+      }
+      
+      const enhancedError = new Error(`Gemini API error (status ${statusCode}): ${errorGuide || error.message}`);
+      Object.assign(enhancedError, { details: error.details || {} });
+      throw enhancedError;
+    }
+
     const details = error.details || {};
 
     // Create a more informative error report with better troubleshooting guidance
@@ -208,7 +251,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
       title: `Error Report for "${query}"`,
       sections: [{
         title: "Error Details",
-        content: `We encountered an error while generating your research report: "${error.message}". This may be due to issues with the Gemini API connection or configuration.\n\nTroubleshooting steps:\n1. Check that your Gemini API key is valid and correctly set up in the Supabase Edge Function Secrets.\n2. Verify that the API key has access to the Gemini model specified in the edge functions.\n3. Check the Edge Function logs for more detailed error information.\n\nIf you continue to experience issues, try modifying your query to be more specific or shorter, or try again later as the Gemini API may be experiencing temporary limitations.`
+        content: `We encountered an error while generating your research report: "${error.message}". This may be due to issues with the Gemini API connection or configuration.\n\nTroubleshooting steps:\n1. Check that your Gemini API key is valid and correctly set up in the Supabase Edge Function Secrets.\n2. Verify that the API key has access to the gemini-1.5-pro-002 model.\n3. Check the Edge Function logs for more detailed error information.\n4. Try testing your API key using the "Test API Key" button below.\n\nIf you continue to experience issues, try modifying your query to be more specific or shorter, or try again later as the Gemini API may be experiencing temporary limitations.`
       }],
       intermediateResults: details
     } as GeminiReport;

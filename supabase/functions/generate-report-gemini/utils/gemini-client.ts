@@ -1,5 +1,5 @@
 
-// Gemini API client utility with improved error handling
+// Gemini API client utility with improved error handling and diagnostics
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,6 +19,11 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
   if (!GEMINI_API_KEY) {
     console.error("Missing GEMINI_API_KEY environment variable");
     throw new Error("Gemini API key is not configured. Please set the GEMINI_API_KEY secret in the Supabase Edge Function Secrets.");
+  }
+
+  // Check API key format for basic validation
+  if (!GEMINI_API_KEY.startsWith('AI')) {
+    console.warn("Warning: Gemini API key format appears incorrect. Keys typically start with 'AI'");
   }
 
   const requestUrl = `${GEMINI_URL}?key=${GEMINI_API_KEY}`;
@@ -57,6 +62,8 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
     
     while (retries > 0) {
       try {
+        console.log(`Making request to Gemini API (attempt ${4-retries}/3)...`);
+        
         response = await fetch(requestUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -73,12 +80,24 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
           // Additional diagnostics for common error codes
           if (statusCode === 400) {
             console.error("Bad request error. Check API key format and request payload format.");
+            // Try to parse error for more details
+            try {
+              const errorJson = JSON.parse(errorBody);
+              if (errorJson.error && errorJson.error.message) {
+                console.error("Error message:", errorJson.error.message);
+              }
+            } catch (e) {}
           } else if (statusCode === 401) {
             console.error("Authentication error. API key is invalid, revoked, or expired.");
+            console.error("Please verify your API key in Google AI Studio: https://makersuite.google.com/app/apikeys");
           } else if (statusCode === 403) {
             console.error("Permission denied. API key may not have access to Gemini 1.5 Pro model or has been rate limited.");
+            console.error("Please check model permissions in Google AI Studio: https://makersuite.google.com/app/apikeys");
+          } else if (statusCode === 404) {
+            console.error("Resource not found. The model gemini-1.5-pro-002 may not be available to your API key.");
           } else if (statusCode === 429) {
             console.error("Rate limit exceeded or quota exceeded. Check your Google AI Studio quota.");
+            console.error("You may need to upgrade your API tier or request a quota increase.");
           } else if (statusCode >= 500) {
             console.error("Gemini API server error. The service might be temporarily unavailable.");
           }
@@ -109,12 +128,22 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
       // Enhanced error message with more specific information
       const statusCode = response?.status || 'Unknown';
       let errorMessage = errorBody || 'Unknown error';
+      let errorDetails = null;
       
       // Try to parse the error body as JSON for more details
       try {
         const errorJson = JSON.parse(errorBody || '{}');
-        if (errorJson.error && errorJson.error.message) {
-          errorMessage = errorJson.error.message;
+        if (errorJson.error) {
+          errorMessage = errorJson.error.message || errorMessage;
+          errorDetails = errorJson.error;
+          
+          // Log additional error fields if available
+          if (errorJson.error.status) {
+            console.error(`Error status: ${errorJson.error.status}`);
+          }
+          if (errorJson.error.details) {
+            console.error(`Error details: ${JSON.stringify(errorJson.error.details)}`);
+          }
         }
       } catch (e) {
         // Use raw error body if not valid JSON
@@ -122,7 +151,7 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
       
       console.error(`Gemini API failed after retries: Status: ${statusCode}, Error: ${errorMessage}`);
       
-      throw new Error(`Gemini API error (${statusCode}): ${errorMessage}. Check your API key configuration and permissions.`);
+      throw new Error(`Gemini API error (${statusCode}): ${errorMessage}. Check your API key configuration and permissions. Details: ${JSON.stringify(errorDetails || {})}`);
     }
 
     const json = await response.json();
@@ -130,7 +159,7 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
     // Improve error handling for response parsing
     if (!json.candidates || json.candidates.length === 0) {
       console.error("No candidates returned from Gemini:", json);
-      throw new Error("No candidates returned from Gemini API");
+      throw new Error("No candidates returned from Gemini API. This may indicate content filtering or an empty response.");
     }
     
     const candidate = json.candidates[0];
@@ -149,6 +178,14 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
     return result;
   } catch (error) {
     console.error("Error calling Gemini API:", error.message);
+    
+    // Add details about the environment to help with debugging
+    console.error("Environment information:");
+    console.error(`- Runtime: ${Deno.version.deno}`);
+    console.error(`- API URL: ${GEMINI_URL}`);
+    console.error(`- API key format valid: ${GEMINI_API_KEY?.startsWith('AI') ? 'Yes' : 'No'}`);
+    console.error(`- API key length: ${GEMINI_API_KEY?.length || 0} characters`);
+    
     throw error;
   }
 }

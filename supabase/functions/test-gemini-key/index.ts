@@ -1,5 +1,5 @@
 
-// Test Gemini API key validity
+// Test Gemini API key validity with enhanced error diagnostics
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -31,7 +31,11 @@ serve(async (req) => {
       );
     }
 
-    // Make a simple test call to the Gemini API - updated to use gemini-1.5-pro-002
+    console.log("Testing Gemini API key validity...");
+    console.log("API Key format check: " + (GEMINI_API_KEY.startsWith('AI') ? "Appears to be valid format" : "Incorrect format - should start with 'AI'"));
+    console.log("API Key length: " + GEMINI_API_KEY.length + " characters");
+
+    // Make a simple test call to the Gemini API using gemini-1.5-pro-002
     const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent?key=${GEMINI_API_KEY}`;
     
     const testBody = {
@@ -42,20 +46,45 @@ serve(async (req) => {
       }
     };
 
+    console.log("Sending test request to Gemini API...");
     const response = await fetch(testUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(testBody)
     });
 
+    const statusCode = response.status;
+    console.log(`Gemini API test response status: ${statusCode}`);
+
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`Gemini API test failed (${response.status}): ${errorBody}`);
+      console.error(`Gemini API test failed (${statusCode}): ${errorBody}`);
+      
+      // Parse error for more detailed diagnostics
+      let detailedError = errorBody;
+      try {
+        const errorJson = JSON.parse(errorBody);
+        if (errorJson.error) {
+          detailedError = errorJson.error;
+          
+          // Check for specific error conditions
+          if (errorJson.error.status === "PERMISSION_DENIED") {
+            console.error("Permission denied error detected. This typically means the API key doesn't have access to the requested model.");
+          } else if (errorJson.error.status === "INVALID_ARGUMENT") {
+            console.error("Invalid argument error detected. This could be due to an incorrect API format or a problem with the request.");
+          } else if (errorJson.error.status === "UNAUTHENTICATED") {
+            console.error("Authentication error detected. The API key is likely invalid or expired.");
+          }
+        }
+      } catch (parseError) {
+        console.error("Error parsing error response:", parseError);
+      }
+      
       return new Response(
         JSON.stringify({
           error: "Gemini API key is invalid or API is unavailable",
-          status: response.status,
-          details: errorBody,
+          status: statusCode,
+          details: detailedError,
           resolution: "Please check your API key or try again later if the service is experiencing issues. Make sure your API key has access to the gemini-1.5-pro-002 model."
         }),
         { 
@@ -65,10 +94,17 @@ serve(async (req) => {
       );
     }
 
+    const responseData = await response.json();
+    console.log("Gemini API test successful. Response:", JSON.stringify(responseData).substring(0, 300) + "...");
+    
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Gemini API key is valid for gemini-1.5-pro-002 model"
+        message: "Gemini API key is valid for gemini-1.5-pro-002 model",
+        modelInfo: {
+          model: "gemini-1.5-pro-002",
+          capabilities: ["text generation", "web search grounding", "image analysis"]
+        }
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -79,7 +115,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: `Failed to test Gemini API key: ${error.message}`,
-        details: error.stack || "No stack trace available"
+        details: error.stack || "No stack trace available",
+        resolution: "Please verify your internet connection, API key format, and try again."
       }),
       { 
         status: 500,

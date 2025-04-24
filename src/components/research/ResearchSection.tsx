@@ -3,9 +3,10 @@ import React from 'react';
 import { SuggestedImage } from '@/hooks/useGeminiReport';
 import ImagePopover from '../ImagePopover';
 import SectionContentRenderer from './SectionContentRenderer';
-import { AlertCircleIcon, InfoIcon } from 'lucide-react';
+import { AlertCircleIcon, InfoIcon, ExternalLinkIcon, CheckCircleIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { toast } from '@/components/ui/sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ResearchSectionProps {
   title: string;
@@ -36,15 +37,57 @@ const ResearchSection: React.FC<ResearchSectionProps> = ({
     (content.toLowerCase().includes('gemini api') || 
      content.toLowerCase().includes('api key'));
 
+  // Function to test the Gemini API key
+  const testGeminiApiKey = async () => {
+    toast.info("Testing Gemini API key...", { duration: 3000 });
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('test-gemini-key', {
+        body: { test: true }
+      });
+      
+      if (error) {
+        console.error("Error testing Gemini API key:", error);
+        toast.error("Failed to test Gemini API key", { 
+          description: error.message,
+          duration: 8000
+        });
+        return;
+      }
+      
+      if (data.error) {
+        console.error("Gemini API key test failed:", data.error);
+        toast.error("Gemini API key test failed", {
+          description: data.error + (data.details ? ` - ${data.details}` : ''),
+          duration: 10000
+        });
+      } else if (data.success) {
+        toast.success("Gemini API key is valid!", {
+          description: data.message,
+          duration: 5000
+        });
+      }
+    } catch (err) {
+      console.error("Exception testing Gemini API key:", err);
+      toast.error("Exception occurred while testing Gemini API key", {
+        description: err.message,
+        duration: 8000
+      });
+    }
+  };
+
   // Function to copy troubleshooting tips to clipboard
   const copyTroubleshootingTips = () => {
     navigator.clipboard.writeText(`
 Gemini API Troubleshooting:
 1. Verify your Gemini API key is valid and has sufficient quota
-2. Check that the API key has access to the Gemini 1.5 Pro model
+2. Check that the API key has access to the Gemini 1.5 Pro model (specifically gemini-1.5-pro-002)
 3. Make sure the API key is correctly set in Supabase Edge Function Secrets
 4. Check the Edge Function logs for detailed error information
 5. Try a different or shorter research query
+6. Verify that your API key format is correct (should start with 'AI')
+7. Check if you've hit API rate limits or quotas
+8. Confirm that the model 'gemini-1.5-pro-002' is available in your region
     `);
     
     toast.success("Troubleshooting tips copied to clipboard");
@@ -90,6 +133,24 @@ Gemini API Troubleshooting:
               onClick={() => window.open("https://ai.google.dev/tutorials/setup", "_blank")}
             >
               Gemini API Documentation
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200 flex items-center gap-1"
+              onClick={testGeminiApiKey}
+            >
+              <CheckCircleIcon className="h-4 w-4" />
+              Test API Key
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-200"
+              onClick={() => window.open("https://supabase.com/dashboard/project/jtdwgpqfratkepiwtmud/functions/test-gemini-key/logs", "_blank")}
+            >
+              <span>View API Test Logs</span>
+              <ExternalLinkIcon className="ml-1 h-3 w-3" />
             </Button>
           </div>
         </div>
