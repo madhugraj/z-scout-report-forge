@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ const LandingPage: React.FC = () => {
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showFeatureTooltip, setShowFeatureTooltip] = useState(false);
   const navigate = useNavigate();
   const { gatherRequirements, isGathering } = useResearchRequirements();
 
@@ -78,7 +80,7 @@ const LandingPage: React.FC = () => {
       <LandingHeader
         showSignIn={showSignIn}
         setShowSignIn={setShowSignIn}
-        showFeatureTooltip={false}
+        showFeatureTooltip={showFeatureTooltip}
         handleTrustSafetyClick={() => navigate('/trust-safety')}
         handleWorkspaceClick={() => navigate('/workspace')}
         handleAboutClick={() => navigate('/about')}
