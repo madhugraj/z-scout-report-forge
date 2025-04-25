@@ -71,8 +71,14 @@ export function useResearchChat() {
     setMessages(prev => [...prev, userMessage]);
     
     try {
+      const currentPhase = determineResearchPhase();
+      
       const { data, error } = await supabase.functions.invoke('research-chat', {
-        body: { message, history }
+        body: { 
+          message, 
+          history,
+          phase: currentPhase
+        }
       });
       
       if (error) {
@@ -99,7 +105,7 @@ export function useResearchChat() {
         const functionCallMessage: ChatMessage = {
           id: Date.now().toString(),
           sender: 'Research AI',
-          text: `Analyzing information for: ${response.functionCall.name}...`,
+          text: getPhaseMessage(response.functionCall.name),
           timestamp: new Date(),
           isAI: true,
           functionCall: response.functionCall
@@ -142,6 +148,32 @@ export function useResearchChat() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const determineResearchPhase = () => {
+    if (!researchData.researchQuestion) {
+      return 'initial';
+    }
+    if (!researchData.recommendedSources) {
+      return 'sources';
+    }
+    if (!researchData.researchScope) {
+      return 'scope';
+    }
+    return 'ready';
+  };
+
+  const getPhaseMessage = (functionName: string) => {
+    switch (functionName) {
+      case 'researchQuestion':
+        return 'I\'ll help you formulate your research question and identify key areas to explore...';
+      case 'suggestSources':
+        return 'Now that we have your research question, let me find relevant academic sources...';
+      case 'defineResearchScope':
+        return 'Based on the sources, I\'ll help define the scope of your research...';
+      default:
+        return `Analyzing information for: ${functionName}...`;
     }
   };
 

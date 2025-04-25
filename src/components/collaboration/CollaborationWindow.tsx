@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import CollaborationHeader from './CollaborationHeader';
@@ -66,7 +65,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   const [confirmingReport, setConfirmingReport] = useState(false);
   const [reportQuery, setReportQuery] = useState('');
 
-  // Use the research chat hook
   const { 
     messages, 
     isLoading, 
@@ -91,7 +89,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     setInviteEmail('');
     setShowInviteDialog(false);
     
-    // Simulate new collaborator joining
     setTimeout(() => {
       const name = inviteEmail.split('@')[0];
       setCollaborators(prev => [...prev, {
@@ -116,40 +113,62 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       }
     }
 
-    // If we're confirming a report, process the confirmation
     if (confirmingReport) {
       if (message.toLowerCase().includes('yes') || message.toLowerCase().includes('confirm') || 
           message.toLowerCase().includes('generate') || message.toLowerCase().includes('proceed')) {
         
-        // User confirmed, start report generation
+        if (!researchData.researchQuestion || !researchData.recommendedSources || !researchData.researchScope) {
+          sendMessage("Before generating the report, I need to understand more about your research. Let me ask you a few questions.");
+          setConfirmingReport(false);
+          return;
+        }
+        
         handleStartReportGeneration();
         setConfirmingReport(false);
         
-        // Add confirmation message to chat
         sendMessage("I confirm that I want to generate the report.");
       } else {
-        // User didn't confirm, reset confirmation state
         setConfirmingReport(false);
         sendMessage("I'm not ready to generate the report yet.");
       }
       return;
     }
 
-    // Regular message sending
     sendMessage(message);
   };
 
   const handleGenerateReport = async () => {
     try {
+      if (!researchData.researchQuestion) {
+        sendMessage("Before we generate a report, I need to understand your research topic better. Could you tell me what you'd like to research?");
+        return;
+      }
+
+      if (!researchData.recommendedSources) {
+        sendMessage("I'll help you identify relevant sources for your research. This will help ensure a comprehensive report.");
+        return;
+      }
+
+      if (!researchData.researchScope) {
+        sendMessage("Let's define the scope of your research to ensure we cover all important aspects.");
+        return;
+      }
+
       const query = await generateReport();
       
       if (query) {
-        // Store the query but don't start generation yet
         setReportQuery(query);
         setConfirmingReport(true);
         
-        // Add a confirmation message from the AI
-        sendMessage(`I'm ready to generate a comprehensive report on "${query}". Please confirm to proceed by typing "yes", "confirm", "generate", or "proceed".`);
+        sendMessage(`Based on our discussion, I understand your research requirements:
+
+1. Main Research Question: "${researchData.researchQuestion.mainQuestion}"
+2. Scope: ${researchData.researchScope.scope.join(', ')}
+3. Number of identified sources: ${researchData.recommendedSources.length}
+
+I'm ready to generate a comprehensive report. Would you like me to proceed?
+
+Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
       }
     } catch (err) {
       console.error('Error preparing report:', err);
@@ -157,11 +176,10 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       setConfirmingReport(false);
     }
   };
-  
+
   const handleStartReportGeneration = () => {
     if (!reportQuery || !onGenerateReport) return;
     
-    // Start the actual report generation
     onGenerateReport(reportQuery);
     
     toast.success('Starting comprehensive report generation', {
@@ -181,15 +199,12 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
 
   const handleSubmitEdit = () => {
     if (editSection !== null) {
-      // Here you would typically send the updated content to your backend
-      // and update the reportSections state in the parent component.
       toast.success(`Section ${editSection + 1} updated successfully!`);
       setEditSection(null);
       setEditText('');
     }
   };
 
-  // Suggested research prompts
   const suggestedPrompts = [
     "I'm interested in researching climate change adaptation in coastal cities",
     "Help me formulate a research question about AI ethics in healthcare",

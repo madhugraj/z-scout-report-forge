@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -338,13 +337,12 @@ async function callGeminiWithFunctionCall(message: string, history: Array<any>) 
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { message, history = [], functionResults = null } = await req.json();
+    const { message, history = [], functionResults = null, phase = 'initial' } = await req.json();
     
     // Update history with function results if provided
     let updatedHistory = [...history];
@@ -362,13 +360,88 @@ serve(async (req) => {
       }
     }
     
-    // Get response from Gemini with enhanced error handling
-    const response = await callGeminiWithFunctionCall(message, updatedHistory);
+    const payload = {
+      contents: updatedHistory.map(msg => {
+        if (msg.role === "assistant" && msg.functionCall) {
+          return {
+            role: "model",
+            parts: [{
+              functionCall: {
+                name: msg.functionCall.name,
+                args: msg.functionCall.arguments
+              }
+            }]
+          };
+        } else if (msg.role === "function") {
+          return {
+            role: "function",
+            parts: [{
+              functionResponse: {
+                name: msg.name,
+                response: msg.content
+              }
+            }]
+          };
+        } else {
+          return {
+            role: msg.role === "assistant" ? "model" : "user",
+            parts: [{ text: msg.content }]
+          };
+        }
+      }),
+      tools: [{
+        functionDeclarations: functionSchemas.filter(schema => {
+          switch (phase) {
+            case 'initial':
+              return schema.name === 'researchQuestion';
+            case 'sources':
+              return schema.name === 'suggestSources';
+            case 'scope':
+              return schema.name === 'defineResearchScope';
+            default:
+              return true;
+          }
+        })
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 8000,
+        topP: 0.95,
+        model: "gemini-2.0-pro"
+      }
+    };
+
+    console.log("Sending request to Gemini API...");
+    const responseData = await callGeminiWithRetry(GEMINI_URL, payload);
     
-    // Add response to history for context
-    updatedHistory.push(response);
+    console.log("Received response from Gemini API:", JSON.stringify(responseData).substring(0, 300) + "...");
     
-    // Return response with updated history
+    // Parse the response for function calls
+    const candidate = responseData.candidates && responseData.candidates[0];
+    
+    if (!candidate || !candidate.content) {
+      throw new Error("Invalid response structure from Gemini API");
+    }
+    
+    const content = candidate.content;
+    
+    // Check for function calls
+    let functionCall = null;
+    if (content.parts && content.parts[0].functionCall) {
+      functionCall = {
+        name: content.parts[0].functionCall.name,
+        arguments: content.parts[0].functionCall.args
+      };
+      
+      console.log(`Function call detected: ${functionCall.name}`);
+      return {
+        role: "assistant",
+        content: null,
+        functionCall: functionCall
+      };
+    }
+    
+    // Return regular text response
     return new Response(JSON.stringify({ 
       response, 
       history: updatedHistory 
