@@ -1,6 +1,6 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { callGeminiWithRetry } from "./utils/geminiApiHandler.ts";
 
 // Define CORS headers for cross-origin requests
 const corsHeaders = {
@@ -8,7 +8,80 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Function schemas remain the same
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+const GEMINI_API_KEY_2 = Deno.env.get("GEMINI_API_KEY_2");
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
+// Alternate models that can be used: "gemini-2.0-pro", "gemini-2.0-pro-exp-02-05", "gemini-2.0-flash", "gemini-1.5-pro"
+
+// Track API key usage and implement simple rate limiting
+const apiKeyTracker = {
+  keys: {} as Record<string, {
+    lastUsed: number,
+    usageCount: number,
+    cooldownUntil: number
+  }>,
+  
+  getNextKey() {
+    const now = Date.now();
+    const availableKeys = [];
+    
+    // Use primary key if available
+    if (GEMINI_API_KEY) {
+      const keyData = this.keys[GEMINI_API_KEY] || { lastUsed: 0, usageCount: 0, cooldownUntil: 0 };
+      if (now > keyData.cooldownUntil) {
+        availableKeys.push(GEMINI_API_KEY);
+      }
+    }
+    
+    // Use secondary key if available
+    if (GEMINI_API_KEY_2) {
+      const keyData = this.keys[GEMINI_API_KEY_2] || { lastUsed: 0, usageCount: 0, cooldownUntil: 0 };
+      if (now > keyData.cooldownUntil) {
+        availableKeys.push(GEMINI_API_KEY_2);
+      }
+    }
+    
+    if (availableKeys.length === 0) {
+      throw new Error("All API keys are currently on cooldown. Please try again in a few minutes.");
+    }
+    
+    // Prefer the key with less usage
+    if (availableKeys.length > 1) {
+      availableKeys.sort((a, b) => 
+        (this.keys[a]?.usageCount || 0) - (this.keys[b]?.usageCount || 0)
+      );
+    }
+    
+    return availableKeys[0];
+  },
+  
+  recordUsage(key: string) {
+    const now = Date.now();
+    if (!this.keys[key]) {
+      this.keys[key] = { lastUsed: now, usageCount: 1, cooldownUntil: 0 };
+    } else {
+      this.keys[key].lastUsed = now;
+      this.keys[key].usageCount++;
+      
+      // Reset usage count every minute
+      if (now - this.keys[key].lastUsed > 60000) {
+        this.keys[key].usageCount = 1;
+      }
+    }
+  },
+  
+  setCooldown(key: string, durationMs: number) {
+    const now = Date.now();
+    if (!this.keys[key]) {
+      this.keys[key] = { lastUsed: now, usageCount: 0, cooldownUntil: now + durationMs };
+    } else {
+      this.keys[key].cooldownUntil = now + durationMs;
+    }
+    console.log(`Set cooldown for key ending in ...${key.substring(key.length-4)} until ${new Date(now + durationMs).toLocaleTimeString()}`);
+  }
+};
+
+// Function schemas for the research assistant
 const functionSchemas = [
   {
     name: "researchQuestion",
@@ -85,9 +158,85 @@ const functionSchemas = [
   }
 ];
 
-async function callGeminiWithFunctionCall(message: string, history: Array<any>) {
-  const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent";
+async function callGeminiWithRetry(url: string, payload: any) {
+  const maxRetries = 3;
+  let attempt = 0;
+  let lastError = null;
   
+  while (attempt < maxRetries) {
+    attempt++;
+    try {
+      // Get the next available API key
+      const apiKey = apiKeyTracker.getNextKey();
+      const requestUrl = `${url}?key=${apiKey}`;
+      
+      console.log(`Calling Gemini API (attempt ${attempt}/${maxRetries})...`);
+      apiKeyTracker.recordUsage(apiKey);
+      
+      const response = await fetch(requestUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      // Handle rate limiting
+      if (response.status === 429) {
+        const cooldownDuration = 60000; // 1 minute cooldown
+        apiKeyTracker.setCooldown(apiKey, cooldownDuration);
+        
+        const responseText = await response.text();
+        console.error(`Rate limit hit (429): ${responseText}`);
+        
+        if (attempt < maxRetries) {
+          // Try with a different key on next attempt
+          const backoff = Math.pow(2, attempt) * 1000;
+          console.log(`Rate limit reached, backing off for ${backoff}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, backoff));
+          continue;
+        } else {
+          throw new Error("API rate limit reached. Please try again in a minute.");
+        }
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Gemini API error ${response.status}: ${errorText}`);
+        
+        if (response.status >= 500) {
+          // Server error, retry
+          if (attempt < maxRetries) {
+            const backoff = Math.pow(2, attempt) * 1000;
+            console.log(`Server error, backing off for ${backoff}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, backoff));
+            continue;
+          }
+        }
+        
+        throw new Error(`Gemini API returned ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+      
+    } catch (error) {
+      lastError = error;
+      console.error(`Error on attempt ${attempt}:`, error);
+      
+      if (attempt >= maxRetries) {
+        break;
+      }
+      
+      // Exponential backoff
+      const backoff = Math.pow(2, attempt) * 1000;
+      console.log(`Backing off for ${backoff}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, backoff));
+    }
+  }
+  
+  throw lastError || new Error("Failed after multiple retries");
+}
+
+async function callGeminiWithFunctionCall(message: string, history: Array<any>) {
   try {
     console.log("Calling Gemini API with function calling capabilities...");
     

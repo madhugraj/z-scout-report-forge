@@ -128,7 +128,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         // Add confirmation message to chat
         sendMessage("I confirm that I want to generate the report.");
       } else {
-        // User didn't confirm
+        // User didn't confirm, reset confirmation state
         setConfirmingReport(false);
         sendMessage("I'm not ready to generate the report yet.");
       }
@@ -148,17 +148,8 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         setReportQuery(query);
         setConfirmingReport(true);
         
-        // Add a confirmation message
-        const confirmationMessage: Message = {
-          id: Date.now().toString(),
-          sender: 'Research AI',
-          text: `I'm ready to generate a comprehensive report on "${query}". Is this the topic you want me to research? Please confirm or provide any additional instructions.`,
-          timestamp: new Date(),
-          isAI: true
-        };
-        
-        // Note: Using the chat hook's internal message handling instead of managing local messages
-        sendMessage(`I'm ready to generate a comprehensive report on "${query}". Please confirm to proceed.`);
+        // Add a confirmation message from the AI
+        sendMessage(`I'm ready to generate a comprehensive report on "${query}". Please confirm to proceed by typing "yes", "confirm", "generate", or "proceed".`);
       }
     } catch (err) {
       console.error('Error preparing report:', err);

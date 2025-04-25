@@ -10,8 +10,9 @@ export const corsHeaders = {
 export const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 export const GEMINI_API_KEY_2 = Deno.env.get("GEMINI_API_KEY_2");
 
-// Using gemini-1.5-pro-002 model as specified
-export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent";
+// Using the specific Gemini models as requested
+export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
+// Alternate models that can be used: "gemini-2.0-pro", "gemini-2.0-pro-exp-02-05", "gemini-2.0-flash", "gemini-1.5-pro"
 
 // Track rate limit information
 const rateLimitTracker = {
@@ -65,7 +66,7 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
 
   const requestUrl = `${GEMINI_URL}?key=${useApiKey}`;
   
-  console.log(`Calling Gemini 1.5 Pro model with prompt length: ${prompt.length} chars, search enabled: ${enableSearch}, maxOutputTokens: ${maxOutputTokens}`);
+  console.log(`Calling Gemini model with prompt length: ${prompt.length} chars, search enabled: ${enableSearch}, maxOutputTokens: ${maxOutputTokens}`);
   
   const requestBody: any = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -146,10 +147,10 @@ export async function callGemini(prompt: string, enableSearch = true, maxOutputT
             console.error("Authentication error. API key is invalid, revoked, or expired.");
             console.error("Please verify your API key in Google AI Studio: https://makersuite.google.com/app/apikeys");
           } else if (statusCode === 403) {
-            console.error("Permission denied. API key may not have access to Gemini 1.5 Pro model or has been rate limited.");
+            console.error("Permission denied. API key may not have access to Gemini model or has been rate limited.");
             console.error("Please check model permissions in Google AI Studio: https://makersuite.google.com/app/apikeys");
           } else if (statusCode === 404) {
-            console.error("Resource not found. The model gemini-1.5-pro-002 may not be available to your API key.");
+            console.error("Resource not found. The model may not be available to your API key.");
           } else if (statusCode === 429) {
             console.error("Rate limit exceeded or quota exceeded. Check your Google AI Studio quota.");
             console.error("You may need to upgrade your API tier or request a quota increase.");
