@@ -114,13 +114,10 @@ export async function callGeminiWithRetry(url: string, requestBody: any, retries
     try {
       console.log(`Attempt ${attempt + 1} with API key ending in ...${apiKey.slice(-4)}`);
       
-      const response = await fetch(url, {
+      const response = await fetch(`${url}?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...requestBody,
-          key: apiKey
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {

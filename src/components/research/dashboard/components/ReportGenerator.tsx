@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useGeminiReport, GeminiReport } from "@/hooks/useGeminiReport";
 import { toast } from "@/components/ui/sonner";
-import { Progress } from "@/components/ui/progress";
 
 interface ReportGeneratorProps {
   onProgress: (progress: number) => void;
@@ -21,19 +20,24 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   const geminiReport = useGeminiReport();
 
   useEffect(() => {
-    if (query.trim()) {
+    if (query && query.trim()) {
       startGeneratingReport(query);
     }
   }, [query]);
 
   const startGeneratingReport = (query: string) => {
+    if (!query || query.trim() === '') {
+      toast.error('Cannot generate a report without a valid research query');
+      return;
+    }
+    
     setIsGenerating(true);
     onProgress(0);
-    onGenerationStep("Initializing enhanced comprehensive research pipeline with Gemini 1.5 Pro...");
+    onGenerationStep("Initializing enhanced comprehensive research pipeline with Gemini 2.0 Pro...");
 
     // More realistic and detailed progress steps for better user experience
     const progressSteps = [
-      { threshold: 5, message: "Sending request to Gemini 1.5 Pro model for advanced academic research analysis..." },
+      { threshold: 5, message: "Sending request to Gemini 2.0 Pro model for advanced academic research analysis..." },
       { threshold: 8, message: "Generating detailed research abstract with expanded scope..." },
       { threshold: 12, message: "Abstract generated! Analyzing comprehensive research domains..." },
       { threshold: 15, message: "Extracting 12-15 main topics and 10-15 subtopics per topic for comprehensive coverage..." },
@@ -99,9 +103,9 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         const estimatedPages = Math.max(1, Math.round(totalWords / 300));
         const totalReferences = result.references?.length || 0;
         const totalTopics = result.sections?.filter(s => !s.title.toLowerCase().includes('introduction') && 
-                                                         !s.title.toLowerCase().includes('conclusion') &&
-                                                         !s.title.toLowerCase().includes('references') &&
-                                                         !s.title.toLowerCase().includes('appendix')).length || 0;
+                                                       !s.title.toLowerCase().includes('conclusion') &&
+                                                       !s.title.toLowerCase().includes('references') &&
+                                                       !s.title.toLowerCase().includes('appendix')).length || 0;
         
         onGenerationStep(`Comprehensive research report complete in ${duration}s! (${estimatedPages} pages, ${totalReferences} citations, ${totalTopics} topic sections)`);
         setIsGenerating(false);
@@ -144,7 +148,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         
         setIsGenerating(false);
         toast.error(`Report generation failed: ${errorMessage}`, {
-          description: "Check your Gemini API key and ensure it has access to the gemini-1.5-pro-002 model.",
+          description: "Check your Gemini API key and ensure it has access to the gemini-2.0-pro model.",
           duration: 8000
         });
         
@@ -152,7 +156,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
           title: "Error Generating Research Report",
           sections: [{
             title: "Error Details",
-            content: `We encountered an error while generating your research report: "${errorMessage}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets and has access to the gemini-1.5-pro-002 model.`
+            content: `We encountered an error while generating your research report: "${errorMessage}". This may be due to an issue with the Gemini API connection or configuration.\n\nPlease check that your Gemini API key is correctly set up in the Supabase Edge Function Secrets and has access to the gemini-2.0-pro model.`
           }],
           references: [],
           suggestedPdfs: [],
@@ -163,11 +167,7 @@ const ReportGenerator: React.FC<ReportGeneratorProps> = ({
     });
   };
 
-  return (
-    <div className="hidden">
-      {/* This is a non-visual component that manages the report generation process */}
-    </div>
-  );
+  return null; // Non-visual component
 };
 
 export default ReportGenerator;

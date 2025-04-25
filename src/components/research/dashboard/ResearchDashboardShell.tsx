@@ -73,6 +73,11 @@ const ResearchDashboardShell: React.FC = () => {
   const handleGenerateReportFromChat = (query: string) => {
     console.log("Starting report generation from chat with query:", query);
     
+    if (!query || query.trim().length === 0) {
+      toast.error("Invalid query for report generation");
+      return;
+    }
+    
     // Update state with the new query
     navigate(location.pathname, { 
       state: { ...state, query },
@@ -81,6 +86,13 @@ const ResearchDashboardShell: React.FC = () => {
     
     // Start the generation process
     setIsGenerating(true);
+    setGenerationSteps([]);
+    setProgress(0);
+    
+    // Add initial step
+    setGenerationSteps(prev => [...prev, 
+      "Starting research report generation based on our conversation..."
+    ]);
   };
 
   return (

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -300,7 +301,17 @@ export function useResearchChat() {
   const generateReport = async () => {
     if (!researchData.researchQuestion) {
       toast.error('Research question is required before generating a report');
-      return;
+      return null;
+    }
+    
+    if (!researchData.recommendedSources) {
+      toast.error('Source recommendations are required before generating a report');
+      return null;
+    }
+    
+    if (!researchData.researchScope) {
+      toast.error('Research scope definition is required before generating a report');
+      return null;
     }
     
     const confirmMessage: ChatMessage = {

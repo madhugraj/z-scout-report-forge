@@ -11,7 +11,7 @@ export const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 export const GEMINI_API_KEY_2 = Deno.env.get("GEMINI_API_KEY_2");
 
 // Using the specific Gemini models as requested
-export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
+export const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro:generateContent";
 // Alternate models that can be used: "gemini-2.0-pro", "gemini-2.0-pro-exp-02-05", "gemini-2.0-flash", "gemini-1.5-pro"
 
 // Track rate limit information
