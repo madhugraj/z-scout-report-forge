@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GeminiReport } from "@/hooks/useGeminiReport";
+import { toast } from "@/components/ui/sonner"; // Add this import for toast
 import ReportGenerator from "./components/ReportGenerator";
 import ViewStateManager from "./components/ViewStateManager";
 
