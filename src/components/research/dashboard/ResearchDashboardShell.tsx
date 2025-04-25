@@ -1,21 +1,20 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GeminiReport } from "@/hooks/useGeminiReport";
-import { toast } from "@/components/ui/sonner"; // Add this import for toast
+import { toast } from "@/components/ui/sonner";
 import ReportGenerator from "./components/ReportGenerator";
 import ViewStateManager from "./components/ViewStateManager";
 
 const ResearchDashboardShell: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { query?: string; files?: string[]; urls?: string[]; source?: string } || {};
+  const state = location.state as { query?: string; files?: string[]; urls?: string[]; source?: string; requirements?: string } || {};
 
   const [activeView, setActiveView] = useState('full-report');
   const [progress, setProgress] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeSideView, setActiveSideView] = useState<'pdf-viewer' | 'images' | 'tables' | null>(null);
-  const [showCollaborator, setShowCollaborator] = useState<boolean>(true); // Show collaborator by default
+  const [showCollaborator, setShowCollaborator] = useState<boolean>(true);
   const [selectedPdfForView, setSelectedPdfForView] = useState<{title: string; url: string} | null>(null);
   const [showEncryptionDialog, setShowEncryptionDialog] = useState(false);
   const [generationSteps, setGenerationSteps] = useState<string[]>([]);
@@ -29,17 +28,15 @@ const ResearchDashboardShell: React.FC = () => {
   });
 
   useEffect(() => {
-    // Do not auto-start report generation even if query is provided
-    // We'll let the chat interface handle this now
-    if (state.query) {
-      console.log("Query provided but waiting for user confirmation through chat interface:", state.query);
+    if (state.requirements && state.query) {
+      console.log("Starting report generation with requirements:", state.requirements);
+      handleGenerateReportFromChat(state.query);
     }
   }, [state, navigate]);
 
   const handleReportGenerated = (newReport: GeminiReport) => {
     console.log("Report generated:", newReport.title);
     
-    // Ensure all arrays are defined even if they're not in the response
     const safeReport = {
       ...newReport,
       sections: newReport.sections || [],
@@ -49,7 +46,6 @@ const ResearchDashboardShell: React.FC = () => {
       suggestedDatasets: newReport.suggestedDatasets || []
     };
     
-    // Update the title if it's not present
     if (!safeReport.title || safeReport.title.trim() === "") {
       safeReport.title = "Research Report: " + (state.query || "Topic Analysis");
     }
@@ -70,7 +66,6 @@ const ResearchDashboardShell: React.FC = () => {
     setShowCollaborator(prev => !prev);
   };
 
-  // Handle generating report from the chat interface
   const handleGenerateReportFromChat = (query: string) => {
     console.log("Starting report generation from chat with query:", query);
     
@@ -79,18 +74,15 @@ const ResearchDashboardShell: React.FC = () => {
       return;
     }
     
-    // Update state with the new query
     navigate(location.pathname, { 
       state: { ...state, query },
       replace: true 
     });
     
-    // Start the generation process
     setIsGenerating(true);
     setGenerationSteps([]);
     setProgress(0);
     
-    // Add initial step
     setGenerationSteps(prev => [...prev, 
       "Starting research report generation based on our conversation..."
     ]);

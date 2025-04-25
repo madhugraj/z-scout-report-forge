@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,8 @@ import WhatYouCanBuildSection from './WhatYouCanBuildSection';
 import LandingHeader from './LandingHeader';
 import PopularResearchTopics from './PopularResearchTopics';
 import { useNavigate } from 'react-router-dom';
+import CollaborationWindow from './collaboration/CollaborationWindow';
+import { useResearchRequirements } from '@/hooks/useResearchRequirements';
 
 const topicReports: Record<string, string> = {
   "How is AI transforming mental health research and interventions? Provide an overview and significant trends.": 
@@ -44,11 +45,13 @@ const LandingPage: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
-
-  // Tooltip is now shown only on hover (disabled persistent auto-show)
-  const [showFeatureTooltip, setShowFeatureTooltip] = useState(false);
-
+  const [showChat, setShowChat] = useState(false);
   const navigate = useNavigate();
+  const { gatherRequirements, isGathering } = useResearchRequirements();
+
+  const handleInputFocus = () => {
+    setShowChat(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,30 +59,18 @@ const LandingPage: React.FC = () => {
       toast.error('Please enter a search query');
       return;
     }
+    setShowChat(true);
+  };
+
+  const handleGenerateReport = (requirements: any) => {
     setIsGenerating(true);
-
-    setTimeout(() => {
-      setIsGenerating(false);
-      navigate('/dashboard', {
-        state: {
-          query: searchQuery,
-          source: 'search'
-        }
-      });
-    }, 1200);
-  };
-
-  const handleUpload = (type: 'drive' | 'computer' | 'url') => {
-    navigate('/upload', { state: { uploadType: type } });
-  };
-  const handleWorkspaceClick = () => navigate('/workspace');
-  const handleTrustSafetyClick = () => navigate('/trust-safety');
-  const handleAboutClick = () => navigate('/about');
-  const handleProClick = () => navigate('/pro');
-
-  const showFeaturedResearch = (query: string) => {
-    setSearchQuery(query);
-    setTimeout(() => handleSubmit({ preventDefault: () => { } } as React.FormEvent), 100);
+    navigate('/dashboard', {
+      state: {
+        query: searchQuery,
+        requirements,
+        source: 'search'
+      }
+    });
   };
 
   return (
@@ -87,13 +78,14 @@ const LandingPage: React.FC = () => {
       <LandingHeader
         showSignIn={showSignIn}
         setShowSignIn={setShowSignIn}
-        showFeatureTooltip={showFeatureTooltip}
-        handleTrustSafetyClick={handleTrustSafetyClick}
-        handleWorkspaceClick={handleWorkspaceClick}
-        handleAboutClick={handleAboutClick}
-        handleProClick={handleProClick}
+        showFeatureTooltip={false}
+        handleTrustSafetyClick={() => navigate('/trust-safety')}
+        handleWorkspaceClick={() => navigate('/workspace')}
+        handleAboutClick={() => navigate('/about')}
+        handleProClick={() => navigate('/pro')}
       />
-      <main className="flex-1 flex items-center justify-center px-4">
+      
+      <main className="flex-1 flex items-center justify-center px-4 relative">
         <div className="w-full max-w-3xl mx-auto space-y-8 text-center">
           <div className="space-y-4 animate-fade-in">
             <h1 className="text-4xl font-bold tracking-tight text-balance bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent sm:text-3xl">
@@ -103,7 +95,7 @@ const LandingPage: React.FC = () => {
               Just upload documents or reference live links, or ask, and get intelligent, cited answers grounded in your documents and trusted sources.
             </p>
           </div>
-          <form onSubmit={handleSubmit} className="w-full" onClick={() => setShowUploadOptions(false)}>
+          <form onSubmit={handleSubmit} className="w-full relative" onClick={() => setShowUploadOptions(false)}>
             <div className="relative rounded-xl border border-gray-800 bg-[#2A2F3C]/80 backdrop-blur-sm shadow-lg transition-colors focus-within:border-violet-500">
               <Input
                 type="text"
@@ -111,6 +103,7 @@ const LandingPage: React.FC = () => {
                 className="pl-12 pr-24 py-7 text-lg border-0 focus-visible:ring-0 rounded-xl bg-transparent text-white placeholder:text-gray-500"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
+                onFocus={handleInputFocus}
               />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
@@ -139,9 +132,27 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
           </form>
-          <PopularResearchTopics onSelectTopic={showFeaturedResearch} />
+
+          {showChat && (
+            <div className="fixed inset-x-0 bottom-0 top-20 bg-black/80 backdrop-blur-sm z-50">
+              <div className="container mx-auto h-full max-w-4xl">
+                <CollaborationWindow
+                  isFloating={true}
+                  onClose={() => setShowChat(false)}
+                  onGenerateReport={handleGenerateReport}
+                  currentUser="You"
+                />
+              </div>
+            </div>
+          )}
+
+          <PopularResearchTopics onSelectTopic={searchQuery => {
+            setSearchQuery(searchQuery);
+            setShowChat(true);
+          }} />
         </div>
       </main>
+
       <WhatYouCanBuildSection />
       <footer className="border-t border-gray-800/50 bg-black/10 backdrop-blur-sm mt-auto">
         <div className="container mx-auto px-4 h-16 flex items-center justify-end text-sm text-gray-400">
