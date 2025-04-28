@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, FormEvent } from 'react';
 import { Search, Globe, GraduationCap, Mic, CloudUpload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,7 +50,7 @@ const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { gatherRequirements, isGathering } = useResearchRequirements();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
       toast.error('Please enter a search query');

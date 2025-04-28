@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
+import { useNavigate } from 'react-router-dom';
 import CollaborationHeader from './CollaborationHeader';
 import CollaboratorsList from './CollaboratorsList';
 import MessageList from './MessageList';
