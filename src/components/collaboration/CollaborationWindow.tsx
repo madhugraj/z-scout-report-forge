@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import CollaborationHeader from './CollaborationHeader';
@@ -10,7 +9,6 @@ import ChatInput from './ChatInput';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useResearchChat } from '@/hooks/useResearchChat';
-import { useNavigate } from 'react-router-dom';
 
 interface CollaboratorInfo {
   name: string;
@@ -37,7 +35,8 @@ interface CollaborationWindowProps {
   reportSections?: {title: string; content: string}[];
   onClose?: () => void;
   isFloating?: boolean;
-  onGenerateReport?: (query: string) => void;
+  onGenerateReport?: (requirements: any) => void;
+  initialQuery?: string;
 }
 
 const CollaborationWindow: React.FC<CollaborationWindowProps> = ({ 
@@ -46,7 +45,8 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   reportSections = [],
   onClose,
   isFloating = false,
-  onGenerateReport
+  onGenerateReport,
+  initialQuery = ''
 }) => {
   const navigate = useNavigate();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -75,6 +75,12 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     researchData 
   } = useResearchChat();
 
+  useEffect(() => {
+    if (initialQuery && messages.length === 0) {
+      sendMessage(initialQuery);
+    }
+  }, [initialQuery]);
+
   const handleInvite = () => {
     if (!inviteEmail.trim()) {
       toast.error('Please enter an email address');
@@ -101,36 +107,20 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     }, 3000);
   };
 
-  const handleSendMessage = (message: string) => {
-    if (message.startsWith('edit section')) {
-      const sectionNumber = parseInt(message.split(' ')[2]) - 1;
-      if (sectionNumber >= 0 && sectionNumber < reportSections.length) {
-        setEditSection(sectionNumber);
-        setEditText(reportSections[sectionNumber].content);
-        return;
-      } else {
-        toast.error('Invalid section number');
-        return;
-      }
-    }
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim()) return;
 
     if (confirmingReport) {
-      if (message.toLowerCase().includes('yes') || message.toLowerCase().includes('confirm') || 
-          message.toLowerCase().includes('generate') || message.toLowerCase().includes('proceed')) {
-        
-        if (!researchData.researchQuestion || !researchData.recommendedSources || !researchData.researchScope) {
-          sendMessage("Before generating the report, I need to understand more about your research. Let me ask you a few questions.");
-          setConfirmingReport(false);
-          return;
-        }
-        
+      if (message.toLowerCase().includes('yes') || 
+          message.toLowerCase().includes('confirm') || 
+          message.toLowerCase().includes('generate') || 
+          message.toLowerCase().includes('proceed')) {
         handleStartReportGeneration();
         setConfirmingReport(false);
-        
         sendMessage("I confirm that I want to generate the report.");
       } else {
         setConfirmingReport(false);
-        sendMessage("I'm not ready to generate the report yet.");
+        sendMessage("I need more information before generating the report.");
       }
       return;
     }

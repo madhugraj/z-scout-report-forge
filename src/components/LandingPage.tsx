@@ -1,10 +1,8 @@
-
-import React, { useState, useRef } from 'react';
-import { Search, Globe, GraduationCap, Mic, CloudUpload, FolderUp, HardDrive } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Globe, GraduationCap, Mic, CloudUpload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
-import { cn } from '@/lib/utils';
 import WhatYouCanBuildSection from './WhatYouCanBuildSection';
 import LandingHeader from './LandingHeader';
 import PopularResearchTopics from './PopularResearchTopics';
@@ -51,11 +49,7 @@ const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { gatherRequirements, isGathering } = useResearchRequirements();
 
-  const handleInputFocus = () => {
-    setShowChat(true);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
       toast.error('Please enter a search query');
@@ -105,7 +99,6 @@ const LandingPage: React.FC = () => {
                 className="pl-12 pr-24 py-7 text-lg border-0 focus-visible:ring-0 rounded-xl bg-transparent text-white placeholder:text-gray-500"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                onFocus={handleInputFocus}
               />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
@@ -143,14 +136,15 @@ const LandingPage: React.FC = () => {
                   onClose={() => setShowChat(false)}
                   onGenerateReport={handleGenerateReport}
                   currentUser="You"
+                  initialQuery={searchQuery}
                 />
               </div>
             </div>
           )}
 
-          <PopularResearchTopics onSelectTopic={searchQuery => {
-            setSearchQuery(searchQuery);
-            setShowChat(true);
+          <PopularResearchTopics onSelectTopic={query => {
+            setSearchQuery(query);
+            handleSubmit(new Event('submit') as React.FormEvent);
           }} />
         </div>
       </main>
