@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -15,13 +14,13 @@ interface ChatMessage {
   };
 }
 
-interface ResearchQuestion {
+export interface ResearchQuestion {
   mainQuestion: string;
   subQuestions: string[];
   researchContext: string;
 }
 
-interface RecommendedSource {
+export interface RecommendedSource {
   title: string;
   authors: string;
   year: string;
@@ -29,10 +28,16 @@ interface RecommendedSource {
   relevance: string;
 }
 
-interface ResearchScope {
+export interface ResearchScope {
   scope: string[];
   limitations: string[];
   timeframe: string;
+}
+
+export interface ResearchChatData {
+  researchQuestion?: ResearchQuestion;
+  recommendedSources?: RecommendedSource[];
+  researchScope?: ResearchScope;
 }
 
 interface ChatHistory {
@@ -50,11 +55,7 @@ export function useResearchChat() {
   const [history, setHistory] = useState<ChatHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const [researchData, setResearchData] = useState<{
-    researchQuestion?: ResearchQuestion;
-    recommendedSources?: RecommendedSource[];
-    researchScope?: ResearchScope;
-  }>({});
+  const [researchData, setResearchData] = useState<ResearchChatData>({});
   const [readyForReport, setReadyForReport] = useState(false);
 
   const handleSendMessage = async (message: string) => {
