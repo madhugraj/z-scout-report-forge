@@ -7,10 +7,10 @@ interface EditorManagerProps {
   onEditRequest?: (sectionIndex: number) => void;
 }
 
-const EditorManager: React.FC<EditorManagerProps> = ({ 
+const EditorManager = ({ 
   reportSections = [],
   onEditRequest 
-}) => {
+}: EditorManagerProps) => {
   const [editSection, setEditSection] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState(false);
   const [editText, setEditText] = useState('');

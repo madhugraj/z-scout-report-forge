@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useNavigate } from 'react-router-dom';
@@ -11,15 +10,9 @@ import ChatInput from './ChatInput';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useResearchChat } from '@/hooks/useResearchChat';
+import { useCollaborationUtils } from './hooks/useCollaborationUtils';
 import EditorManager from './EditorManager';
 import ReportGenerator from './ReportGenerator';
-
-interface CollaboratorInfo {
-  name: string;
-  status: 'online' | 'offline';
-  lastEdit?: string;
-  isAI?: boolean;
-}
 
 interface CollaborationWindowProps {
   onEditRequest?: (sectionIndex: number) => void;
@@ -41,17 +34,8 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   initialQuery = ''
 }) => {
   const navigate = useNavigate();
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [collaborators, setCollaborators] = useState<CollaboratorInfo[]>([
-    {
-      name: 'Research AI',
-      status: 'online',
-      lastEdit: 'AI Assistant ready to help',
-      isAI: true
-    }
-  ]);
-
+  
+  // Custom hooks
   const { 
     messages, 
     isLoading, 
@@ -60,46 +44,33 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     generateReport,
     researchData 
   } = useResearchChat();
-
-  const editorData = EditorManager({ reportSections, onEditRequest });
   
+  const {
+    inviteEmail,
+    setInviteEmail,
+    collaborators,
+    showInviteDialog,
+    setShowInviteDialog,
+    handleInvite,
+    formatTime
+  } = useCollaborationUtils();
+
+  // Editor state management
+  const editorData = EditorManager({ reportSections, onEditRequest });
+
+  // Report generator state management
   const reportGeneratorData = ReportGenerator({ 
     onGenerateReport, 
     researchData,
     sendMessage 
   });
 
+  // Handle initial query
   useEffect(() => {
     if (initialQuery && messages.length === 0) {
       sendMessage(initialQuery);
     }
-  }, [initialQuery, messages.length]);
-
-  const handleInvite = () => {
-    if (!inviteEmail.trim()) {
-      toast.error('Please enter an email address');
-      return;
-    }
-
-    if (!inviteEmail.includes('@') || !inviteEmail.includes('.')) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-
-    toast.success(`Invite sent to ${inviteEmail}`);
-    setInviteEmail('');
-    setShowInviteDialog(false);
-    
-    setTimeout(() => {
-      const name = inviteEmail.split('@')[0];
-      setCollaborators(prev => [...prev, {
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        status: 'online',
-        lastEdit: 'Just joined'
-      }]);
-      toast.success(`${name} joined the collaboration`);
-    }, 3000);
-  };
+  }, [initialQuery, messages.length, sendMessage]);
 
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
@@ -116,10 +87,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
 
     // Otherwise, send to the research chat
     sendMessage(message);
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const suggestedPrompts = [

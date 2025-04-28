@@ -9,11 +9,11 @@ interface ReportGeneratorProps {
   sendMessage: (message: string) => void;
 }
 
-const ReportGenerator: React.FC<ReportGeneratorProps> = ({ 
+const ReportGenerator = ({ 
   onGenerateReport,
   researchData,
   sendMessage
-}) => {
+}: ReportGeneratorProps) => {
   const [reportQuery, setReportQuery] = useState('');
   const [confirmingReport, setConfirmingReport] = useState(false);
 
