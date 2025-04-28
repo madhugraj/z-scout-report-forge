@@ -1,8 +1,10 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
-interface ChatMessage {
+// Types
+export interface ChatMessage {
   id: string;
   sender: string;
   text: string;
@@ -50,6 +52,7 @@ interface ChatHistory {
   };
 }
 
+// Hook
 export function useResearchChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [history, setHistory] = useState<ChatHistory[]>([]);
@@ -58,6 +61,190 @@ export function useResearchChat() {
   const [researchData, setResearchData] = useState<ResearchChatData>({});
   const [readyForReport, setReadyForReport] = useState(false);
 
+  // Helper functions
+  const determineResearchPhase = () => {
+    if (!researchData.researchQuestion) return 'initial';
+    if (!researchData.recommendedSources) return 'sources';
+    if (!researchData.researchScope) return 'scope';
+    return 'ready';
+  };
+
+  const getPhaseMessage = (functionName: string) => {
+    switch (functionName) {
+      case 'researchQuestion':
+        return 'I\'ll help you formulate your research question and identify key areas to explore...';
+      case 'suggestSources':
+        return 'Now that we have your research question, let me find relevant academic sources...';
+      case 'defineResearchScope':
+        return 'Based on the sources, I\'ll help define the scope of your research...';
+      default:
+        return `Analyzing information for: ${functionName}...`;
+    }
+  };
+
+  // Function to handle retries with exponential backoff
+  const retryWithBackoff = (message: string) => {
+    if (retryCount < 3) {
+      const backoffTime = Math.pow(2, retryCount) * 1000;
+      toast.info('Retrying in ' + (backoffTime / 1000) + ' seconds...', {
+        duration: backoffTime
+      });
+      
+      setTimeout(() => {
+        setRetryCount(prev => prev + 1);
+        handleSendMessage(message);
+      }, backoffTime);
+      return true;
+    }
+    
+    toast.error('Unable to get a response after multiple attempts', {
+      description: 'Please try again later',
+      duration: 8000
+    });
+    setRetryCount(0);
+    return false;
+  };
+
+  // Function to send results of function calls back to the AI
+  const sendFunctionResultToAI = async (name: string, results: any) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('research-chat', {
+        body: { 
+          message: "", 
+          history, 
+          functionResults: results
+        }
+      });
+      
+      if (error) {
+        console.error('Error sending function results:', error);
+        return;
+      }
+      
+      setHistory(data.history);
+      
+    } catch (err) {
+      console.error('Error sending function results:', err);
+    }
+  };
+
+  // Functions for handling different types of function calls
+  const handleResearchQuestion = async (args: ResearchQuestion) => {
+    setResearchData(prev => ({
+      ...prev,
+      researchQuestion: args
+    }));
+    
+    await sendFunctionResultToAI('researchQuestion', { success: true, data: args });
+    
+    const researchQuestionMessage: ChatMessage = {
+      id: Date.now().toString(),
+      sender: 'Research AI',
+      text: `I've identified your main research question: "${args.mainQuestion}"\n\n${
+        args.subQuestions && args.subQuestions.length > 0 ? 
+          `Related sub-questions:\n${args.subQuestions.map((q: string) => `• ${q}`).join('\n')}` : ''
+      }`,
+      timestamp: new Date(),
+      isAI: true
+    };
+    
+    setMessages(prev => [...prev, researchQuestionMessage]);
+  };
+
+  const handleSuggestSources = async (args: { recommendedSources: RecommendedSource[] }) => {
+    setResearchData(prev => ({
+      ...prev,
+      recommendedSources: args.recommendedSources
+    }));
+    
+    await sendFunctionResultToAI('suggestSources', { success: true, data: args });
+    
+    const sourcesMessage: ChatMessage = {
+      id: Date.now().toString(),
+      sender: 'Research AI',
+      text: `I've identified ${args.recommendedSources.length} relevant sources for your research. Here are some key references:\n\n${
+        args.recommendedSources.slice(0, 3).map((source: RecommendedSource, index: number) => 
+          `${index + 1}. "${source.title}" by ${source.authors} (${source.year})`
+        ).join('\n')
+      }${args.recommendedSources.length > 3 ? '\n\n...and more' : ''}`,
+      timestamp: new Date(),
+      isAI: true
+    };
+    
+    setMessages(prev => [...prev, sourcesMessage]);
+  };
+
+  const handleDefineResearchScope = async (args: ResearchScope) => {
+    setResearchData(prev => ({
+      ...prev,
+      researchScope: args
+    }));
+    
+    await sendFunctionResultToAI('defineResearchScope', { success: true, data: args });
+    
+    const scopeMessage: ChatMessage = {
+      id: Date.now().toString(),
+      sender: 'Research AI',
+      text: `I've defined the scope for your research:\n\n${
+        args.scope ? `Within scope:\n${args.scope.map((s: string) => `• ${s}`).join('\n')}` : ''
+      }\n\n${
+        args.limitations ? `Beyond scope:\n${args.limitations.map((l: string) => `• ${l}`).join('\n')}` : ''
+      }${
+        args.timeframe ? `\n\nTimeframe: ${args.timeframe}` : ''
+      }`,
+      timestamp: new Date(),
+      isAI: true
+    };
+    
+    setMessages(prev => [...prev, scopeMessage]);
+    
+    checkIfReadyForReport();
+  };
+
+  // Check if we're ready to generate a report
+  const checkIfReadyForReport = () => {
+    if (researchData.researchQuestion && researchData.recommendedSources && researchData.researchScope) {
+      setReadyForReport(true);
+      
+      const readyMessage: ChatMessage = {
+        id: Date.now().toString(),
+        sender: 'Research AI',
+        text: `I now have enough information to generate a comprehensive research report. Would you like me to start generating the full report based on our discussion?`,
+        timestamp: new Date(),
+        isAI: true
+      };
+      
+      setMessages(prev => [...prev, readyMessage]);
+    }
+  };
+
+  // Process function call results
+  const processFunctionCallResult = async (functionCall: { name: string, arguments: any }) => {
+    const { name, arguments: args } = functionCall;
+    
+    try {
+      const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
+      
+      switch(name) {
+        case 'researchQuestion':
+          await handleResearchQuestion(parsedArgs);
+          break;
+          
+        case 'suggestSources':
+          await handleSuggestSources(parsedArgs);
+          break;
+          
+        case 'defineResearchScope':
+          await handleDefineResearchScope(parsedArgs);
+          break;
+      }
+    } catch (err) {
+      console.error(`Error processing function call ${name}:`, err);
+      toast.error(`Error processing research analysis`);
+    }
+  };
+
+  // Main function to send messages
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
 
@@ -130,175 +317,13 @@ export function useResearchChat() {
       
     } catch (err) {
       console.error('Error processing message:', err);
-      
-      if (retryCount < 3) {
-        const backoffTime = Math.pow(2, retryCount) * 1000;
-        toast.info('Retrying in ' + (backoffTime / 1000) + ' seconds...', {
-          duration: backoffTime
-        });
-        
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          handleSendMessage(message);
-        }, backoffTime);
-      } else {
-        toast.error('Unable to get a response after multiple attempts', {
-          description: 'Please try again later',
-          duration: 8000
-        });
-        setRetryCount(0);
-      }
+      retryWithBackoff(message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const determineResearchPhase = () => {
-    if (!researchData.researchQuestion) {
-      return 'initial';
-    }
-    if (!researchData.recommendedSources) {
-      return 'sources';
-    }
-    if (!researchData.researchScope) {
-      return 'scope';
-    }
-    return 'ready';
-  };
-
-  const getPhaseMessage = (functionName: string) => {
-    switch (functionName) {
-      case 'researchQuestion':
-        return 'I\'ll help you formulate your research question and identify key areas to explore...';
-      case 'suggestSources':
-        return 'Now that we have your research question, let me find relevant academic sources...';
-      case 'defineResearchScope':
-        return 'Based on the sources, I\'ll help define the scope of your research...';
-      default:
-        return `Analyzing information for: ${functionName}...`;
-    }
-  };
-
-  const processFunctionCallResult = async (functionCall: { name: string, arguments: any }) => {
-    const { name, arguments: args } = functionCall;
-    
-    try {
-      const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
-      
-      switch(name) {
-        case 'researchQuestion':
-          setResearchData(prev => ({
-            ...prev,
-            researchQuestion: parsedArgs
-          }));
-          
-          await sendFunctionResultToAI(name, { success: true, data: parsedArgs });
-          
-          const researchQuestionMessage: ChatMessage = {
-            id: Date.now().toString(),
-            sender: 'Research AI',
-            text: `I've identified your main research question: "${parsedArgs.mainQuestion}"\n\n${
-              parsedArgs.subQuestions && parsedArgs.subQuestions.length > 0 ? 
-                `Related sub-questions:\n${parsedArgs.subQuestions.map((q: string) => `• ${q}`).join('\n')}` : ''
-            }`,
-            timestamp: new Date(),
-            isAI: true
-          };
-          
-          setMessages(prev => [...prev, researchQuestionMessage]);
-          break;
-          
-        case 'suggestSources':
-          setResearchData(prev => ({
-            ...prev,
-            recommendedSources: parsedArgs.recommendedSources
-          }));
-          
-          await sendFunctionResultToAI(name, { success: true, data: parsedArgs });
-          
-          const sourcesMessage: ChatMessage = {
-            id: Date.now().toString(),
-            sender: 'Research AI',
-            text: `I've identified ${parsedArgs.recommendedSources.length} relevant sources for your research. Here are some key references:\n\n${
-              parsedArgs.recommendedSources.slice(0, 3).map((source: RecommendedSource, index: number) => 
-                `${index + 1}. "${source.title}" by ${source.authors} (${source.year})`
-              ).join('\n')
-            }${parsedArgs.recommendedSources.length > 3 ? '\n\n...and more' : ''}`,
-            timestamp: new Date(),
-            isAI: true
-          };
-          
-          setMessages(prev => [...prev, sourcesMessage]);
-          break;
-          
-        case 'defineResearchScope':
-          setResearchData(prev => ({
-            ...prev,
-            researchScope: parsedArgs
-          }));
-          
-          await sendFunctionResultToAI(name, { success: true, data: parsedArgs });
-          
-          const scopeMessage: ChatMessage = {
-            id: Date.now().toString(),
-            sender: 'Research AI',
-            text: `I've defined the scope for your research:\n\n${
-              parsedArgs.scope ? `Within scope:\n${parsedArgs.scope.map((s: string) => `• ${s}`).join('\n')}` : ''
-            }\n\n${
-              parsedArgs.limitations ? `Beyond scope:\n${parsedArgs.limitations.map((l: string) => `• ${l}`).join('\n')}` : ''
-            }${
-              parsedArgs.timeframe ? `\n\nTimeframe: ${parsedArgs.timeframe}` : ''
-            }`,
-            timestamp: new Date(),
-            isAI: true
-          };
-          
-          setMessages(prev => [...prev, scopeMessage]);
-          
-          if (researchData.researchQuestion && researchData.recommendedSources) {
-            setReadyForReport(true);
-            
-            const readyMessage: ChatMessage = {
-              id: Date.now().toString(),
-              sender: 'Research AI',
-              text: `I now have enough information to generate a comprehensive research report. Would you like me to start generating the full report based on our discussion?`,
-              timestamp: new Date(),
-              isAI: true
-            };
-            
-            setMessages(prev => [...prev, readyMessage]);
-          }
-          
-          break;
-      }
-    } catch (err) {
-      console.error(`Error processing function call ${name}:`, err);
-      toast.error(`Error processing research analysis`);
-    }
-  };
-
-  const sendFunctionResultToAI = async (name: string, results: any) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('research-chat', {
-        body: { 
-          message: "", 
-          history, 
-          functionResults: results
-        }
-      });
-      
-      if (error) {
-        console.error('Error sending function results:', error);
-        return;
-      }
-      
-      setHistory(data.history);
-      
-    } catch (err) {
-      console.error('Error sending function results:', err);
-    }
-  };
-
+  // Generate the report
   const generateReport = async () => {
     if (!researchData.researchQuestion) {
       toast.error('Research question is required before generating a report');

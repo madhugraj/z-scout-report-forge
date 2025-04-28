@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, ReactNode } from 'react';
 import { toast } from '@/components/ui/sonner';
 
 interface EditorManagerProps {

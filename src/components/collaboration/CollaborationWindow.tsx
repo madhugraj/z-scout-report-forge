@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useNavigate } from 'react-router-dom';
@@ -60,9 +61,9 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     researchData 
   } = useResearchChat();
 
-  const editorManager = EditorManager({ reportSections, onEditRequest });
+  const editorData = EditorManager({ reportSections, onEditRequest });
   
-  const reportGenerator = ReportGenerator({ 
+  const reportGeneratorData = ReportGenerator({ 
     onGenerateReport, 
     researchData,
     sendMessage 
@@ -104,13 +105,13 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     if (!message.trim()) return;
 
     // Handle report confirmation if we're in that state
-    if (reportGenerator.confirmingReport) {
-      const handled = reportGenerator.handleConfirmReportGeneration(message);
+    if (reportGeneratorData.confirmingReport) {
+      const handled = reportGeneratorData.handleConfirmReportGeneration(message);
       if (handled) return;
     }
 
     // Check if this is an edit command
-    const wasEditCommand = editorManager.processEditCommand(message);
+    const wasEditCommand = editorData.processEditCommand(message);
     if (wasEditCommand) return;
 
     // Otherwise, send to the research chat
@@ -145,8 +146,8 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       <CollaborationHeader
         showInviteDialog={showInviteDialog}
         setShowInviteDialog={setShowInviteDialog}
-        editorMode={editorManager.editorMode}
-        setEditorMode={editorManager.setEditorMode}
+        editorMode={editorData.editorMode}
+        setEditorMode={editorData.setEditorMode}
       />
 
       <div className="flex flex-row flex-1 overflow-hidden">
@@ -156,16 +157,16 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         />
 
         <div className="flex-1 flex flex-col overflow-hidden border-l border-gray-800/50">
-          {editorManager.editSection !== null ? (
+          {editorData.editSection !== null ? (
             <EditPanel
-              sectionTitle={reportSections[editorManager.editSection]?.title}
-              editTitle={editorManager.editTitle}
-              editText={editorManager.editText}
-              setEditText={editorManager.setEditText}
-              setEditTitle={editorManager.setEditTitle}
-              handleCancelEdit={editorManager.handleCancelEdit}
-              handleSubmitEdit={editorManager.handleSubmitEdit}
-              editorMode={editorManager.editorMode}
+              sectionTitle={reportSections[editorData.editSection]?.title}
+              editTitle={editorData.editTitle}
+              editText={editorData.editText}
+              setEditText={editorData.setEditText}
+              setEditTitle={editorData.setEditTitle}
+              handleCancelEdit={editorData.handleCancelEdit}
+              handleSubmitEdit={editorData.handleSubmitEdit}
+              editorMode={editorData.editorMode}
             />
           ) : (
             <>
@@ -176,12 +177,12 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
               <ChatInput 
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
-                placeholder={reportGenerator.confirmingReport 
+                placeholder={reportGeneratorData.confirmingReport 
                   ? "Type 'yes' to confirm report generation or provide additional instructions..." 
                   : "Describe your research topic or ask a question..."}
-                suggestedPrompts={!reportGenerator.confirmingReport ? suggestedPrompts : []}
-                onGenerateReport={reportGenerator.handleGenerateReport}
-                showGenerateButton={readyForReport && !reportGenerator.confirmingReport} 
+                suggestedPrompts={!reportGeneratorData.confirmingReport ? suggestedPrompts : []}
+                onGenerateReport={reportGeneratorData.handleGenerateReport}
+                showGenerateButton={readyForReport && !reportGeneratorData.confirmingReport} 
               />
             </>
           )}
