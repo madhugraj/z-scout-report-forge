@@ -60,6 +60,7 @@ export function useResearchChat() {
   const [retryCount, setRetryCount] = useState(0);
   const [researchData, setResearchData] = useState<ResearchChatData>({});
   const [readyForReport, setReadyForReport] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Helper functions
   const determineResearchPhase = () => {
@@ -80,6 +81,30 @@ export function useResearchChat() {
       default:
         return `Analyzing information for: ${functionName}...`;
     }
+  };
+
+  // Function to handle API errors
+  const handleApiError = (error: any) => {
+    console.error('API Error:', error);
+    
+    // Check if it's a Gemini model issue
+    if (error.message?.includes('model') && error.message?.includes('not found')) {
+      setApiError('There appears to be an issue with the AI model. Using fallback mode.');
+      
+      // Create a fallback assistant message
+      const fallbackMessage: ChatMessage = {
+        id: Date.now().toString(),
+        sender: 'Research AI',
+        text: `I'm currently experiencing technical difficulties connecting to my research database. I can still help you brainstorm your topic, but I'll have limited access to academic sources for now. Please describe your research interests, and I'll do my best to assist you.`,
+        timestamp: new Date(),
+        isAI: true
+      };
+      
+      setMessages(prev => [...prev, fallbackMessage]);
+      return true;
+    }
+    
+    return false;
   };
 
   // Function to handle retries with exponential backoff
@@ -244,6 +269,30 @@ export function useResearchChat() {
     }
   };
 
+  // Handle fallback responses when API is failing
+  const createFallbackResponse = (message: string) => {
+    // Simple responses when the AI service is down
+    let response: string;
+    
+    if (message.toLowerCase().includes('research') || message.toLowerCase().includes('study') || message.toLowerCase().includes('paper')) {
+      response = "I understand you're working on a research project. While I'm having trouble connecting to my academic database right now, I can still help you organize your thoughts. What specific area are you researching?";
+    } else if (message.toLowerCase().includes('source') || message.toLowerCase().includes('reference') || message.toLowerCase().includes('citation')) {
+      response = "I'd normally provide specific academic sources for your research, but I'm currently having trouble accessing my citation database. In the meantime, consider checking Google Scholar, JSTOR, or your university's research portal for relevant literature.";
+    } else {
+      response = "Thank you for your message. I'm currently experiencing some technical limitations with my research tools, but I'm still here to help. Could you tell me more about your research goals so I can assist you in other ways?";
+    }
+    
+    const aiMessage: ChatMessage = {
+      id: Date.now().toString(),
+      sender: 'Research AI',
+      text: response,
+      timestamp: new Date(),
+      isAI: true
+    };
+    
+    setMessages(prev => [...prev, aiMessage]);
+  };
+
   // Main function to send messages
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
@@ -260,6 +309,13 @@ export function useResearchChat() {
     setMessages(prev => [...prev, userMessage]);
     
     try {
+      // If we're in API error state, use fallback responses
+      if (apiError) {
+        createFallbackResponse(message);
+        setIsLoading(false);
+        return;
+      }
+      
       const currentPhase = determineResearchPhase();
       
       const { data, error } = await supabase.functions.invoke('research-chat', {
@@ -279,8 +335,16 @@ export function useResearchChat() {
             duration: 5000
           });
         } else {
+          // Handle other API errors with fallback
+          if (handleApiError(error)) {
+            setIsLoading(false);
+            return;
+          }
+          
           toast.error('Failed to get AI response');
         }
+        
+        setIsLoading(false);
         return;
       }
       
@@ -317,6 +381,13 @@ export function useResearchChat() {
       
     } catch (err) {
       console.error('Error processing message:', err);
+      
+      // Try to handle API error with fallback
+      if (handleApiError(err)) {
+        setIsLoading(false);
+        return;
+      }
+      
       retryWithBackoff(message);
     } finally {
       setIsLoading(false);
@@ -359,6 +430,7 @@ export function useResearchChat() {
     sendMessage: handleSendMessage,
     readyForReport,
     generateReport,
-    researchData
+    researchData,
+    apiError
   };
 }

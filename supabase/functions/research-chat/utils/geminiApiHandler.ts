@@ -96,6 +96,13 @@ export async function callGeminiWithRetry(url: string, requestBody: any, retries
     console.log(`Adjusting topK from ${requestBody.generationConfig.topK} to 40 (maximum allowed)`);
     requestBody.generationConfig.topK = 40;
   }
+
+  // Handle model-specific URL adjustments
+  if (url.includes('gemini-2.0-pro')) {
+    // Try with gemini-1.5-pro instead
+    console.log('Adjusting URL from gemini-2.0-pro to gemini-1.5-pro');
+    url = url.replace('gemini-2.0-pro', 'gemini-1.5-pro');
+  }
   
   for (let attempt = 0; attempt <= retries; attempt++) {
     // Exponential backoff for retries
@@ -137,6 +144,16 @@ export async function callGeminiWithRetry(url: string, requestBody: any, retries
                   cooldownDuration = parseInt(retryDelay[1], 10);
                 }
               }
+            }
+          }
+          
+          // If it's a model not found error, try with a different model
+          if (errorJson.error?.message?.includes('model') && errorJson.error?.message?.includes('not found')) {
+            if (url.includes('gemini-1.5-pro')) {
+              // Try with gemini-1.0-pro as fallback
+              console.log('Trying with gemini-1.0-pro as fallback');
+              url = url.replace('gemini-1.5-pro', 'gemini-1.0-pro');
+              continue;
             }
           }
         } catch (e) {
