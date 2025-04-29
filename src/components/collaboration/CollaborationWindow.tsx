@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useNavigate } from 'react-router-dom';
@@ -89,11 +90,40 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     sendMessage(message);
   };
 
-  const suggestedPrompts = [
-    "I'm interested in researching climate change adaptation in coastal cities",
-    "Help me formulate a research question about AI ethics in healthcare",
-    "I want to explore the impact of remote work on employee productivity"
-  ];
+  // Generate dynamically relevant suggested prompts based on initialQuery
+  const generateSuggestedPrompts = () => {
+    if (!initialQuery) {
+      return [
+        "I need help researching a topic for my academic paper",
+        "Can you help me find sources for my research?",
+        "I'd like to explore the latest developments in my field"
+      ];
+    }
+    
+    const query = initialQuery.toLowerCase();
+    const topicKeywords = [
+      { keywords: ["climate", "environment", "warming", "carbon"], topic: "climate change" },
+      { keywords: ["ai", "artificial", "intelligence", "machine", "learning"], topic: "artificial intelligence" },
+      { keywords: ["health", "medical", "medicine", "disease"], topic: "healthcare" },
+      { keywords: ["education", "learning", "school", "teaching"], topic: "education" },
+      { keywords: ["tech", "technology", "digital"], topic: "technology" }
+    ];
+    
+    // Find matching topic or use generic research-focused prompts
+    const matchedTopic = topicKeywords.find(item => 
+      item.keywords.some(keyword => query.includes(keyword))
+    );
+    
+    const topic = matchedTopic ? matchedTopic.topic : "this topic";
+    
+    return [
+      `What are the key research questions I should explore about ${topic}?`,
+      `Can you recommend the most recent academic sources on ${topic}?`,
+      `What methodology would be best for researching ${topic}?`
+    ];
+  };
+
+  const suggestedPrompts = generateSuggestedPrompts();
 
   return (
     <div className={`flex flex-col ${isFloating ? 'h-full rounded-lg border border-gray-700 shadow-lg overflow-hidden' : 'h-full'}`}>
@@ -146,7 +176,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
                 isLoading={isLoading}
                 placeholder={reportGeneratorData.confirmingReport 
                   ? "Type 'yes' to confirm report generation or provide additional instructions..." 
-                  : "Describe your research topic or ask a question..."}
+                  : `Describe your research on ${initialQuery || "your topic"} or ask questions...`}
                 suggestedPrompts={!reportGeneratorData.confirmingReport ? suggestedPrompts : []}
                 onGenerateReport={reportGeneratorData.handleGenerateReport}
                 showGenerateButton={readyForReport && !reportGeneratorData.confirmingReport} 

@@ -172,8 +172,7 @@ serve(async (req) => {
       generationConfig: {
         temperature: 0.2,
         maxOutputTokens: 8000,
-        topP: 0.95,
-        model: "gemini-2.0-pro"
+        topP: 0.95
       }
     };
 

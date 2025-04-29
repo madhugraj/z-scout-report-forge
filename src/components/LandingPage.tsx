@@ -56,6 +56,8 @@ const LandingPage: React.FC = () => {
       toast.error('Please enter a search query');
       return;
     }
+    
+    // Show chat window with the search query for a more connected experience
     setShowChat(true);
   };
 
@@ -68,6 +70,15 @@ const LandingPage: React.FC = () => {
         source: 'search'
       }
     });
+  };
+
+  // Function to handle topic selection from PopularResearchTopics
+  const handleTopicSelection = (query: string) => {
+    setSearchQuery(query);
+    // Automatically submit the form after selecting a topic
+    setTimeout(() => {
+      handleSubmit(new Event('submit') as unknown as FormEvent);
+    }, 100);
   };
 
   return (
@@ -143,10 +154,7 @@ const LandingPage: React.FC = () => {
             </div>
           )}
 
-          <PopularResearchTopics onSelectTopic={query => {
-            setSearchQuery(query);
-            handleSubmit(new Event('submit') as unknown as FormEvent);
-          }} />
+          <PopularResearchTopics onSelectTopic={handleTopicSelection} />
         </div>
       </main>
 
