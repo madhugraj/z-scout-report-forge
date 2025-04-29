@@ -58,7 +58,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   const [editSection, setEditSection] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editText, setEditText] = useState('');
-  const [editorMode, setEditorMode] = useState<'markdown' | 'wysiwyg'>('markdown');
+  const [editorMode, setEditorMode] = useState<'minimal' | 'advanced'>('minimal');
   const [confirmingReport, setConfirmingReport] = useState(false);
   const [reportQuery, setReportQuery] = useState('');
 
@@ -220,6 +220,16 @@ Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
 
   const suggestedPrompts = generateSuggestedPrompts();
 
+  // Transform ChatMessage[] to Message[] for MessageList component
+  const transformedMessages = messages.map((msg, index) => ({
+    id: `msg-${index}-${msg.timestamp || Date.now()}`,
+    sender: msg.role === 'user' ? 'You' : 'Research AI',
+    text: msg.content,
+    timestamp: new Date(msg.timestamp || Date.now()),
+    isAI: msg.role === 'assistant',
+    functionCall: msg.functionCall
+  }));
+
   return (
     <div className={`flex flex-col ${isFloating ? 'h-full rounded-lg border border-gray-700 shadow-lg overflow-hidden' : 'h-full'}`}>
       {isFloating && (
@@ -263,7 +273,7 @@ Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
           ) : (
             <>
               <MessageList 
-                messages={messages} 
+                messages={transformedMessages}
                 formatTime={formatTime} 
               />
               <ChatInput 
