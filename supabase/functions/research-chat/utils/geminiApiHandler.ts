@@ -1,212 +1,76 @@
 
-// Helper functions for managing Gemini API calls with failover and rate limiting
-const apiKeyRotator = {
-  keys: [Deno.env.get("GEMINI_API_KEY"), Deno.env.get("GEMINI_API_KEY_2")].filter(Boolean),
-  currentIndex: 0,
-  lastCallTimestamps: new Map<string, number[]>(),
-  rateLimitWindow: 60000, // 1 minute window
-  maxCallsPerWindow: 40, // Keep at 40 as per API limitations
-  
-  // Track keys currently in cooldown due to rate limiting
-  cooldownKeys: new Map<string, number>(),
+import { GeminiError } from "./GeminiError.ts";
 
-  getNextKey(): string | null {
-    if (this.keys.length === 0) {
-      console.error("No API keys available");
-      return null;
-    }
-    
-    const startIndex = this.currentIndex;
-    let attempts = 0;
-    
-    do {
-      const key = this.keys[this.currentIndex];
-      
-      // Check if key is in cooldown
-      const cooldownUntil = this.cooldownKeys.get(key);
-      if (cooldownUntil && Date.now() < cooldownUntil) {
-        console.log(`API key ending in ...${key?.slice(-4)} is in cooldown for ${Math.ceil((cooldownUntil - Date.now()) / 1000)}s`);
-        this.currentIndex = (this.currentIndex + 1) % this.keys.length;
-        attempts++;
-        continue;
-      }
-      
-      // Remove expired cooldown
-      if (cooldownUntil) {
-        this.cooldownKeys.delete(key);
-      }
-      
-      if (this.canUseKey(key)) {
-        this.recordApiCall(key);
-        return key;
-      }
-      
-      this.currentIndex = (this.currentIndex + 1) % this.keys.length;
-      attempts++;
-    } while (attempts < this.keys.length);
-    
-    console.log("All API keys are currently rate limited or in cooldown");
-    return this.keys[startIndex]; // Return the first key anyway, we'll handle the rate limit error
-  },
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+const MAX_RETRIES = 3;
+const BASE_DELAY = 2000; // 2 seconds
 
-  canUseKey(key: string): boolean {
-    if (!key) return false;
-    
-    const timestamps = this.lastCallTimestamps.get(key) || [];
-    const now = Date.now();
-    
-    // Remove timestamps outside the window
-    const recentCalls = timestamps.filter(
-      timestamp => now - timestamp < this.rateLimitWindow
-    );
-    
-    this.lastCallTimestamps.set(key, recentCalls);
-    return recentCalls.length < this.maxCallsPerWindow;
-  },
-
-  recordApiCall(key: string) {
-    const timestamps = this.lastCallTimestamps.get(key) || [];
-    timestamps.push(Date.now());
-    this.lastCallTimestamps.set(key, timestamps);
-  },
-  
-  // Set a key in cooldown after a rate limit error
-  setCooldown(key: string, seconds: number) {
-    const cooldownUntil = Date.now() + (seconds * 1000);
-    this.cooldownKeys.set(key, cooldownUntil);
-    console.log(`Setting API key ending in ...${key.slice(-4)} in cooldown for ${seconds}s until ${new Date(cooldownUntil).toISOString()}`);
-  },
-  
-  // Get number of available keys (not in cooldown)
-  getAvailableKeyCount(): number {
-    const now = Date.now();
-    return this.keys.filter(key => {
-      const cooldownUntil = this.cooldownKeys.get(key);
-      return !cooldownUntil || now >= cooldownUntil;
-    }).length;
+export async function callGeminiWithRetry(url: string, payload: any, retries = MAX_RETRIES): Promise<any> {
+  if (!GEMINI_API_KEY) {
+    throw new Error("Missing GEMINI_API_KEY. Please set this in the Edge Function Secrets.");
   }
-};
-
-export async function callGeminiWithRetry(url: string, requestBody: any, retries = 3) {
+  
+  // Try all possible model endpoints if we encounter specific errors
+  const modelEndpoints = [
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+  ];
+  
   let lastError: Error | null = null;
-  let apiKey: string | null = null;
   
-  // Fix topK parameter if present and too large (maximum allowed is 40)
-  if (requestBody.generationConfig?.topK && requestBody.generationConfig.topK > 40) {
-    console.log(`Adjusting topK from ${requestBody.generationConfig.topK} to 40 (maximum allowed)`);
-    requestBody.generationConfig.topK = 40;
-  }
-
-  // Handle model-specific URL adjustments
-  if (url.includes('gemini-2.0-pro')) {
-    // Try with gemini-1.5-pro instead
-    console.log('Adjusting URL from gemini-2.0-pro to gemini-1.5-pro');
-    url = url.replace('gemini-2.0-pro', 'gemini-1.5-pro');
-  }
-  
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    // Exponential backoff for retries
-    if (attempt > 0) {
-      const backoffMs = Math.min(Math.pow(2, attempt) * 1000, 10000);
-      console.log(`Retry attempt ${attempt} of ${retries}, backing off for ${backoffMs}ms`);
-      await new Promise(resolve => setTimeout(resolve, backoffMs));
-    }
-    
-    apiKey = apiKeyRotator.getNextKey();
-    
-    if (!apiKey) {
-      throw new Error(`All API keys are currently rate limited. Please try again in a minute.`);
-    }
-    
+  for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      console.log(`Attempt ${attempt + 1} with API key ending in ...${apiKey.slice(-4)}`);
+      // For the first attempt, use the provided URL
+      // For subsequent attempts, try backup model endpoints
+      const currentUrl = attempt === 0 ? url : modelEndpoints[attempt % modelEndpoints.length];
       
-      const response = await fetch(`${url}?key=${apiKey}`, {
+      console.log(`Attempt ${attempt + 1} with API key ending in ...${GEMINI_API_KEY.slice(-4)}`);
+      
+      const requestUrl = `${currentUrl}?key=${GEMINI_API_KEY}`;
+      const response = await fetch(requestUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody)
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const status = response.status;
-        let errorText = await response.text();
-        let cooldownDuration = 60; // Default cooldown
+        const errorData = await response.json();
+        console.error(`Error with API key ending in ...${GEMINI_API_KEY.slice(-4)}:`, errorData);
         
-        // Parse the error response for more details
-        try {
-          const errorJson = JSON.parse(errorText);
-          if (errorJson.error?.details) {
-            // Try to extract retry delay information
-            for (const detail of errorJson.error.details) {
-              if (detail["@type"] === "type.googleapis.com/google.rpc.RetryInfo" && detail.retryDelay) {
-                const retryDelay = detail.retryDelay.match(/(\d+)s/);
-                if (retryDelay && retryDelay[1]) {
-                  cooldownDuration = parseInt(retryDelay[1], 10);
-                }
-              }
-            }
-          }
-          
-          // If it's a model not found error, try with a different model
-          if (errorJson.error?.message?.includes('model') && errorJson.error?.message?.includes('not found')) {
-            if (url.includes('gemini-1.5-pro')) {
-              // Try with gemini-1.0-pro as fallback
-              console.log('Trying with gemini-1.0-pro as fallback');
-              url = url.replace('gemini-1.5-pro', 'gemini-1.0-pro');
-              continue;
-            }
-          }
-        } catch (e) {
-          // Ignore JSON parsing errors
-        }
+        const statusCode = response.status;
+        const errorMessage = errorData.error?.message || "Unknown Gemini API error";
         
-        // Handle rate limiting (429)
-        if (status === 429) {
-          console.log(`Rate limit hit for API key ending in ...${apiKey.slice(-4)}, setting cooldown for ${cooldownDuration}s`);
-          apiKeyRotator.setCooldown(apiKey, cooldownDuration);
-          
-          // Only continue if we have other keys available
-          if (apiKeyRotator.getAvailableKeyCount() > 0) {
-            continue;
-          } else {
-            throw new Error(`Rate limit exceeded for all API keys. Please try again in ${cooldownDuration} seconds.`);
-          }
-        }
-        
-        // For other errors, throw with details
-        throw new Error(`Gemini API error (${status}): ${errorText}`);
+        // Throw formatted error
+        throw new GeminiError(`Gemini API error (${statusCode}): ${JSON.stringify(errorData)}`, statusCode, errorData);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return data;
       
     } catch (error) {
-      console.error(`Error with API key ending in ...${apiKey.slice(-4)}:`, error);
       lastError = error;
       
-      // Special handling for certain error messages
-      const errorMessage = error.message?.toLowerCase() || '';
-      if (
-        errorMessage.includes("quota exceeded") || 
-        errorMessage.includes("rate limit") || 
-        errorMessage.includes("resource exhausted")
-      ) {
-        // Apply cooldown to this key
-        apiKeyRotator.setCooldown(apiKey, 60);
-        
-        // Only continue if we have other keys available
-        if (apiKeyRotator.getAvailableKeyCount() > 0) {
-          continue;
-        }
+      // If this is the last attempt, throw the error
+      if (attempt === retries - 1) {
+        throw error;
       }
       
-      // For other errors, only retry if we have attempts left
-      if (attempt < retries) {
+      // For 404 errors (model not found), immediately try the next model endpoint
+      if (error instanceof GeminiError && error.statusCode === 404) {
+        console.log("Model not found, trying alternative model");
         continue;
       }
       
-      throw error;
+      // For other errors, implement exponential backoff
+      const delay = BASE_DELAY * Math.pow(2, attempt);
+      console.log(`Retry attempt ${attempt + 1} of ${retries}, backing off for ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
   
-  throw lastError || new Error("All API keys failed");
+  // This should never be reached as the last attempt would throw
+  throw lastError || new Error("Failed to call Gemini API after exhausting all retries");
 }

@@ -12,8 +12,6 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useResearchChat } from '@/hooks/useResearchChat';
 import { useCollaborationUtils } from './hooks/useCollaborationUtils';
-import EditorManager from './EditorManager';
-import ReportGenerator from './ReportGenerator';
 
 interface CollaborationWindowProps {
   onEditRequest?: (sectionIndex: number) => void;
@@ -56,15 +54,13 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     formatTime
   } = useCollaborationUtils();
 
-  // Editor state management
-  const editorData = EditorManager({ reportSections, onEditRequest });
-
-  // Report generator state management
-  const reportGeneratorData = ReportGenerator({ 
-    onGenerateReport, 
-    researchData,
-    sendMessage 
-  });
+  // Local state for editor and report generator
+  const [editSection, setEditSection] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editText, setEditText] = useState('');
+  const [editorMode, setEditorMode] = useState<'markdown' | 'wysiwyg'>('markdown');
+  const [confirmingReport, setConfirmingReport] = useState(false);
+  const [reportQuery, setReportQuery] = useState('');
 
   // Handle initial query
   useEffect(() => {
@@ -73,17 +69,116 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     }
   }, [initialQuery, messages.length, sendMessage]);
 
+  // Editor functions
+  const handleCancelEdit = () => {
+    setEditSection(null);
+    setEditTitle('');
+    setEditText('');
+  };
+
+  const handleSubmitEdit = () => {
+    if (editSection !== null && onEditRequest) {
+      // Call the parent's edit handler
+      onEditRequest(editSection);
+      handleCancelEdit();
+    }
+  };
+
+  const processEditCommand = (message: string): boolean => {
+    const editRegex = /^edit\s+section\s+(\d+)$/i;
+    const match = message.match(editRegex);
+    
+    if (match) {
+      const sectionIndex = parseInt(match[1], 10) - 1; // Convert to 0-based index
+      if (sectionIndex >= 0 && sectionIndex < reportSections.length) {
+        setEditSection(sectionIndex);
+        setEditTitle(reportSections[sectionIndex].title);
+        setEditText(reportSections[sectionIndex].content);
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Report generation functions
+  const handleGenerateReport = async () => {
+    try {
+      if (!researchData.researchQuestion) {
+        sendMessage("Before we generate a report, I need to understand your research topic better. Could you tell me what you'd like to research?");
+        return;
+      }
+
+      if (!researchData.recommendedSources) {
+        sendMessage("I'll help you identify relevant sources for your research. This will help ensure a comprehensive report.");
+        return;
+      }
+
+      if (!researchData.researchScope) {
+        sendMessage("Let's define the scope of your research to ensure we cover all important aspects.");
+        return;
+      }
+
+      // Format the query based on research data
+      const query = researchData.researchQuestion.mainQuestion;
+      
+      if (query) {
+        setReportQuery(query);
+        setConfirmingReport(true);
+        
+        sendMessage(`Based on our discussion, I understand your research requirements:
+
+1. Main Research Question: "${researchData.researchQuestion.mainQuestion}"
+2. Scope: ${researchData.researchScope.scope.join(', ')}
+3. Number of identified sources: ${researchData.recommendedSources.length}
+
+I'm ready to generate a comprehensive report. Would you like me to proceed?
+
+Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
+      }
+    } catch (err) {
+      console.error('Error preparing report:', err);
+      toast.error('Failed to prepare report generation');
+      setConfirmingReport(false);
+    }
+  };
+
+  const handleConfirmReportGeneration = (message: string): boolean => {
+    if (!confirmingReport) return false;
+    
+    if (message.toLowerCase().includes('yes') || 
+        message.toLowerCase().includes('confirm') || 
+        message.toLowerCase().includes('generate') || 
+        message.toLowerCase().includes('proceed')) {
+      handleStartReportGeneration();
+      setConfirmingReport(false);
+      return true;
+    } else {
+      setConfirmingReport(false);
+      return true;
+    }
+  };
+
+  const handleStartReportGeneration = () => {
+    if (!reportQuery || !onGenerateReport) return;
+    
+    onGenerateReport(reportQuery);
+    
+    toast.success('Starting comprehensive report generation', {
+      description: 'This may take 1-2 minutes. We\'ll notify you when it\'s ready.',
+      duration: 5000
+    });
+  };
+
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
 
     // Handle report confirmation if we're in that state
-    if (reportGeneratorData.confirmingReport) {
-      const handled = reportGeneratorData.handleConfirmReportGeneration(message);
-      if (handled) return;
+    if (handleConfirmReportGeneration(message)) {
+      return;
     }
 
     // Check if this is an edit command
-    const wasEditCommand = editorData.processEditCommand(message);
+    const wasEditCommand = processEditCommand(message);
     if (wasEditCommand) return;
 
     // Otherwise, send to the research chat
@@ -143,8 +238,8 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       <CollaborationHeader
         showInviteDialog={showInviteDialog}
         setShowInviteDialog={setShowInviteDialog}
-        editorMode={editorData.editorMode}
-        setEditorMode={editorData.setEditorMode}
+        editorMode={editorMode}
+        setEditorMode={setEditorMode}
       />
 
       <div className="flex flex-row flex-1 overflow-hidden">
@@ -154,16 +249,16 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         />
 
         <div className="flex-1 flex flex-col overflow-hidden border-l border-gray-800/50">
-          {editorData.editSection !== null ? (
+          {editSection !== null ? (
             <EditPanel
-              sectionTitle={reportSections[editorData.editSection]?.title}
-              editTitle={editorData.editTitle}
-              editText={editorData.editText}
-              setEditText={editorData.setEditText}
-              setEditTitle={editorData.setEditTitle}
-              handleCancelEdit={editorData.handleCancelEdit}
-              handleSubmitEdit={editorData.handleSubmitEdit}
-              editorMode={editorData.editorMode}
+              sectionTitle={reportSections[editSection]?.title}
+              editTitle={editTitle}
+              editText={editText}
+              setEditText={setEditText}
+              setEditTitle={setEditTitle}
+              handleCancelEdit={handleCancelEdit}
+              handleSubmitEdit={handleSubmitEdit}
+              editorMode={editorMode}
             />
           ) : (
             <>
@@ -174,12 +269,12 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
               <ChatInput 
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
-                placeholder={reportGeneratorData.confirmingReport 
+                placeholder={confirmingReport 
                   ? "Type 'yes' to confirm report generation or provide additional instructions..." 
                   : `Describe your research on ${initialQuery || "your topic"} or ask questions...`}
-                suggestedPrompts={!reportGeneratorData.confirmingReport ? suggestedPrompts : []}
-                onGenerateReport={reportGeneratorData.handleGenerateReport}
-                showGenerateButton={readyForReport && !reportGeneratorData.confirmingReport} 
+                suggestedPrompts={!confirmingReport ? suggestedPrompts : []}
+                onGenerateReport={handleGenerateReport}
+                showGenerateButton={readyForReport && !confirmingReport} 
               />
             </>
           )}

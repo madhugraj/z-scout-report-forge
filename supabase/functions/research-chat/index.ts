@@ -85,6 +85,49 @@ const functionSchemas = [
       },
       required: ["scope"]
     }
+  },
+  {
+    name: "generateReportStructure",
+    description: "Generate a structured report outline based on the research topic",
+    parameters: {
+      type: "object",
+      properties: {
+        abstract: {
+          type: "string",
+          description: "A comprehensive abstract summarizing the research topic"
+        },
+        mainTopic: {
+          type: "string",
+          description: "The main topic of the research"
+        },
+        subtopics: {
+          type: "array",
+          description: "List of subtopics to cover in the research report",
+          items: { type: "string" }
+        },
+        reportStructure: {
+          type: "object",
+          description: "The structured outline of the research report",
+          properties: {
+            title: { type: "string" },
+            sections: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  subsections: {
+                    type: "array",
+                    items: { type: "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      required: ["abstract", "mainTopic", "subtopics"]
+    }
   }
 ];
 
@@ -159,6 +202,8 @@ serve(async (req) => {
           return schema.name === 'suggestSources';
         case 'scope':
           return schema.name === 'defineResearchScope';
+        case 'report':
+          return schema.name === 'generateReportStructure';
         default:
           return true;
       }
@@ -201,6 +246,11 @@ serve(async (req) => {
       };
       
       console.log(`Function call detected: ${functionCall.name}`);
+
+      // If the function call is generateReportStructure, we're ready to generate a full report
+      if (functionCall.name === 'generateReportStructure') {
+        console.log("Report structure generated, ready for full report generation");
+      }
     } else if (content.parts && content.parts[0].text) {
       responseText = content.parts[0].text;
     }
@@ -217,9 +267,17 @@ serve(async (req) => {
       updatedHistory.push(response);
     }
     
+    // Determine if we're ready to generate a report
+    const isReadyForReport = updatedHistory.some(msg => 
+      msg.role === "assistant" && 
+      msg.functionCall &&
+      msg.functionCall.name === "defineResearchScope"
+    );
+    
     return new Response(JSON.stringify({ 
       response, 
-      history: updatedHistory 
+      history: updatedHistory,
+      readyForReport: isReadyForReport
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
