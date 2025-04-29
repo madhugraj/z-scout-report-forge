@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useResearchChat } from '@/hooks/useResearchChat';
 import { useCollaborationUtils } from './hooks/useCollaborationUtils';
+import { useReportGenerator } from './hooks/useReportGenerator';
 
 interface CollaborationWindowProps {
   onEditRequest?: (sectionIndex: number) => void;
@@ -41,7 +41,9 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     sendMessage, 
     readyForReport,
     generateReport,
-    researchData 
+    researchData,
+    currentPhase,
+    conversationCount 
   } = useResearchChat();
   
   const {
@@ -61,6 +63,14 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   const [editorMode, setEditorMode] = useState<'minimal' | 'advanced'>('minimal');
   const [confirmingReport, setConfirmingReport] = useState(false);
   const [reportQuery, setReportQuery] = useState('');
+  const [autoGenerateReport, setAutoGenerateReport] = useState(false);
+
+  // Use the report generator hook
+  const reportGenerator = useReportGenerator({
+    onGenerateReport,
+    researchData,
+    sendMessage,
+  });
 
   // Handle initial query
   useEffect(() => {
@@ -68,6 +78,15 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
       sendMessage(initialQuery);
     }
   }, [initialQuery, messages.length, sendMessage]);
+
+  // Auto-generate report after 5 questions
+  useEffect(() => {
+    if (conversationCount >= 5 && readyForReport && !autoGenerateReport) {
+      setAutoGenerateReport(true);
+      handleGenerateReport();
+      toast.info("Research phase complete. Generating comprehensive report...");
+    }
+  }, [conversationCount, readyForReport, autoGenerateReport]);
 
   // Editor functions
   const handleCancelEdit = () => {
@@ -154,7 +173,7 @@ Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
       return true;
     } else {
       setConfirmingReport(false);
-      return true;
+      return false;
     }
   };
 
@@ -167,6 +186,9 @@ Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
       description: 'This may take 1-2 minutes. We\'ll notify you when it\'s ready.',
       duration: 5000
     });
+    
+    // Redirect to dashboard
+    navigate('/dashboard', { state: { query: reportQuery } });
   };
 
   const handleSendMessage = async (message: string) => {
@@ -262,10 +284,10 @@ Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
           {editSection !== null ? (
             <EditPanel
               sectionTitle={reportSections[editSection]?.title}
-              editTitle={editTitle}
+              editTitle={false}
               editText={editText}
               setEditText={setEditText}
-              setEditTitle={setEditTitle}
+              setEditTitle={() => {}}
               handleCancelEdit={handleCancelEdit}
               handleSubmitEdit={handleSubmitEdit}
               editorMode={editorMode}

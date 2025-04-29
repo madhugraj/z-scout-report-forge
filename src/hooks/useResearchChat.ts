@@ -59,6 +59,8 @@ export function useResearchChat() {
   const [currentPhase, setCurrentPhase] = useState<'initial' | 'sources' | 'scope' | 'report'>('initial');
   const [readyForReport, setReadyForReport] = useState(false);
   const [researchData, setResearchData] = useState<ResearchChatData>({});
+  const [conversationCount, setConversationCount] = useState(0);
+  const [retryAttempts, setRetryAttempts] = useState(0);
   
   // Process function results to update research data
   const processFunctionResults = useCallback((functionName: string, results: any) => {
@@ -113,6 +115,9 @@ export function useResearchChat() {
     };
     
     setMessages(prev => [...prev, userMessage]);
+    
+    // Increment conversation count for user messages
+    setConversationCount(prev => prev + 1);
 
     try {
       // Get the last message that might contain a function call
@@ -191,6 +196,10 @@ export function useResearchChat() {
       } else {
         throw new Error("Invalid response format from Edge Function");
       }
+      
+      // Reset retry attempts on success
+      setRetryAttempts(0);
+      
     } catch (err) {
       console.error("Failed to send message:", err);
       
@@ -201,11 +210,21 @@ export function useResearchChat() {
         timestamp: Date.now()
       }]);
       
+      // Increment retry attempts
+      const currentRetries = retryAttempts + 1;
+      setRetryAttempts(currentRetries);
+      
+      // If we've retried too many times, suggest report generation
+      if (currentRetries >= 3 && currentPhase !== 'initial') {
+        setReadyForReport(true);
+        toast.warning("We're experiencing some issues with the research assistant. You may want to generate a report with what we have so far.");
+      }
+      
       toast.error("Failed to communicate with research assistant");
     } finally {
       setIsLoading(false);
     }
-  }, [messages, currentPhase, processFunctionResults]);
+  }, [messages, currentPhase, processFunctionResults, retryAttempts]);
 
   const generateReport = useCallback((requirements: any) => {
     if (!researchData.researchQuestion?.mainQuestion) {
@@ -226,6 +245,8 @@ export function useResearchChat() {
     readyForReport,
     generateReport,
     researchData,
-    currentPhase
+    currentPhase,
+    conversationCount,
+    retryAttempts
   };
 }

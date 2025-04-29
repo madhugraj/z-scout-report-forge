@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { GeminiReport } from "@/hooks/useGeminiReport";
+import { GeminiReport, useGeminiReport } from "@/hooks/useGeminiReport";
 import { toast } from "@/components/ui/sonner";
 import ReportGenerator from "./components/ReportGenerator";
 import ViewStateManager from "./components/ViewStateManager";
+import CollaborationWindow from "@/components/collaboration/CollaborationWindow";
 
 const ResearchDashboardShell: React.FC = () => {
   const location = useLocation();
@@ -27,13 +28,16 @@ const ResearchDashboardShell: React.FC = () => {
     suggestedImages: [],
     suggestedDatasets: []
   });
+  
+  // Initialize gemini report mutation
+  const geminiReportMutation = useGeminiReport();
 
   useEffect(() => {
-    if (state.requirements && state.query) {
-      console.log("Starting report generation with requirements:", state.requirements);
+    if (state.query) {
+      console.log("Starting report generation with query:", state.query);
       handleGenerateReportFromChat(state.query);
     }
-  }, [state, navigate]);
+  }, [state.query, navigate]);
 
   const handleReportGenerated = (newReport: GeminiReport) => {
     console.log("Report generated:", newReport.title);
@@ -75,18 +79,38 @@ const ResearchDashboardShell: React.FC = () => {
       return;
     }
     
+    // Update URL state
     navigate(location.pathname, { 
       state: { ...state, query },
       replace: true 
     });
     
+    // Start generation
     setIsGenerating(true);
     setGenerationSteps([]);
     setProgress(0);
     
+    // Show first step
     setGenerationSteps(prev => [...prev, 
       "Starting research report generation based on our conversation..."
     ]);
+    
+    // Trigger the report generation mutation
+    geminiReportMutation.mutate(query, {
+      onSuccess: (data) => {
+        handleReportGenerated(data);
+        setProgress(100);
+        setGenerationSteps(prev => [...prev, "Report generation complete!"]);
+      },
+      onError: (error) => {
+        toast.error("Failed to generate report", {
+          description: error.message || "Unknown error"
+        });
+        setIsGenerating(false);
+        setProgress(100);
+        setGenerationSteps(prev => [...prev, `Error: ${error.message}`]);
+      }
+    });
   };
 
   return (
@@ -119,7 +143,17 @@ const ResearchDashboardShell: React.FC = () => {
         onCloseEncryptionDialog={() => setShowEncryptionDialog(false)}
         onSelectPdfForView={setSelectedPdfForView}
         onGenerateReportFromChat={handleGenerateReportFromChat}
-      />
+      >
+        {showCollaborator && (
+          <div className="h-80 sm:h-96 w-full border border-gray-800 rounded-md overflow-hidden">
+            <CollaborationWindow 
+              isFloating={true}
+              onClose={() => setShowCollaborator(false)}
+              onGenerateReport={handleGenerateReportFromChat}
+            />
+          </div>
+        )}
+      </ViewStateManager>
     </>
   );
 };

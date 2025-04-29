@@ -137,7 +137,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, history = [], functionResults = null, phase = 'initial' } = await req.json();
+    const { message, history = [], functionResults = null, phase = 'initial', forceReport = false } = await req.json();
     
     // Update history with function results if provided
     let updatedHistory = [...history];
@@ -193,9 +193,30 @@ serve(async (req) => {
       });
     }
     
+    // Auto advance to next phase if we've reached the conversation limit
+    let currentPhase = phase;
+    const userMessageCount = updatedHistory.filter(msg => msg.role === 'user').length;
+    
+    // If we have 5 or more messages and still in early phases, try to advance
+    if (userMessageCount >= 5 && (currentPhase === 'initial' || currentPhase === 'sources')) {
+      console.log(`Auto-advancing from ${currentPhase} due to message count: ${userMessageCount}`);
+      
+      if (currentPhase === 'initial') {
+        currentPhase = 'sources';
+      } else if (currentPhase === 'sources') {
+        currentPhase = 'scope';
+      }
+    }
+    
+    // If explicitly forcing report generation
+    if (forceReport && currentPhase !== 'report') {
+      console.log("Forcing advancement to report phase");
+      currentPhase = 'report';
+    }
+    
     // Define which functions to include based on the research phase
     const availableFunctions = functionSchemas.filter(schema => {
-      switch (phase) {
+      switch (currentPhase) {
         case 'initial':
           return schema.name === 'researchQuestion';
         case 'sources':
@@ -221,6 +242,7 @@ serve(async (req) => {
       }
     };
 
+    console.log(`Processing request in phase: ${currentPhase}`);
     console.log("Sending request to Gemini API...");
     const responseData = await callGeminiWithRetry(GEMINI_URL, payload);
     
@@ -272,12 +294,13 @@ serve(async (req) => {
       msg.role === "assistant" && 
       msg.functionCall &&
       msg.functionCall.name === "defineResearchScope"
-    );
+    ) || userMessageCount >= 5;
     
     return new Response(JSON.stringify({ 
       response, 
       history: updatedHistory,
-      readyForReport: isReadyForReport
+      readyForReport: isReadyForReport,
+      currentPhase
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
