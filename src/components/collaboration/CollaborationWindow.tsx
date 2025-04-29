@@ -19,7 +19,7 @@ interface CollaborationWindowProps {
   reportSections?: {title: string; content: string}[];
   onClose?: () => void;
   isFloating?: boolean;
-  onGenerateReport?: (requirements: any) => void;
+  onGenerateReport?: (query: string) => void;
   initialQuery?: string;
 }
 
@@ -61,8 +61,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   const [editTitle, setEditTitle] = useState('');
   const [editText, setEditText] = useState('');
   const [editorMode, setEditorMode] = useState<'minimal' | 'advanced'>('minimal');
-  const [confirmingReport, setConfirmingReport] = useState(false);
-  const [reportQuery, setReportQuery] = useState('');
   const [autoGenerateReport, setAutoGenerateReport] = useState(false);
 
   // Use the report generator hook
@@ -83,10 +81,10 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   useEffect(() => {
     if (conversationCount >= 5 && readyForReport && !autoGenerateReport) {
       setAutoGenerateReport(true);
-      handleGenerateReport();
+      reportGenerator.prepareReport();
       toast.info("Research phase complete. Generating comprehensive report...");
     }
-  }, [conversationCount, readyForReport, autoGenerateReport]);
+  }, [conversationCount, readyForReport, autoGenerateReport, reportGenerator]);
 
   // Editor functions
   const handleCancelEdit = () => {
@@ -119,83 +117,11 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     return false;
   };
 
-  // Report generation functions
-  const handleGenerateReport = async () => {
-    try {
-      if (!researchData.researchQuestion) {
-        sendMessage("Before we generate a report, I need to understand your research topic better. Could you tell me what you'd like to research?");
-        return;
-      }
-
-      if (!researchData.recommendedSources) {
-        sendMessage("I'll help you identify relevant sources for your research. This will help ensure a comprehensive report.");
-        return;
-      }
-
-      if (!researchData.researchScope) {
-        sendMessage("Let's define the scope of your research to ensure we cover all important aspects.");
-        return;
-      }
-
-      // Format the query based on research data
-      const query = researchData.researchQuestion.mainQuestion;
-      
-      if (query) {
-        setReportQuery(query);
-        setConfirmingReport(true);
-        
-        sendMessage(`Based on our discussion, I understand your research requirements:
-
-1. Main Research Question: "${researchData.researchQuestion.mainQuestion}"
-2. Scope: ${researchData.researchScope.scope.join(', ')}
-3. Number of identified sources: ${researchData.recommendedSources.length}
-
-I'm ready to generate a comprehensive report. Would you like me to proceed?
-
-Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
-      }
-    } catch (err) {
-      console.error('Error preparing report:', err);
-      toast.error('Failed to prepare report generation');
-      setConfirmingReport(false);
-    }
-  };
-
-  const handleConfirmReportGeneration = (message: string): boolean => {
-    if (!confirmingReport) return false;
-    
-    if (message.toLowerCase().includes('yes') || 
-        message.toLowerCase().includes('confirm') || 
-        message.toLowerCase().includes('generate') || 
-        message.toLowerCase().includes('proceed')) {
-      handleStartReportGeneration();
-      setConfirmingReport(false);
-      return true;
-    } else {
-      setConfirmingReport(false);
-      return false;
-    }
-  };
-
-  const handleStartReportGeneration = () => {
-    if (!reportQuery || !onGenerateReport) return;
-    
-    onGenerateReport(reportQuery);
-    
-    toast.success('Starting comprehensive report generation', {
-      description: 'This may take 1-2 minutes. We\'ll notify you when it\'s ready.',
-      duration: 5000
-    });
-    
-    // Redirect to dashboard
-    navigate('/dashboard', { state: { query: reportQuery } });
-  };
-
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
 
     // Handle report confirmation if we're in that state
-    if (handleConfirmReportGeneration(message)) {
+    if (reportGenerator.confirmReportGeneration(message)) {
       return;
     }
 
@@ -301,12 +227,12 @@ Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
               <ChatInput 
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
-                placeholder={confirmingReport 
+                placeholder={reportGenerator.confirmingReport 
                   ? "Type 'yes' to confirm report generation or provide additional instructions..." 
                   : `Describe your research on ${initialQuery || "your topic"} or ask questions...`}
-                suggestedPrompts={!confirmingReport ? suggestedPrompts : []}
-                onGenerateReport={handleGenerateReport}
-                showGenerateButton={readyForReport && !confirmingReport} 
+                suggestedPrompts={!reportGenerator.confirmingReport ? suggestedPrompts : []}
+                onGenerateReport={reportGenerator.prepareReport}
+                showGenerateButton={readyForReport && !reportGenerator.confirmingReport} 
               />
             </>
           )}

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { ReactNode } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import PDFViewerDialog from "../../../PDFViewerDialog";
 import EncryptionDialog from "../../../EncryptionDialog";

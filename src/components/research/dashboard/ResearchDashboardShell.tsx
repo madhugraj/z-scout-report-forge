@@ -143,17 +143,7 @@ const ResearchDashboardShell: React.FC = () => {
         onCloseEncryptionDialog={() => setShowEncryptionDialog(false)}
         onSelectPdfForView={setSelectedPdfForView}
         onGenerateReportFromChat={handleGenerateReportFromChat}
-      >
-        {showCollaborator && (
-          <div className="h-80 sm:h-96 w-full border border-gray-800 rounded-md overflow-hidden">
-            <CollaborationWindow 
-              isFloating={true}
-              onClose={() => setShowCollaborator(false)}
-              onGenerateReport={handleGenerateReportFromChat}
-            />
-          </div>
-        )}
-      </ViewStateManager>
+      />
     </>
   );
 };

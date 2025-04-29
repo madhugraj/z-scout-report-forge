@@ -143,7 +143,8 @@ export function useResearchChat() {
           message,
           history: messages,
           functionResults,
-          phase: currentPhase
+          phase: currentPhase,
+          forceReport: conversationCount >= 5 // Force report phase after 5 conversations
         }
       });
 
@@ -167,7 +168,7 @@ export function useResearchChat() {
       }
       
       // Extract and store the updated history
-      const { response, history, readyForReport: isReadyForReport } = data;
+      const { response, history, readyForReport: isReadyForReport, currentPhase: newPhase } = data;
       
       // If the response is properly formed
       if (response) {
@@ -192,6 +193,11 @@ export function useResearchChat() {
         // Update readyForReport status if the backend says we're ready
         if (isReadyForReport !== undefined) {
           setReadyForReport(isReadyForReport);
+        }
+        
+        // Update current phase if the backend changed it
+        if (newPhase) {
+          setCurrentPhase(newPhase);
         }
       } else {
         throw new Error("Invalid response format from Edge Function");
@@ -224,7 +230,7 @@ export function useResearchChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, currentPhase, processFunctionResults, retryAttempts]);
+  }, [messages, currentPhase, processFunctionResults, retryAttempts, conversationCount]);
 
   const generateReport = useCallback((requirements: any) => {
     if (!researchData.researchQuestion?.mainQuestion) {
