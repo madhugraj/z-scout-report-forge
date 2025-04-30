@@ -10,6 +10,26 @@ export async function callGeminiWithRetry(url: string, payload: any, retries = M
     throw new Error("Missing GEMINI_API_KEY. Please set this in the Edge Function Secrets.");
   }
   
+  // Always enable web search capabilities for research tasks
+  if (payload.tools) {
+    // Make sure Google Search grounding is enabled
+    if (!payload.tools.some((tool: any) => tool.googleSearchRetrieval !== undefined)) {
+      payload.tools.push({
+        googleSearchRetrieval: {}
+      });
+    }
+  }
+  
+  // Add system instruction for grounding if not present
+  if (!payload.systemInstruction) {
+    payload.systemInstruction = {
+      role: "system",
+      parts: [{
+        text: "You are a research assistant capable of providing accurate and up-to-date information. Use web search and grounding to answer questions about current events, statistics, and factual information. You should provide comprehensive, detailed, and well-referenced answers based on reliable sources."
+      }]
+    };
+  }
+  
   // Try all possible model endpoints if we encounter specific errors
   const modelEndpoints = [
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent",
@@ -28,7 +48,9 @@ export async function callGeminiWithRetry(url: string, payload: any, retries = M
       console.log(`Attempt ${attempt + 1} with API key ending in ...${GEMINI_API_KEY.slice(-4)}`);
       
       // Add apiVersion parameter to ensure we're using the latest API version with grounding support
-      const requestUrl = `${currentUrl}?key=${GEMINI_API_KEY}&apiVersion=v1beta`;
+      // Add enableSearch parameter explicitly to enable web search
+      const requestUrl = `${currentUrl}?key=${GEMINI_API_KEY}&apiVersion=v1beta&enableSearch=true`;
+      
       const response = await fetch(requestUrl, {
         method: "POST",
         headers: {
@@ -49,6 +71,13 @@ export async function callGeminiWithRetry(url: string, payload: any, retries = M
       }
 
       const data = await response.json();
+      
+      // Log if web search was actually used
+      if (data.candidates && data.candidates[0]?.citationMetadata?.citations) {
+        console.log("Web search was used with citations:", 
+          data.candidates[0].citationMetadata.citations.length);
+      }
+      
       return data;
       
     } catch (error) {

@@ -134,50 +134,8 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     sendMessage(message);
   };
 
-  // Generate dynamically relevant suggested prompts based on initialQuery
-  const generateSuggestedPrompts = () => {
-    if (!initialQuery) {
-      return [
-        "I need help researching a topic for my academic paper",
-        "Can you help me find sources for my research?",
-        "I'd like to explore the latest developments in my field"
-      ];
-    }
-    
-    const query = initialQuery.toLowerCase();
-    const topicKeywords = [
-      { keywords: ["climate", "environment", "warming", "carbon"], topic: "climate change" },
-      { keywords: ["ai", "artificial", "intelligence", "machine", "learning"], topic: "artificial intelligence" },
-      { keywords: ["health", "medical", "medicine", "disease"], topic: "healthcare" },
-      { keywords: ["education", "learning", "school", "teaching"], topic: "education" },
-      { keywords: ["tech", "technology", "digital"], topic: "technology" }
-    ];
-    
-    // Find matching topic or use generic research-focused prompts
-    const matchedTopic = topicKeywords.find(item => 
-      item.keywords.some(keyword => query.includes(keyword))
-    );
-    
-    const topic = matchedTopic ? matchedTopic.topic : "this topic";
-    
-    return [
-      `What are the key research questions I should explore about ${topic}?`,
-      `Can you recommend the most recent academic sources on ${topic}?`,
-      `What methodology would be best for researching ${topic}?`
-    ];
-  };
-
-  const suggestedPrompts = generateSuggestedPrompts();
-
-  // Transform ChatMessage[] to Message[] for MessageList component
-  const transformedMessages = messages.map((msg, index) => ({
-    id: `msg-${index}-${msg.timestamp || Date.now()}`,
-    sender: msg.role === 'user' ? currentUser : 'Research AI',
-    text: msg.content,
-    timestamp: new Date(msg.timestamp || Date.now()),
-    isAI: msg.role === 'assistant',
-    functionCall: msg.functionCall
-  }));
+  // Extract suggestion prompts into a separate component
+  const suggestedPrompts = useSuggestedPrompts(initialQuery);
 
   return (
     <div className={`flex flex-col ${isFloating ? 'h-full rounded-lg border border-gray-700 shadow-lg overflow-hidden' : 'h-full'}`}>
@@ -222,7 +180,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
           ) : (
             <>
               <MessageList 
-                messages={transformedMessages}
+                messages={transformMessages(messages, currentUser)} 
                 formatTime={formatTime} 
               />
               <ChatInput 
@@ -250,5 +208,50 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     </div>
   );
 };
+
+// Helper functions extracted from the main component
+function transformMessages(messages: any[], currentUser: string) {
+  return messages.map((msg, index) => ({
+    id: `msg-${index}-${msg.timestamp || Date.now()}`,
+    sender: msg.role === 'user' ? currentUser : 'Research AI',
+    text: msg.content,
+    timestamp: new Date(msg.timestamp || Date.now()),
+    isAI: msg.role === 'assistant',
+    functionCall: msg.functionCall
+  }));
+}
+
+function useSuggestedPrompts(initialQuery: string) {
+  // Generate dynamically relevant suggested prompts based on initialQuery
+  if (!initialQuery) {
+    return [
+      "I need help researching a topic for my academic paper",
+      "Can you help me find sources for my research?",
+      "I'd like to explore the latest developments in my field"
+    ];
+  }
+  
+  const query = initialQuery.toLowerCase();
+  const topicKeywords = [
+    { keywords: ["climate", "environment", "warming", "carbon"], topic: "climate change" },
+    { keywords: ["ai", "artificial", "intelligence", "machine", "learning"], topic: "artificial intelligence" },
+    { keywords: ["health", "medical", "medicine", "disease"], topic: "healthcare" },
+    { keywords: ["education", "learning", "school", "teaching"], topic: "education" },
+    { keywords: ["tech", "technology", "digital"], topic: "technology" }
+  ];
+  
+  // Find matching topic or use generic research-focused prompts
+  const matchedTopic = topicKeywords.find(item => 
+    item.keywords.some(keyword => query.includes(keyword))
+  );
+  
+  const topic = matchedTopic ? matchedTopic.topic : "this topic";
+  
+  return [
+    `What are the key research questions I should explore about ${topic}?`,
+    `Can you recommend the most recent academic sources on ${topic}?`,
+    `What methodology would be best for researching ${topic}?`
+  ];
+}
 
 export default CollaborationWindow;
