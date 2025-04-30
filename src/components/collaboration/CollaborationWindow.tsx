@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useNavigate } from 'react-router-dom';
@@ -56,7 +57,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     formatTime
   } = useCollaborationUtils();
 
-  // Local state for editor and report generator
+  // Local state for editor
   const [editSection, setEditSection] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editText, setEditText] = useState('');
@@ -82,7 +83,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     if (conversationCount >= 5 && readyForReport && !autoGenerateReport) {
       setAutoGenerateReport(true);
       reportGenerator.prepareReport();
-      toast.info("Research phase complete. Generating comprehensive report...");
+      toast.info("Research phase complete. Generating comprehensive report with web search grounding...");
     }
   }, [conversationCount, readyForReport, autoGenerateReport, reportGenerator]);
 
@@ -171,7 +172,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
   // Transform ChatMessage[] to Message[] for MessageList component
   const transformedMessages = messages.map((msg, index) => ({
     id: `msg-${index}-${msg.timestamp || Date.now()}`,
-    sender: msg.role === 'user' ? 'You' : 'Research AI',
+    sender: msg.role === 'user' ? currentUser : 'Research AI',
     text: msg.content,
     timestamp: new Date(msg.timestamp || Date.now()),
     isAI: msg.role === 'assistant',
@@ -209,11 +210,11 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden border-l border-gray-800/50">
           {editSection !== null ? (
             <EditPanel
-              sectionTitle={reportSections[editSection]?.title}
+              sectionTitle={editTitle}
               editTitle={false}
               editText={editText}
               setEditText={setEditText}
-              setEditTitle={() => {}}
+              setEditTitle={setEditTitle}
               handleCancelEdit={handleCancelEdit}
               handleSubmitEdit={handleSubmitEdit}
               editorMode={editorMode}

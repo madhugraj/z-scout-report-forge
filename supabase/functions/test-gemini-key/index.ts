@@ -1,144 +1,123 @@
 
-// Test Gemini API key validity with enhanced error diagnostics
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-
+  
+  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+  
+  if (!GEMINI_API_KEY) {
+    return new Response(
+      JSON.stringify({
+        error: "Missing API key",
+        details: "The GEMINI_API_KEY is not set in the Edge Function secrets",
+        resolution: "Please set the GEMINI_API_KEY in the Supabase dashboard under Edge Functions > Secrets"
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  
   try {
-    // Get the API key from environment variables
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const modelToTest = "gemini-1.5-pro-002"; // Using the most advanced model for testing
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelToTest}:generateContent?key=${GEMINI_API_KEY}`;
     
-    if (!GEMINI_API_KEY) {
-      console.error("Missing GEMINI_API_KEY environment variable");
-      return new Response(
-        JSON.stringify({
-          error: "Gemini API key is not configured",
-          resolution: "Please set the GEMINI_API_KEY secret in the Supabase Edge Function Secrets."
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        }
-      );
-    }
-
-    console.log("Testing Gemini API key validity...");
-    console.log("API Key format check: " + (GEMINI_API_KEY.startsWith('AI') ? "Appears to be valid format" : "Incorrect format - should start with 'AI'"));
-    console.log("API Key length: " + GEMINI_API_KEY.length + " characters");
-
-    // Make a simple test call to the Gemini API using gemini-1.5-pro-002
-    const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-002:generateContent?key=${GEMINI_API_KEY}`;
-    
-    // Include function calling capabilities in test
-    const testBody = {
-      contents: [{ role: "user", parts: [{ text: "Hello, this is a test prompt. Please respond with 'API key is valid'." }] }],
-      tools: [{
-        functionDeclarations: [{
-          name: "testFunction",
-          description: "This is a test function for API validation",
-          parameters: {
-            type: "object",
-            properties: {
-              response: {
-                type: "string",
-                description: "Test response"
-              }
-            },
-            required: ["response"]
-          }
+    // Include a test for grounding capabilities
+    const payload = {
+      contents: [{ 
+        parts: [{ 
+          text: "Generate a brief response to test the API connection and grounding capabilities: What year is it now?"
         }]
       }],
       generationConfig: {
-        maxOutputTokens: 20,
-        temperature: 0.0,
-      }
-    };
-
-    console.log("Sending test request to Gemini API...");
-    const response = await fetch(testUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(testBody)
-    });
-
-    const statusCode = response.status;
-    console.log(`Gemini API test response status: ${statusCode}`);
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error(`Gemini API test failed (${statusCode}): ${errorBody}`);
-      
-      // Parse error for more detailed diagnostics
-      let detailedError = errorBody;
-      try {
-        const errorJson = JSON.parse(errorBody);
-        if (errorJson.error) {
-          detailedError = errorJson.error;
-          
-          // Check for specific error conditions
-          if (errorJson.error.status === "PERMISSION_DENIED") {
-            console.error("Permission denied error detected. This typically means the API key doesn't have access to the requested model.");
-          } else if (errorJson.error.status === "INVALID_ARGUMENT") {
-            console.error("Invalid argument error detected. This could be due to an incorrect API format or a problem with the request.");
-          } else if (errorJson.error.status === "UNAUTHENTICATED") {
-            console.error("Authentication error detected. The API key is likely invalid or expired.");
-          }
+        temperature: 0.1,
+        maxOutputTokens: 100
+      },
+      // Test grounding capabilities
+      tools: [
+        {
+          googleSearchRetrieval: {}
         }
-      } catch (parseError) {
-        console.error("Error parsing error response:", parseError);
+      ]
+    };
+    
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      const errorDetails = data.error || {};
+      
+      // More detailed error categorization
+      let resolution = "";
+      
+      if (response.status === 400) {
+        resolution = "The request format may be incorrect. Check if your API key is properly formatted.";
+      } else if (response.status === 401 || response.status === 403) {
+        resolution = "Authentication failed. Your API key may be invalid or doesn't have permission to access this model.";
+      } else if (response.status === 404) {
+        resolution = `Model '${modelToTest}' not found. You might need to request access to this model in Google AI Studio.`;
+      } else if (response.status === 429) {
+        resolution = "You've exceeded your rate limit or quota. Check your Google AI Studio quota settings.";
+      } else {
+        resolution = "There may be an issue with the Gemini API. Please try again later.";
       }
       
       return new Response(
         JSON.stringify({
-          error: "Gemini API key is invalid or API is unavailable",
-          status: statusCode,
-          details: detailedError,
-          resolution: "Please check your API key or try again later if the service is experiencing issues. Make sure your API key has access to the gemini-1.5-pro-002 model and supports function calling."
+          error: errorDetails.message || "API key validation failed",
+          details: errorDetails,
+          status: response.status,
+          resolution
         }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        }
+        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const responseData = await response.json();
-    console.log("Gemini API test successful. Response:", JSON.stringify(responseData).substring(0, 300) + "...");
+    
+    // Check if the response has content and test for grounding capabilities
+    const hasValidResponse = data.candidates && 
+                            data.candidates[0] && 
+                            data.candidates[0].content && 
+                            data.candidates[0].content.parts && 
+                            data.candidates[0].content.parts[0].text;
+                            
+    const responseText = hasValidResponse ? data.candidates[0].content.parts[0].text : "";
+    
+    // Check if the response contains the current year, which would indicate grounding is working
+    const currentYear = new Date().getFullYear().toString();
+    const hasGroundingCapability = responseText.includes(currentYear);
     
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Gemini API key is valid for gemini-1.5-pro-002 model with function calling support",
-        modelInfo: {
-          model: "gemini-1.5-pro-002",
-          capabilities: ["text generation", "web search grounding", "image analysis", "function calling"]
-        }
+        model: modelToTest,
+        hasGroundingCapability,
+        testResponse: responseText.substring(0, 100) + (responseText.length > 100 ? "..." : "")
       }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+    
   } catch (error) {
-    console.error("Error testing Gemini API key:", error);
     return new Response(
       JSON.stringify({
-        error: `Failed to test Gemini API key: ${error.message}`,
-        details: error.stack || "No stack trace available",
-        resolution: "Please verify your internet connection, API key format, and try again."
+        error: "API key validation failed",
+        details: error.message,
+        resolution: "Please check your network connection and try again"
       }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

@@ -27,7 +27,8 @@ export async function callGeminiWithRetry(url: string, payload: any, retries = M
       
       console.log(`Attempt ${attempt + 1} with API key ending in ...${GEMINI_API_KEY.slice(-4)}`);
       
-      const requestUrl = `${currentUrl}?key=${GEMINI_API_KEY}`;
+      // Add apiVersion parameter to ensure we're using the latest API version with grounding support
+      const requestUrl = `${currentUrl}?key=${GEMINI_API_KEY}&apiVersion=v1beta`;
       const response = await fetch(requestUrl, {
         method: "POST",
         headers: {

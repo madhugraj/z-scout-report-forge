@@ -47,7 +47,7 @@ export function useReportGenerator({
 2. Scope: ${researchData.researchScope.scope.join(', ')}
 3. Number of identified sources: ${researchData.recommendedSources.length}
 
-I'm ready to generate a comprehensive report. Would you like me to proceed?
+I'm ready to generate a comprehensive report with grounded web search. Would you like me to proceed?
 
 Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
         

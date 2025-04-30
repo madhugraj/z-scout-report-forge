@@ -230,6 +230,7 @@ serve(async (req) => {
       }
     });
     
+    // Configure payload with grounding enabled - this is the key change
     const payload = {
       contents: messages,
       tools: [{
@@ -239,11 +240,34 @@ serve(async (req) => {
         temperature: 0.2,
         maxOutputTokens: 8000,
         topP: 0.95
-      }
+      },
+      // Enable grounding through web search capabilities
+      systemInstruction: {
+        role: "system",
+        parts: [{
+          text: "You are a research assistant capable of providing accurate and up-to-date information. Use web search and grounding to answer questions about current events, statistics, and factual information. You should provide comprehensive, detailed, and well-referenced answers based on reliable sources. When discussing healthcare technology systems in countries like India, provide specific facts, statistics, and recent developments based on your search capabilities."
+        }]
+      },
+      // Enable Google search-based grounding
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_DANGEROUS",
+          threshold: "BLOCK_NONE"
+        }
+      ],
+      // Enable Google Search grounding
+      tools: [
+        {
+          functionDeclarations: availableFunctions
+        },
+        {
+          googleSearchRetrieval: {}
+        }
+      ]
     };
 
     console.log(`Processing request in phase: ${currentPhase}`);
-    console.log("Sending request to Gemini API...");
+    console.log("Sending request to Gemini API with grounding enabled...");
     const responseData = await callGeminiWithRetry(GEMINI_URL, payload);
     
     console.log("Received response from Gemini API:", JSON.stringify(responseData).substring(0, 300) + "...");

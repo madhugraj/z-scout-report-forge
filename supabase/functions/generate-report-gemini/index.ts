@@ -15,6 +15,9 @@ serve(async (req) => {
       generateFullReport = true,
       includeAllSubtopics = true,
       forceDepth = false,
+      enableGrounding = true,  // New parameter for enabling grounding
+      useWebSearch = true,     // New parameter for enabling web search
+      enableMixedSearch = true, // New parameter for mixed search approach
       retryAttempt = false
     } = await req.json();
     
@@ -26,7 +29,7 @@ serve(async (req) => {
     }
 
     console.log(`Starting research process for query: "${query}"`);
-    console.log(`Generation parameters: depth=${requestDepth}, pages=${pageTarget}, fullReport=${generateFullReport}`);
+    console.log(`Generation parameters: depth=${requestDepth}, pages=${pageTarget}, fullReport=${generateFullReport}, grounding=${enableGrounding}`);
 
     // Step 1: Generate a comprehensive abstract
     const abstractPrompt = `
@@ -42,8 +45,8 @@ The abstract should:
 
 Your abstract will form the foundation for an extensive research report with multiple major topics and subtopics.`;
 
-    console.log("Step 1: Generating abstract...");
-    const abstract = await callGemini(abstractPrompt, false);
+    console.log("Step 1: Generating abstract with grounding capabilities...");
+    const abstract = await callGemini(abstractPrompt, enableGrounding); // Pass enableGrounding flag
     console.log(`Abstract generated (${abstract.length} chars)`);
 
     // Step 2: Extract topic structure with more detailed guidance
@@ -81,7 +84,7 @@ Instructions:
 `;
 
     console.log("Step 2: Extracting topic structure...");
-    const topicStructureText = await callGemini(topicsPrompt, false);
+    const topicStructureText = await callGemini(topicsPrompt, enableGrounding); // Pass enableGrounding flag
     
     let topicStructure;
     let mainTopic;
@@ -138,15 +141,14 @@ Instructions:
     }
 
     // Step 3: Generate the full report directly using the topic structure
-    // This is a major change - instead of researching each topic separately,
-    // we'll have Gemini generate a complete report in one go based on the topic structure
-    console.log("Step 3: Generating full comprehensive report with gemini-1.5-pro-002 model...");
+    console.log("Step 3: Generating full comprehensive report with gemini-1.5-pro-002 model and grounding...");
     
     // Format the topic structure for the prompt
     const topicStructureForPrompt = topics.map(topic => {
       return `## ${topic.title}\n${topic.subtopics.map(st => `- ${st}`).join('\n')}`;
     }).join('\n\n');
     
+    // Updated prompt to explicitly request web search and current information
     const fullReportPrompt = `
 You are a distinguished academic researcher creating a comprehensive scholarly report.
 
@@ -160,6 +162,8 @@ Your task is to create a complete, in-depth research report covering ALL of thes
 - Well-structured with clear sections and subsections
 - Evidence-based with specific statistics, data points, and facts
 - Properly referenced with at least 30-40 academic citations
+- INCLUDE CURRENT AND UP-TO-DATE INFORMATION USING WEB SEARCH CAPABILITIES
+- GROUND ALL CLAIMS AND INFORMATION IN RELIABLE SOURCES
 
 Include the following sections:
 1. Title (descriptive and specific)
@@ -170,11 +174,15 @@ Include the following sections:
    - Each major topic should be its own section with proper heading
    - Each subtopic should be thoroughly covered as a subsection
    - Include SPECIFIC data, statistics, and research findings for each subtopic
+   - Include CURRENT INFORMATION from recent sources
+   - Cite SPECIFIC DATES and CURRENT STATISTICS where relevant
 6. Synthesis of Key Findings (cross-cutting themes and insights)
 7. Conclusion (implications and future directions)
-8. References (at least 30-40 properly formatted citations)
+8. References (at least 30-40 properly formatted citations with dates)
 
 CRITICAL REQUIREMENTS:
+- USE WEB SEARCH to include the MOST CURRENT information available
+- Include the PUBLICATION YEAR for all references
 - INCLUDE ALL topics and subtopics from the structure above
 - Each topic section must be at least 2-3 pages of substantive content
 - Each subtopic must have at least 1-2 paragraphs of specific information
@@ -210,7 +218,7 @@ CRITICAL REQUIREMENTS:
 Begin with research on the provided topic structure and create a COMPREHENSIVE report with SUBSTANTIAL CONTENT for each section.`;
 
     // Set a higher token limit for the comprehensive report
-    const reportText = await callGemini(fullReportPrompt, true, 32000);
+    const reportText = await callGemini(fullReportPrompt, enableGrounding, 32000); // Pass enableGrounding flag
     console.log(`Report generated (${reportText.length} chars), parsing JSON...`);
     
     let report;
@@ -295,7 +303,9 @@ Begin with research on the provided topic structure and create a COMPREHENSIVE r
       subtopics: topics.flatMap(t => t.subtopics),
       retryAttempted: retryAttempt,
       intermediateResults: {
-        topicStructure
+        topicStructure,
+        groundingEnabled: enableGrounding,
+        webSearchUsed: useWebSearch
       }
     };
 

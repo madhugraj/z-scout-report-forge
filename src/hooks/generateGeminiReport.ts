@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import fallbackReport from "./fallbackGeminiReport";
 import { GeminiReport } from "./types/geminiReportTypes";
@@ -29,29 +28,32 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
     
     console.log("Gemini API key is valid. Proceeding with report generation for query:", query);
 
-    // Enhanced query with explicit instructions for comprehensive topic coverage
-    const enhancedQuery = `${query} - COMPREHENSIVE ACADEMIC RESEARCH WITH COMPLETE TOPIC COVERAGE: Generate a detailed, authoritative research report with extensive coverage of ALL major topics and subtopics. Include in-depth analysis supported by specific data, statistics, scholarly references, and proper citations. Ensure comprehensive exploration of the full breadth and depth of the subject.`;
+    // Enhanced query with explicit grounding instructions
+    const enhancedQuery = `${query} - COMPREHENSIVE ACADEMIC RESEARCH WITH WEB-BASED GROUNDING: Generate a detailed, authoritative research report using web search grounding for current information. Include in-depth analysis supported by specific data, statistics, scholarly references with dates, and proper citations. Ensure up-to-date information by utilizing your internet search capabilities to access current information.`;
 
-    // Call our updated edge function with enhanced parameters for more comprehensive results
+    // Call our updated edge function with enhanced parameters for grounding and search
     const { data, error } = await supabase.functions.invoke('generate-report-gemini', {
       body: { 
         query: enhancedQuery,
-        requestDepth: "maximum", // Request maximum depth
-        pageTarget: "80-100", // Target more pages for comprehensive coverage
+        requestDepth: "maximum",
+        pageTarget: "80-100",
         generateFullReport: true,
         includeAllSubtopics: true,
-        forceDepth: true, // Force deeper research
-        forceBreadth: true, // Force broader topic coverage
+        forceDepth: true,
+        forceBreadth: true,
         includeCitations: true,
         useAcademicFormat: true,
-        maxReferences: 100, // Increased reference count
+        maxReferences: 100,
         includeDataPoints: true,
         expandSubtopicCoverage: true,
         improveResearchDepth: true,
-        ensureCompleteCoverage: true, // Explicitly request complete topic coverage
-        minimumTopicsRequired: 12, // Set minimum topics to cover
-        minimumSubtopicsPerTopic: 10, // Set minimum subtopics per topic
-        retryOnFailure: true // Enable automatic retries on the server side
+        ensureCompleteCoverage: true,
+        minimumTopicsRequired: 12,
+        minimumSubtopicsPerTopic: 10,
+        retryOnFailure: true,
+        enableGrounding: true, // Enable grounding explicitly
+        useWebSearch: true,    // Use web search for up-to-date information
+        enableMixedSearch: true // Mix web search with model knowledge
       }
     });
 
@@ -198,12 +200,12 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
 
     // Normalize and process the report structure to ensure all fields are present
     const processedReport = {
-      ...report,
-      sections: report.sections || [],
-      references: report.references || [],
-      suggestedPdfs: report.suggestedPdfs || [],
-      suggestedImages: report.suggestedImages || [],
-      suggestedDatasets: report.suggestedDatasets || [],
+      ...data.report,
+      sections: data.report.sections || [],
+      references: data.report.references || [],
+      suggestedPdfs: data.report.suggestedPdfs || [],
+      suggestedImages: data.report.suggestedImages || [],
+      suggestedDatasets: data.report.suggestedDatasets || [],
       intermediateResults: {
         abstract: data.abstract,
         mainTopic: data.mainTopic,
@@ -251,7 +253,7 @@ export async function generateGeminiReport(query: string): Promise<GeminiReport>
       title: `Error Report for "${query}"`,
       sections: [{
         title: "Error Details",
-        content: `We encountered an error while generating your research report: "${error.message}". This may be due to issues with the Gemini API connection or configuration.\n\nTroubleshooting steps:\n1. Check that your Gemini API key is valid and correctly set up in the Supabase Edge Function Secrets.\n2. Verify that the API key has access to the gemini-1.5-pro-002 model.\n3. Check the Edge Function logs for more detailed error information.\n4. Try testing your API key using the "Test API Key" button below.\n\nIf you continue to experience issues, try modifying your query to be more specific or shorter, or try again later as the Gemini API may be experiencing temporary limitations.`
+        content: `We encountered an error while generating your research report: "${error.message}". This may be due to issues with the Gemini API connection or configuration.\n\nTroubleshooting steps:\n1. Check that your Gemini API key is valid and correctly set up in the Supabase Edge Function Secrets.\n2. Verify that the API key has access to the gemini-1.5-pro model.\n3. Check the Edge Function logs for more detailed error information.\n4. Try testing your API key using the "Test API Key" button below.\n\nIf you continue to experience issues, try modifying your query to be more specific or shorter, or try again later as the Gemini API may be experiencing temporary limitations.`
       }],
       intermediateResults: details
     } as GeminiReport;
