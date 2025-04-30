@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import { useResearchData } from './research/useResearchData';
+import { useResearchData, ResearchChatData } from './research/useResearchData';
 import { useResearchMessages } from './research/useResearchMessages';
 import { processFunctionResults } from './research/researchUtils';
 
@@ -15,6 +15,9 @@ export interface ChatMessage {
     arguments: any;
   };
 }
+
+// Re-export the ResearchChatData type
+export type { ResearchChatData } from './research/useResearchData';
 
 export function useResearchChat() {
   const { 
@@ -164,7 +167,7 @@ export function useResearchChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, currentPhase, processFunctionResults, retryAttempts, conversationCount]);
+  }, [messages, currentPhase, conversationCount, retryAttempts, setMessages, setIsLoading, setReadyForReport, setCurrentPhase]);
 
   const generateReport = useCallback((requirements: any) => {
     if (!researchData.researchQuestion?.mainQuestion) {

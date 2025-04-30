@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { toast } from '@/components/ui/sonner';
-import { ResearchChatData } from '@/hooks/useResearchChat';
+import { ResearchChatData } from '@/hooks/research/useResearchData';
 
 interface UseReportGeneratorProps {
   onGenerateReport?: (query: string) => void;

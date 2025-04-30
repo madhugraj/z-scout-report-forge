@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { toast } from '@/components/ui/sonner';
-import { ResearchChatData } from '@/hooks/useResearchChat';
+import { ResearchChatData } from '@/hooks/research/useResearchData';
 
 interface ReportGeneratorProps {
   onGenerateReport?: (query: string) => void;
@@ -65,14 +65,11 @@ Please confirm by typing "yes", "confirm", "generate", or "proceed".`);
         message.toLowerCase().includes('proceed')) {
       handleStartReportGeneration();
       setConfirmingReport(false);
-      sendMessage("I confirm that I want to generate the report.");
       return true;
     } else {
       setConfirmingReport(false);
-      sendMessage("I need more information before generating the report.");
-      return true;
+      return false;
     }
-    return false;
   };
 
   const handleStartReportGeneration = () => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +12,7 @@ import { X } from 'lucide-react';
 import { useResearchChat } from '@/hooks/useResearchChat';
 import { useCollaborationUtils } from './hooks/useCollaborationUtils';
 import { useReportGenerator } from './hooks/useReportGenerator';
+import { useSuggestedPrompts } from './SuggestedPrompts';
 
 interface CollaborationWindowProps {
   onEditRequest?: (sectionIndex: number) => void;
@@ -134,8 +134,20 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     sendMessage(message);
   };
 
-  // Extract suggestion prompts into a separate component
+  // Use suggestion prompts
   const suggestedPrompts = useSuggestedPrompts(initialQuery);
+
+  // Helper function to transform messages
+  const transformMessages = (messages: any[], currentUser: string) => {
+    return messages.map((msg, index) => ({
+      id: `msg-${index}-${msg.timestamp || Date.now()}`,
+      sender: msg.role === 'user' ? currentUser : 'Research AI',
+      text: msg.content,
+      timestamp: new Date(msg.timestamp || Date.now()),
+      isAI: msg.role === 'assistant',
+      functionCall: msg.functionCall
+    }));
+  };
 
   return (
     <div className={`flex flex-col ${isFloating ? 'h-full rounded-lg border border-gray-700 shadow-lg overflow-hidden' : 'h-full'}`}>
@@ -208,50 +220,5 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     </div>
   );
 };
-
-// Helper functions extracted from the main component
-function transformMessages(messages: any[], currentUser: string) {
-  return messages.map((msg, index) => ({
-    id: `msg-${index}-${msg.timestamp || Date.now()}`,
-    sender: msg.role === 'user' ? currentUser : 'Research AI',
-    text: msg.content,
-    timestamp: new Date(msg.timestamp || Date.now()),
-    isAI: msg.role === 'assistant',
-    functionCall: msg.functionCall
-  }));
-}
-
-function useSuggestedPrompts(initialQuery: string) {
-  // Generate dynamically relevant suggested prompts based on initialQuery
-  if (!initialQuery) {
-    return [
-      "I need help researching a topic for my academic paper",
-      "Can you help me find sources for my research?",
-      "I'd like to explore the latest developments in my field"
-    ];
-  }
-  
-  const query = initialQuery.toLowerCase();
-  const topicKeywords = [
-    { keywords: ["climate", "environment", "warming", "carbon"], topic: "climate change" },
-    { keywords: ["ai", "artificial", "intelligence", "machine", "learning"], topic: "artificial intelligence" },
-    { keywords: ["health", "medical", "medicine", "disease"], topic: "healthcare" },
-    { keywords: ["education", "learning", "school", "teaching"], topic: "education" },
-    { keywords: ["tech", "technology", "digital"], topic: "technology" }
-  ];
-  
-  // Find matching topic or use generic research-focused prompts
-  const matchedTopic = topicKeywords.find(item => 
-    item.keywords.some(keyword => query.includes(keyword))
-  );
-  
-  const topic = matchedTopic ? matchedTopic.topic : "this topic";
-  
-  return [
-    `What are the key research questions I should explore about ${topic}?`,
-    `Can you recommend the most recent academic sources on ${topic}?`,
-    `What methodology would be best for researching ${topic}?`
-  ];
-}
 
 export default CollaborationWindow;
