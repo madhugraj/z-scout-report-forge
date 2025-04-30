@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 
 interface InviteDialogProps {
   open: boolean;
-  setOpen: (value: boolean) => void;
+  setOpen: (open: boolean) => void; // Changed from value: boolean to open: boolean for clarity
   inviteEmail: string;
   setInviteEmail: React.Dispatch<React.SetStateAction<string>>;
   handleInvite: () => void;

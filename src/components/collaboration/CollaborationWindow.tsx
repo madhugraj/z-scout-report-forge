@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import { useNavigate } from 'react-router-dom';
-import CollaborationHeader from './CollaborationHeader';
+import CollaborationHeaderWrapper from './CollaborationHeaderWrapper';
 import CollaboratorsList from './CollaboratorsList';
 import MessageList from './MessageList';
 import EditPanel from './EditPanel';
@@ -13,6 +13,7 @@ import { useResearchChat } from '@/hooks/useResearchChat';
 import { useCollaborationUtils } from './hooks/useCollaborationUtils';
 import { useReportGenerator } from './hooks/useReportGenerator';
 import { useSuggestedPrompts } from './SuggestedPrompts';
+import { processEditCommand, transformMessages } from './utils/MessageUtils';
 
 interface CollaborationWindowProps {
   onEditRequest?: (sectionIndex: number) => void;
@@ -102,22 +103,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     }
   };
 
-  const processEditCommand = (message: string): boolean => {
-    const editRegex = /^edit\s+section\s+(\d+)$/i;
-    const match = message.match(editRegex);
-    
-    if (match) {
-      const sectionIndex = parseInt(match[1], 10) - 1; // Convert to 0-based index
-      if (sectionIndex >= 0 && sectionIndex < reportSections.length) {
-        setEditSection(sectionIndex);
-        setEditTitle(reportSections[sectionIndex].title);
-        setEditText(reportSections[sectionIndex].content);
-        return true;
-      }
-    }
-    return false;
-  };
-
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
 
@@ -127,7 +112,13 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
     }
 
     // Check if this is an edit command
-    const wasEditCommand = processEditCommand(message);
+    const wasEditCommand = processEditCommand(
+      message, 
+      reportSections, 
+      setEditSection, 
+      setEditTitle, 
+      setEditText
+    );
     if (wasEditCommand) return;
 
     // Otherwise, send to the research chat
@@ -136,18 +127,6 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
 
   // Use suggestion prompts
   const suggestedPrompts = useSuggestedPrompts(initialQuery);
-
-  // Helper function to transform messages
-  const transformMessages = (messages: any[], currentUser: string) => {
-    return messages.map((msg, index) => ({
-      id: `msg-${index}-${msg.timestamp || Date.now()}`,
-      sender: msg.role === 'user' ? currentUser : 'Research AI',
-      text: msg.content,
-      timestamp: new Date(msg.timestamp || Date.now()),
-      isAI: msg.role === 'assistant',
-      functionCall: msg.functionCall
-    }));
-  };
 
   return (
     <div className={`flex flex-col ${isFloating ? 'h-full rounded-lg border border-gray-700 shadow-lg overflow-hidden' : 'h-full'}`}>
@@ -164,7 +143,7 @@ const CollaborationWindow: React.FC<CollaborationWindowProps> = ({
         </div>
       )}
       
-      <CollaborationHeader
+      <CollaborationHeaderWrapper
         showInviteDialog={showInviteDialog}
         setShowInviteDialog={setShowInviteDialog}
         editorMode={editorMode}
